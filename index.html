@@ -2,8 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PIO Offset Tracker</title>
+<meta name="theme-color" content="#0B4A25">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Offsets">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Public+Sans:wght@400;500;600;700&display=swap">
@@ -97,6 +104,11 @@ button.tile{font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%
 .tap{cursor:pointer}
 .list .row.tap:hover,tr.tap:hover td{background:var(--surface-2)}
 tr.total td{border-top:2px solid var(--line-strong);background:var(--surface-2)}
+.mine{display:flex;align-items:center;gap:14px;flex-wrap:wrap;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;background:var(--brand-soft);border:1px solid color-mix(in srgb,var(--brand) 30%,transparent);border-radius:var(--r);padding:12px 16px}
+.mine .k{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--brand-strong)}
+.mine b{font-family:var(--f-display);font-size:17px;font-variant-numeric:tabular-nums}
+.mine .go{margin-left:auto;color:var(--brand-strong);display:flex}
+.mine:hover{border-color:var(--brand)}
 .hero-main,.hero .box{font:inherit;color:inherit;text-align:left;background:none;border:0;padding:0;cursor:pointer;display:flex;flex-direction:column}
 .hero .box{background:rgba(255,255,255,.08);border:1px solid rgba(232,243,236,.22);padding:12px 14px}
 .hero .box:hover{background:rgba(255,255,255,.14)}
@@ -116,6 +128,7 @@ tr.total td{border-top:2px solid var(--line-strong);background:var(--surface-2)}
 .mini-tiles div{background:var(--surface-2);border-radius:var(--r-sm);padding:10px 12px;display:flex;flex-direction:column}
 .mini-tiles span{font-size:12px;color:var(--muted);font-weight:600}
 .mini-tiles b{font-family:var(--f-display);font-size:18px;font-variant-numeric:tabular-nums}
+.acct{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .list.boxed{border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
 .modal-f{flex-wrap:wrap}
 .loading{flex-direction:column;gap:12px}
@@ -144,6 +157,7 @@ tr.total td{border-top:2px solid var(--line-strong);background:var(--surface-2)}
 .seg label b{font-size:14px;display:flex;align-items:center;gap:6px}
 .seg label small{color:var(--muted);font-size:12px}
 .seg input{position:absolute;opacity:0}
+.seg.two-up{grid-template-columns:repeat(2,minmax(0,1fr))}
 .seg input:checked+label{border-color:var(--brand);background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)}
 .seg input:focus-visible+label{outline:3px solid var(--brand-glow);outline-offset:2px}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
@@ -238,6 +252,7 @@ th{text-align:left;font-size:12px;font-weight:700;letter-spacing:.05em;text-tran
 td{padding:12px 18px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
 tr:last-child td{border-bottom:0}
 td.r,th.r{text-align:right}
+td.plus{color:var(--brand-strong)} td.minus{color:var(--gold)}
 .filters{display:flex;gap:10px;flex-wrap:wrap}
 .filters select{height:36px;width:auto;min-width:140px}
 .panel-h select.input{height:36px;width:auto;max-width:100%}
@@ -357,6 +372,56 @@ td.r,th.r{text-align:right}
 .hero .box span{font-size:13px;color:var(--side-muted)}
 .hero-r{display:flex;flex-direction:column;gap:12px;align-items:flex-end}
 @media (max-width:560px){.hero-r{align-items:stretch;width:100%}.iconpick{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* ---------- visual polish: soft gradients, app-like surfaces ---------- */
+:root{--r:16px;--r-sm:10px;
+  --bg-grad:radial-gradient(1100px 600px at -10% -10%, #D4EEDB 0%, transparent 60%),radial-gradient(900px 520px at 110% -5%, #FBEFD2 0%, transparent 55%),radial-gradient(900px 700px at 50% 120%, #DCE8F7 0%, transparent 60%);
+  --hero-grad:linear-gradient(135deg,#0F6B2E 0%,#0B4A25 55%,#08331A 100%);
+  --side-grad:linear-gradient(180deg,#0E4A27 0%,#0A3A1E 60%,#072A16 100%);
+  --shadow:0 1px 2px rgba(14,30,51,.05),0 8px 24px -8px rgba(14,30,51,.12)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg-grad:radial-gradient(1100px 600px at -10% -10%, #123623 0%, transparent 60%),radial-gradient(900px 520px at 110% -5%, #2E2610 0%, transparent 55%),radial-gradient(900px 700px at 50% 120%, #11213A 0%, transparent 60%);
+  --hero-grad:linear-gradient(135deg,#14713A 0%,#0C4424 55%,#082C18 100%);
+  --side-grad:linear-gradient(180deg,#0B3221 0%,#08261A 100%);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -8px rgba(0,0,0,.5)}}
+:root[data-theme="dark"]{
+  --bg-grad:radial-gradient(1100px 600px at -10% -10%, #123623 0%, transparent 60%),radial-gradient(900px 520px at 110% -5%, #2E2610 0%, transparent 55%),radial-gradient(900px 700px at 50% 120%, #11213A 0%, transparent 60%);
+  --hero-grad:linear-gradient(135deg,#14713A 0%,#0C4424 55%,#082C18 100%);
+  --side-grad:linear-gradient(180deg,#0B3221 0%,#08261A 100%);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -8px rgba(0,0,0,.5)}
+body{background-color:var(--bg);background-image:var(--bg-grad);background-attachment:fixed}
+.panel{border-color:color-mix(in srgb,var(--line) 70%,transparent)}
+.side{background:var(--side-grad);overflow-y:auto}
+.topbar{background:var(--side-grad)!important}
+.hero{background:var(--hero-grad);box-shadow:0 18px 40px -18px rgba(11,74,37,.55);border-radius:20px}
+.hero::after{content:"";position:absolute;right:-60px;top:-80px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(245,185,46,.22),transparent 62%);pointer-events:none}
+.btn-primary{background:linear-gradient(180deg,#1C9145,#14773A);box-shadow:0 1px 0 rgba(255,255,255,.15) inset,0 4px 12px -4px rgba(22,128,58,.55)}
+.btn-primary:hover{background:linear-gradient(180deg,#178038,#0F6B2E)}
+.hero .btn-primary{background:#5BD077;color:#08261A;box-shadow:0 6px 16px -6px rgba(0,0,0,.4)}
+.tile .k svg.i{width:26px;height:26px;padding:5px;border-radius:8px;background:var(--brand-soft);color:var(--brand-strong);flex:none}
+.tile.warn .k svg.i{background:var(--gold-soft);color:var(--gold)}
+.tile .v{font-size:26px}
+.mine{background:linear-gradient(90deg,var(--brand-soft),color-mix(in srgb,var(--brand-soft) 40%,var(--surface)))}
+.list .row{transition:background .15s}
+.mark{border-radius:12px!important}
+.modal{border-radius:20px;box-shadow:0 30px 80px -20px rgba(0,0,0,.45)}
+.scrim{background:rgba(6,20,13,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.input{border-radius:var(--r-sm)}
+.wrap{animation:rise .28s ease-out}
+@keyframes rise{from{opacity:.001;transform:translateY(6px)}to{opacity:1;transform:none}}
+.modal{animation:pop .2s ease-out}
+@keyframes pop{from{opacity:.001;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+@media (max-width:860px){
+  .tabbar{background:color-mix(in srgb,var(--surface) 82%,transparent);backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);
+    left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));border:1px solid var(--line);border-radius:20px;box-shadow:0 10px 30px -10px rgba(14,30,51,.3);padding:6px}
+  .tabbar button[aria-current="page"]{background:var(--brand-soft);border-radius:14px}
+  .main{padding-block:20px 110px}
+  .scrim{align-items:end;padding:0}
+  .modal{max-width:none;border-radius:22px 22px 0 0;max-height:92vh;padding-bottom:env(safe-area-inset-bottom,0px);animation:sheet .25s ease-out}
+  @keyframes sheet{from{transform:translateY(40px);opacity:.001}to{transform:none;opacity:1}}
+  .tile .k svg.i{width:22px;height:22px;padding:4px}
+  .hero{border-radius:18px}
+}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -547,6 +612,23 @@ function monthStats(u, m){
   return o;
 }
 function sorted(list){ return list.slice().sort(function(a,b){ return a.date === b.date ? (b.createdAt > a.createdAt ? 1 : -1) : (b.date > a.date ? 1 : -1); }); }
+function otherAdmins(){ return S.users.filter(function(u){ return u.role === 'admin' && u.active && u.username !== S.me.username; }).length; }
+function canReview(e){ return isAdmin() && e.status === 'Pending' && !(e.username === S.me.username && otherAdmins() > 0); }
+/* One month for one person: carried over + earned − used = balance on the 1st of next month. */
+function ledger(u, m){
+  var o = { open:0, earned:0, used:0, pending:0, n:0 };
+  S.entries.forEach(function(e){
+    if (e.username !== u) return;
+    var em = e.date.slice(0,7);
+    if (e.status === 'Confirmed'){
+      var v = e.type === 'EARN' ? e.days : -e.days;
+      if (em < m) o.open += v;
+      else if (em === m){ if (e.type === 'EARN'){ o.earned += e.days; o.n++; } else o.used += e.days; }
+    } else if (e.status === 'Pending' && e.type === 'EARN' && em === m) o.pending += e.days;
+  });
+  o.close = o.open + o.earned - o.used;
+  return o;
+}
 function pending(){ return sorted(S.entries.filter(function(e){ return e.status === 'Pending'; })); }
 function closesOn(m){ return fDate(nextMonthStart(m), { month:'long', day:'numeric' }); }
 function goRecords(f){ S.rf = Object.assign({ user:'all', div:'all', type:'all', status:'all' }, f || {}); S.view = 'records'; render(); window.scrollTo(0,0); }
@@ -638,7 +720,8 @@ function entryRow(e, opts){
   var title = (opts.showName ? esc(userName(e.username)) + ' · ' : '') + (use ? 'Offset used' : esc(e.event || e.category));
   var meta = fDate(e.date, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + (use ? '' : ' · ' + esc(e.category)) + (e.venue ? ' · ' + esc(e.venue) : '');
   var acts = '';
-  if (opts.review) acts = '<div class="acts"><button class="btn btn-sm btn-primary" data-act="review" data-id="' + e.id + '" data-d="Confirmed">Confirm</button><button class="btn btn-sm btn-danger" data-act="review" data-id="' + e.id + '" data-d="Rejected">Reject</button></div>';
+  if (opts.review && !canReview(e)) acts = '<div class="acts"><span class="pill off">Needs another admin to confirm</span></div>';
+  else if (opts.review) acts = '<div class="acts"><button class="btn btn-sm btn-primary" data-act="review" data-id="' + e.id + '" data-d="Confirmed">Confirm</button><button class="btn btn-sm btn-danger" data-act="review" data-id="' + e.id + '" data-d="Rejected">Reject</button></div>';
   return '<li class="row tap' + (opts.review ? ' rv' : '') + '" data-entry="' + e.id + '" tabindex="0"><span class="mark ' + cls + '">' + ic(use ? 'minus' : (CAT_ICON[e.category] || 'plus')) + '</span>' +
     '<div class="body"><div class="t">' + title + '</div><div class="m">' + meta + '</div></div>' +
     (opts.review || e.status === 'Confirmed' ? '' : '<span class="pill ' + e.status + '">' + e.status + '</span>') +
@@ -661,7 +744,7 @@ function viewEmpDash(){
   var recent = sorted(S.entries).slice(0, 6);
   return head('Magandang araw, ' + esc(S.me.name.split(' ')[0]), fDate(today(), { weekday:'long', month:'long', day:'numeric', year:'numeric' }) + (S.me.division ? ' · ' + divChip(S.me.division) : '')) +
     '<section class="hero"><button class="hero-main" data-go="monthly"><span class="k">Available offset</span><span class="big">' + fD(st.avail) + '</span>' +
-      '<span class="sub">From months already counted. Tap to see each month.</span></button>' +
+      '<span class="sub">Unused days carry over every month. Tap to see each month.</span></button>' +
       '<div class="hero-r"><button class="box" data-go="monthly"><span>' + fMonth(m) + ' so far</span><b>+' + fD(st.month) + '</b><span>Added to your balance on ' + closesOn(m) + '</span></button>' +
       '<button class="btn btn-primary" data-go="log">' + ic('plus') + 'Log an offset</button></div></section>' +
     '<div class="tiles three">' +
@@ -682,7 +765,9 @@ function viewAdminDash(){
   var all = stats(null, dv), pend = pending();
   var rows = staff.map(function(u){ return { u: u, s: stats(u.username) }; }).sort(function(a,b){ return b.s.avail - a.s.avail || a.u.name.localeCompare(b.u.name); });
   return head('Dashboard', 'Offsets across the office as of ' + fDate(today(), { month:'long', day:'numeric', year:'numeric' }),
-      '<button class="btn btn-primary" data-act="useModal">' + ic('minus') + 'Record offset use</button>') +
+      '<div class="filters"><button class="btn btn-ghost" data-go="log">' + ic('plus') + 'Add offset</button><button class="btn btn-primary" data-act="useModal">' + ic('minus') + 'Record offset use</button></div>') +
+    (function(){ var me = stats(S.me.username); return '<button class="mine" data-person="' + esc(S.me.username) + '"><span class="k">Your offset</span><b>' + fD(me.avail) + ' available</b>' +
+      '<span class="hint">' + (me.month ? '+' + fD(me.month) + ' this month · ' : '') + (me.pendN ? me.pendN + ' waiting for review' : 'Nothing waiting') + '</span><span class="go">' + ic('right') + '</span></button>'; })() +
     '<div class="tiles">' +
       tile('Waiting for review', pend.length, fD(stats(null).pending) + ' to confirm', pend.length ? 'warn' : '', 'clock', 'data-go="approvals"') +
       tile('Total available', fD(all.avail), 'Usable now, ' + (dv === 'all' ? 'all staff' : esc(divOf(dv).short)), '', 'plus', 'data-go="staff"') +
@@ -705,14 +790,13 @@ function viewAdminDash(){
 
 /* ----- log offset ----- */
 function viewLog(){
-  var adm = isAdmin(), pre = S.prefill || {};
+  var adm = isAdmin(), pre = S.prefill || { username: S.me.username };
   S.prefill = null;
   var who = adm ? '<div class="field"><label for="fu">Employee</label><select class="input" id="fu" name="username">' +
-      S.users.filter(function(u){ return u.active; }).map(function(u){ return '<option value="' + esc(u.username) + '"' + (pre.username === u.username ? ' selected' : '') + '>' + esc(u.name) + '</option>'; }).join('') + '</select>' +
-      '<span class="hint">Entries you add as admin are confirmed right away.</span></div>' : '';
+      S.users.filter(function(u){ return u.active; }).map(function(u){ return '<option value="' + esc(u.username) + '"' + (pre.username === u.username ? ' selected' : '') + '>' + esc(u.name) + (u.username === S.me.username ? ' (you)' : '') + '</option>'; }).join('') + '</select>' +
+      '<span class="hint">Offsets you add for staff are confirmed right away.' + (otherAdmins() ? ' Your own offsets go to another admin for confirmation.' : '') + '</span></div>' : '';
   var cats = [['Holiday','flag','Regular or special holiday'],['Weekend','sun','Saturday or Sunday'],['After 5 PM','moon','Events past office hours']];
-  var amts = [['1','1 day','Whole day'],['0.5','½ day','About 4 hours'],['0.25','¼ day','About 2 hours']];
-  return head(adm ? 'Add an offset' : 'Log an offset', adm ? 'Record extra work for an employee who forgot to log it.' : 'Your entry goes to an admin for confirmation.') +
+  return head(adm ? 'Add an offset' : 'Log an offset', adm ? 'Log your own extra work, or add one for a staff member who forgot.' : 'Log ½ day or 1 day per entry. An admin confirms it before it counts.') +
     '<div class="grid-2"><form class="panel panel-b stack" data-form="earn">' + who +
       '<div class="field"><label for="fe">Event name</label><input class="input" id="fe" name="event" maxlength="120" placeholder="e.g. Bantayog Festival opening program" required></div>' +
       '<div class="field"><label for="fv">Venue</label><input class="input" id="fv" name="venue" maxlength="120" placeholder="e.g. Provincial Capitol Grounds, Daet" required></div>' +
@@ -720,17 +804,20 @@ function viewLog(){
       '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">Type of extra work</legend><div class="seg">' +
         cats.map(function(c, i){ return '<input type="radio" name="category" id="c' + i + '" value="' + c[0] + '"' + (i === 0 ? ' checked' : '') + '><label for="c' + i + '"><b>' + ic(c[1]) + c[0] + '</b><small>' + c[2] + '</small></label>'; }).join('') +
       '</div></fieldset>' +
-      '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">How much offset</legend><div class="seg">' +
-        amts.map(function(a, i){ return '<input type="radio" name="days" id="a' + i + '" value="' + a[0] + '"' + (i === 0 ? ' checked' : '') + '><label for="a' + i + '"><b>' + a[1] + '</b><small>' + a[2] + '</small></label>'; }).join('') +
+      '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">How much offset</legend><div class="seg two-up">' +
+        '<input type="radio" name="days" id="a0" value="1" checked><label for="a0"><b>1 day</b><small>8 hours or more, including events that end past midnight</small></label>' +
+        '<input type="radio" name="days" id="a1" value="0.5"><label for="a1"><b>½ day</b><small>About 4 hours</small></label>' +
       '</div></fieldset>' +
       '<label class="check"><input type="checkbox" name="noTravelOrder" required><span><b>This work was not under a travel order.</b><br><span class="hint">Work covered by a travel order is already counted in the DTR and is not an offset.</span></span></label>' +
       '<p class="error" id="err" role="alert"></p><div><button class="btn btn-primary btn-lg" type="submit">' + ic('plus') + (adm ? 'Add confirmed offset' : 'Submit for confirmation') + '</button></div>' +
     '</form>' +
     '<aside class="panel"><div class="panel-h"><h2>How offsets are counted</h2></div><div class="panel-b note">' +
       '<div>' + ic('month') + '<span>The regular schedule is ' + WORKDAYS + ' workdays a month. Days worked beyond it are offsets.</span></div>' +
-      '<div>' + ic('clock') + '<span>Offsets are counted when the month ends. What you log in ' + fMonth(curMonth()) + ' becomes usable on ' + closesOn(curMonth()) + '.</span></div>' +
+      '<div>' + ic('clock') + '<span>Each entry is ½ day (about 4 hours) or 1 day (8 hours or more). What you log in ' + fMonth(curMonth()) + ' becomes usable on ' + closesOn(curMonth()) + '.</span></div>' +
+      '<div>' + ic('cal') + '<span>Forgot to log? Pick the past date. Once confirmed, it counts right away.</span></div>' +
+      '<div>' + ic('plus') + '<span>Unused offsets carry over to the next months. They do not expire.</span></div>' +
       '<div>' + ic('route') + '<span>Work done under a travel order is not an offset. It is already counted in your DTR.</span></div>' +
-      '<div>' + ic('check') + '<span>An admin confirms each entry before it counts.</span></div>' +
+
     '</div></aside></div>';
 }
 
@@ -738,7 +825,7 @@ function viewLog(){
 function viewApprovals(){
   var p = pending();
   return head('Approvals', p.length ? p.length + (p.length === 1 ? ' offset is' : ' offsets are') + ' waiting for your review. Tap an entry to see its details.' : 'Nothing to review right now.',
-      p.length > 1 ? '<button class="btn btn-primary" data-act="confirmAll">' + ic('check') + 'Confirm all ' + p.length + '</button>' : '') +
+      p.filter(canReview).length > 1 ? '<button class="btn btn-primary" data-act="confirmAll">' + ic('check') + 'Confirm all ' + p.filter(canReview).length + '</button>' : '') +
     '<section class="panel">' + (p.length ? '<ul class="list">' + p.map(function(e){ return entryRow(e, { showName:true, review:true }); }).join('') + '</ul>'
       : '<div class="empty"><b>All caught up</b>When staff log offsets, they appear here for you to confirm or reject.</div>') + '</section>';
 }
@@ -788,31 +875,34 @@ function viewMonthly(){
   var nav = '<div class="cal-nav"><button class="icon-btn" data-act="monPrev" aria-label="Previous month">' + ic('left') + '</button><h2>' + fMonth(m) + '</h2>' +
     '<button class="icon-btn" data-act="monNext" aria-label="Next month"' + (m >= curMonth() ? ' disabled' : '') + '>' + ic('right') + '</button></div>';
   var body;
+  var nm = fDate(nextMonthStart(m), { month:'short', day:'numeric' });
   if (adm){
     var dv = S.dashDiv;
     var staff = S.users.filter(function(u){ return dv === 'all' || u.division === dv; });
-    var tot = { earned:0, pending:0, used:0 };
-    var rows = staff.map(function(u){ var s = monthStats(u.username, m); tot.earned += s.earned; tot.pending += s.pending; tot.used += s.used; return { u:u, s:s }; })
-      .filter(function(r){ return r.u.active || r.s.earned || r.s.used; })
-      .sort(function(a,b){ return b.s.earned - a.s.earned || a.u.name.localeCompare(b.u.name); });
+    var tot = { open:0, earned:0, used:0, pending:0, close:0 };
+    var rows = staff.map(function(u){ var s = ledger(u.username, m); ['open','earned','used','pending','close'].forEach(function(k){ tot[k] += s[k]; }); return { u:u, s:s }; })
+      .filter(function(r){ return r.u.active || r.s.earned || r.s.used || r.s.open; })
+      .sort(function(a,b){ return b.s.close - a.s.close || a.u.name.localeCompare(b.u.name); });
+    function cells(x){ return '<td class="r num">' + (x.open ? fD(x.open) : '—') + '</td><td class="r num plus">' + (x.earned ? '+' + fD(x.earned) : '—') + '</td><td class="r num minus">' + (x.used ? '−' + fD(x.used) : '—') + '</td>' +
+      '<td class="r num"><b>' + fD(x.close) + '</b></td><td class="r num">' + (x.pending ? fD(x.pending) : '—') + '</td>'; }
     body = '<section class="panel"><div class="panel-h">' + nav + '<div class="filters">' + divSelect('dashDiv', dv, 'Filter by division', true) + status + '</div></div>' +
-      '<div class="table-wrap"><table><thead><tr><th>Employee</th><th>Division</th><th class="r">Offset earned</th><th class="r">Pending</th><th class="r">Used</th></tr></thead><tbody>' +
-      rows.map(function(r){ return '<tr class="tap" data-person="' + esc(r.u.username) + '" tabindex="0"><td><b>' + esc(r.u.name) + '</b></td><td>' + divChip(r.u.division) + '</td><td class="r num"><b>' + (r.s.earned ? '+' + fD(r.s.earned) : '—') + '</b></td>' +
-        '<td class="r num">' + (r.s.pending ? fD(r.s.pending) : '—') + '</td><td class="r num">' + (r.s.used ? '−' + fD(r.s.used) : '—') + '</td></tr>'; }).join('') +
-      '<tr class="total"><td><b>Total</b></td><td></td><td class="r num"><b>+' + fD(tot.earned) + '</b></td><td class="r num">' + (tot.pending ? fD(tot.pending) : '—') + '</td><td class="r num">' + (tot.used ? '−' + fD(tot.used) : '—') + '</td></tr>' +
+      '<div class="table-wrap"><table><thead><tr><th>Employee</th><th>Division</th><th class="r">Carried over</th><th class="r">Earned</th><th class="r">Used</th><th class="r">Balance ' + nm + '</th><th class="r">Pending</th></tr></thead><tbody>' +
+      rows.map(function(r){ return '<tr class="tap" data-person="' + esc(r.u.username) + '" tabindex="0"><td><b>' + esc(r.u.name) + '</b></td><td>' + divChip(r.u.division) + '</td>' + cells(r.s) + '</tr>'; }).join('') +
+      '<tr class="total"><td><b>Total</b></td><td></td>' + cells(tot) + '</tr>' +
       '</tbody></table></div></section>';
   } else {
-    var s = monthStats(S.me.username, m);
+    var s = ledger(S.me.username, m);
     var list = sorted(S.entries.filter(function(e){ return e.date.slice(0,7) === m; }));
     body = '<section class="panel"><div class="panel-h">' + nav + status + '</div>' +
-      '<div class="panel-b"><div class="tiles three">' +
-        tile('Offset earned', '+' + fD(s.earned), s.n + (s.n === 1 ? ' confirmed entry' : ' confirmed entries'), '', 'plus') +
-        tile('Waiting for review', fD(s.pending), 'Not yet counted', s.pending ? 'warn' : '', 'clock') +
-        tile('Used', fD(s.used), 'Offset days taken this month', '', 'minus') +
+      '<div class="panel-b"><div class="tiles">' +
+        tile('Carried over', fD(s.open), 'Left from earlier months', '', 'right') +
+        tile('Earned', '+' + fD(s.earned), s.pending ? fD(s.pending) + ' still waiting for review' : s.n + (s.n === 1 ? ' confirmed entry' : ' confirmed entries'), s.pending ? 'warn' : '', 'plus') +
+        tile('Used', '−' + fD(s.used), 'Days off taken this month', '', 'minus') +
+        tile('Balance on ' + nm, fD(s.close), open ? 'If nothing else changes' : 'Carried into ' + fMonth(shiftMonth(m, 1)).split(' ')[0], '', 'check') +
       '</div></div>' +
       (list.length ? '<ul class="list" style="border-top:1px solid var(--line)">' + list.map(function(e){ return entryRow(e); }).join('') + '</ul>' : '<div class="empty">No offsets recorded in ' + fMonth(m) + '.</div>') + '</section>';
   }
-  return head('Monthly summary', open ? 'This month is still open. Its offsets are added to balances on ' + closesOn(m) + '.' : 'Offsets counted for ' + fMonth(m) + '.') + body;
+  return head('Monthly summary', 'Unused offsets carry over. ' + (open ? 'This month\u2019s offsets become usable on ' + closesOn(m) + '.' : 'Late entries for ' + fMonth(m) + ' count once confirmed.')) + body;
 }
 
 /* ----- records ----- */
@@ -851,15 +941,14 @@ function viewStaff(){
       '<td>' + divSelect('ud_' + u.username, u.division, 'Division of ' + u.name, false, true).replace('class="input"', 'class="input" data-setdiv="' + esc(u.username) + '" style="height:34px;min-width:160px"') + '</td>' +
       '<td>' + (u.active ? '<span class="pill Confirmed">Active</span>' : '<span class="pill off">Inactive</span>') + '</td>' +
       '<td class="r num">' + fD(st.avail) + '</td>' +
-      '<td class="r"><button class="btn btn-sm btn-ghost" data-act="pinModal" data-u="' + esc(u.username) + '">' + ic('key') + 'Reset PIN</button> ' +
-      (self ? '' : '<button class="btn btn-sm ' + (u.active ? 'btn-danger' : 'btn-ghost') + '" data-act="toggleActive" data-u="' + esc(u.username) + '" data-a="' + (u.active ? '0' : '1') + '">' + (u.active ? 'Deactivate' : 'Activate') + '</button>') + '</td></tr>';
+      '<td class="r"><button class="btn btn-sm btn-ghost" data-person="' + esc(u.username) + '">Manage' + (self ? ' (you)' : '') + '</button></td></tr>';
   }).join('');
   var divs = S.divisions.map(function(d){
     var n = S.users.filter(function(u){ return u.division === d.id && u.active; }).length;
     return '<li class="row tap" data-act="divModal" data-id="' + esc(d.id) + '" tabindex="0">' + divBadge(d, 38) + '<div class="body"><div class="t">' + esc(d.name) + '</div><div class="m">' + n + ' active staff · shown as “' + esc(d.short) + '”</div></div>' +
       '<span class="hint">' + ic('edit') + '</span></li>';
   }).join('');
-  return head('Staff', 'Tap a person to see their offsets. Deactivated staff keep their records but cannot sign in.') +
+  return head('Staff', 'Tap a person to see their offsets, reset their PIN, deactivate or remove them.') +
     '<section class="panel"><div class="panel-h"><h2>Accounts</h2><span class="hint num">' + S.users.length + ' total</span></div>' +
       '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Division</th><th>Status</th><th class="r">Available</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></section>' +
     '<div class="grid-2"><section class="panel"><div class="panel-h"><h2>Divisions</h2><button class="btn btn-sm btn-primary" data-act="divModal">' + ic('plus') + 'Add division</button></div>' +
@@ -912,7 +1001,8 @@ function entryModal(id){
   var foot = '';
   var canDel = adm || (e.username === S.me.username && e.status === 'Pending');
   if (canDel) foot += '<button type="button" class="btn btn-danger" data-act="del" data-id="' + e.id + '" style="margin-right:auto">' + ic('trash') + 'Remove</button>';
-  if (adm && e.status === 'Pending') foot += '<button type="button" class="btn btn-ghost" data-act="review" data-id="' + e.id + '" data-d="Rejected">Reject</button><button type="button" class="btn btn-primary" data-act="review" data-id="' + e.id + '" data-d="Confirmed">' + ic('check') + 'Confirm</button>';
+  if (adm && e.status === 'Pending' && !canReview(e)) foot += '<span class="hint" style="align-self:center">Another admin needs to confirm your own offset.</span>';
+  else if (canReview(e)) foot += '<button type="button" class="btn btn-ghost" data-act="review" data-id="' + e.id + '" data-d="Rejected">Reject</button><button type="button" class="btn btn-primary" data-act="review" data-id="' + e.id + '" data-d="Confirmed">' + ic('check') + 'Confirm</button>';
   else foot += '<button type="button" class="btn btn-ghost" data-act="close">Close</button>';
   modal(use ? 'Offset used' : esc(e.event || 'Offset'), body, foot);
 }
@@ -924,6 +1014,12 @@ function personModal(username){
       '<div><div class="hint">@' + esc(u.username) + ' · <span class="cap">' + esc(u.role) + '</span>' + (u.active ? '' : ' · Inactive') + '</div>' + divChip(u.division) + '</div></div>' +
     '<div class="mini-tiles"><div><span>Available</span><b>' + fD(st.avail) + '</b></div><div><span>' + fMonth(curMonth()).split(' ')[0] + ' so far</span><b>+' + fD(st.month) + '</b></div>' +
       '<div><span>Pending</span><b>' + fD(st.pending) + '</b></div><div><span>Used this year</span><b>' + fD(st.usedY) + '</b></div></div>' +
+    (isAdmin() ? '<div class="label">Account</div><div class="acct">' +
+      '<button type="button" class="btn btn-sm btn-ghost" data-act="pinModal" data-u="' + esc(username) + '">' + ic('key') + 'Reset PIN</button>' +
+      (username === S.me.username ? '<span class="hint">You can change your own PIN from the menu.</span>' :
+        '<button type="button" class="btn btn-sm btn-ghost" data-act="toggleActive" data-u="' + esc(username) + '" data-a="' + (u.active ? '0' : '1') + '">' + (u.active ? 'Deactivate' : 'Activate') + '</button>' +
+        '<button type="button" class="btn btn-sm btn-danger" data-act="removeUser" data-u="' + esc(username) + '">' + ic('trash') + 'Remove ' + (u.role === 'admin' ? 'admin' : 'staff') + '</button>') +
+      '</div><p class="hint" style="margin:0">Deactivate blocks sign-in but keeps them on the lists. Remove deletes the account; their past entries stay in the records.</p>' : '') +
     (recent.length ? '<div class="label" style="display:flex;justify-content:space-between;align-items:center">Recent<button type="button" class="btn btn-sm btn-ghost" data-act="personRecords" data-u="' + esc(username) + '">' + ic('list') + 'All records</button></div><ul class="list boxed">' + recent.map(function(e){ return entryRow(e); }).join('') + '</ul>' : '<p class="hint">No offsets yet.</p>'),
     '<button type="button" class="btn btn-ghost" data-act="personAdd" data-u="' + esc(username) + '">' + ic('plus') + 'Add offset</button>' +
     '<button type="button" class="btn btn-primary" data-act="useModal" data-u="' + esc(username) + '"' + (st.avail > 0 ? '' : ' disabled') + '>' + ic('minus') + 'Record use</button>');
@@ -934,9 +1030,9 @@ function useModal(u, date){
   modal('Record offset use',
     '<div class="field"><label for="mu">Employee</label><select class="input" id="mu" name="username">' + staff.map(function(x){ return '<option value="' + esc(x.username) + '"' + (x.username === u ? ' selected' : '') + '>' + esc(x.name) + ' · ' + fD(stats(x.username).avail) + ' available</option>'; }).join('') + '</select></div>' +
     '<div class="two"><div class="field"><label for="mdt">First day off</label><input class="input" id="mdt" name="date" type="date" value="' + (date || today()) + '" required></div>' +
-    '<div class="field"><label for="md">Days</label><input class="input num" id="md" name="days" type="number" min="0.25" max="30" step="0.25" value="1" required>' +
+    '<div class="field"><label for="md">Days</label><input class="input num" id="md" name="days" type="number" min="0.5" max="30" step="0.5" value="1" required>' +
       '<div class="chips"><button type="button" class="chip" data-d="0.5">½ day</button><button type="button" class="chip" data-d="1">1 day</button><button type="button" class="chip" data-d="2">2 days</button></div></div></div>' +
-    '<span class="hint">Only offsets from months already counted can be used.</span>',
+    '<span class="hint">Uses offsets from months already counted. Whatever is left carries over.</span>',
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Record use</button>', 'recordUse');
 }
 function divModal(id){
@@ -1031,9 +1127,14 @@ document.addEventListener('click', function(ev){
   if (a === 'review'){ var d = t.dataset.d; busy(t, act('review', { id: t.dataset.id, decision: d }, d === 'Confirmed' ? 'Offset confirmed' : 'Offset rejected').then(closeModal), document.querySelector('#modal .scrim') ? 'merr' : null); return; }
   if (a === 'confirmAll'){
     if (t.dataset.sure !== '1'){ t.dataset.sure = '1'; t.innerHTML = ic('check') + 'Tap again to confirm all'; return; }
-    busy(t, act('reviewMany', { ids: pending().map(function(e){ return e.id; }), decision: 'Confirmed' }, function(n){ return n + ' offsets confirmed'; })); return;
+    busy(t, act('reviewMany', { ids: pending().filter(canReview).map(function(e){ return e.id; }), decision: 'Confirmed' }, function(n){ return n + ' offsets confirmed'; })); return;
   }
-  if (a === 'toggleActive'){ var on = t.dataset.a === '1'; busy(t, act('setActive', { username: t.dataset.u, active: on }, on ? 'Account activated' : 'Account deactivated')); return; }
+  if (a === 'toggleActive'){ var on = t.dataset.a === '1', tu = t.dataset.u; busy(t, act('setActive', { username: tu, active: on }, on ? 'Account activated' : 'Account deactivated').then(function(){ if (document.querySelector('#modal .scrim')) personModal(tu); }), 'merr'); return; }
+  if (a === 'removeUser'){
+    if (t.dataset.sure !== '1'){ t.dataset.sure = '1'; t.innerHTML = ic('trash') + 'Tap again to remove ' + esc(firstName(t.dataset.u)); return; }
+    var nm2 = userName(t.dataset.u);
+    busy(t, act('removeUser', { username: t.dataset.u }, nm2 + ' was removed').then(closeModal), 'merr'); return;
+  }
 });
 document.addEventListener('keydown', function(ev){
   if (ev.key === 'Escape' && document.querySelector('#modal .scrim')) closeModal();
@@ -1075,7 +1176,7 @@ document.addEventListener('submit', function(ev){
     if (d.division) lSet('pio_div', d.division);
     p = call(kind, d).then(function(r){ S.token = r.token; saveSession(r.token, remember); S.view = 'dashboard'; if (!S.me) return refresh(); if (remember) lSet('pio_cache', JSON.stringify({ me:S.me, users:S.users, entries:S.entries, divisions:S.divisions, workdays:WORKDAYS })); render(); });
   }
-  else if (kind === 'earn'){ d.noTravelOrder = !!d.noTravelOrder; p = act('logEarn', d, isAdmin() ? 'Offset added and confirmed' : 'Sent for confirmation').then(function(){ S.view = isAdmin() ? 'records' : 'dashboard'; render(); window.scrollTo(0,0); }); }
+  else if (kind === 'earn'){ d.noTravelOrder = !!d.noTravelOrder; var selfLog = !isAdmin() || !d.username || d.username === S.me.username; p = act('logEarn', d, isAdmin() && !(selfLog && otherAdmins()) ? 'Offset added and confirmed' : 'Sent for confirmation').then(function(){ S.view = isAdmin() ? 'records' : 'dashboard'; render(); window.scrollTo(0,0); }); }
   else if (kind === 'recordUse') p = act('recordUse', d, 'Offset use recorded').then(closeModal);
   else if (kind === 'addUser') p = act('addUser', d, d.name + ' can now sign in');
   else if (kind === 'resetPin') p = act('resetPin', d, 'PIN reset').then(closeModal);
@@ -1098,6 +1199,7 @@ var Mock = (function(){
   ];
   var users = [
     { username:'admin', name:'Maria Santos', role:'admin', division:'asd', pin:'1234', active:true },
+    { username:'rmendoza', name:'Ramon Mendoza', role:'admin', division:'bantayog', pin:'1234', active:true },
     { username:'jdelacruz', name:'Juan Dela Cruz', role:'employee', division:'smpd', pin:'1234', active:true },
     { username:'areyes', name:'Ana Reyes', role:'employee', division:'bantayog', pin:'1234', active:true },
     { username:'mbautista', name:'Mark Bautista', role:'employee', division:'smpd', pin:'1234', active:true },
@@ -1111,20 +1213,23 @@ var Mock = (function(){
   add('jdelacruz','EARN',34,'After 5 PM',0.5,'Provincial Board session','Sangguniang Panlalawigan Hall','Confirmed');
   add('jdelacruz','EARN',27,'Weekend',1,'Bayanihan clean-up drive','Bagasbas Beach, Daet','Confirmed');
   add('jdelacruz','USE',13,'Used',1,'','','Confirmed');
-  add('jdelacruz','EARN',4,'After 5 PM',0.25,'Typhoon advisory livestream','PIO Studio, Capitol','Pending');
+  add('jdelacruz','EARN',4,'After 5 PM',1,'Typhoon advisory livestream','PIO Studio, Capitol','Pending');
   add('jdelacruz','EARN',1,'Holiday',1,'Undas road monitoring','Camambugan Cemetery, Daet','Confirmed');
   add('areyes','EARN',31,'Weekend',1,'Livelihood caravan','Labo Municipal Gym','Confirmed');
   add('areyes','EARN',19,'Weekend',1,'Medical mission','Brgy. Tulay na Lupa, Labo','Confirmed');
   add('areyes','EARN',3,'Weekend',1,'Coastal clean-up','Mercedes Fish Port','Pending');
   add('mbautista','EARN',22,'Weekend',1,'Bantayog Festival street dance','Daet Town Plaza','Confirmed');
-  add('mbautista','EARN',10,'After 5 PM',0.5,'Governor\'s town hall','Jose Panganiban Covered Court','Confirmed');
+  add('mbautista','EARN',10,'After 5 PM',1,'Governor\'s town hall','Jose Panganiban Covered Court','Confirmed');
   add('mbautista','USE',6,'Used',0.5,'','','Confirmed');
-  add('mbautista','EARN',2,'After 5 PM',0.25,'PDRRMO briefing','PDRRMO Operations Center','Pending');
+  add('mbautista','EARN',2,'After 5 PM',1,'PDRRMO briefing','PDRRMO Operations Center','Pending');
   add('cvillanueva','EARN',16,'Weekend',1,'Year-end inventory','PIO Supply Room','Confirmed');
+  add('admin','EARN',38,'Weekend',1,'Provincial press conference','Capitol Session Hall','Confirmed');
+  add('admin','EARN',2,'After 5 PM',1,'Media briefing on typhoon response','PDRRMO Operations Center','Pending');
   function pub(u){ return { username:u.username, name:u.name, role:u.role, division:u.division, active:u.active }; }
   function find(u){ return users.filter(function(x){ return x.username === String(u||'').toLowerCase(); })[0]; }
   function bal(u){ var m = curMonth(); return entries.reduce(function(s,e){ if (e.username !== u || e.status !== 'Confirmed') return s; return e.type === 'EARN' ? (e.date.slice(0,7) < m ? s + e.days : s) : s - e.days; }, 0); }
   function fail(m){ return { ok:false, error:m }; }
+  function others(me){ return users.filter(function(u){ return u.role === 'admin' && u.active && u.username !== me.username; }).length; }
   function copy(x){ return JSON.parse(JSON.stringify(x)); }
   function data(me){ var adm = me.role === 'admin'; return { me:pub(me), users: adm ? users.map(pub) : [pub(me)], divisions:copy(divisions), entries: copy(entries.filter(function(e){ return adm || e.username === me.username; })), workdays:22 }; }
   function ok(me, d){ return { ok:true, data:d === undefined ? true : d, fresh: data(me) }; }
@@ -1138,22 +1243,24 @@ var Mock = (function(){
     if (a === 'data') return { ok:true, data: data(me) };
     if (a === 'logEarn'){
       var who = adm && p.username ? p.username : me.username, dd = Number(p.days);
+      if (dd !== 0.5 && dd !== 1) return fail('Pick ½ day or 1 day.');
       if (!String(p.event||'').trim()) return fail('Event name is required.');
       if (!String(p.venue||'').trim()) return fail('Venue is required.');
       if (!p.date || p.date > today()) return fail('You cannot log an offset for a future date.');
-      if (!(dd > 0) || dd > 1) return fail('Days must be in quarter-day steps, up to 1.');
       if (!p.noTravelOrder) return fail('Confirm that this work was not under a travel order.');
       if (entries.some(function(e){ return e.username === who && e.type === 'EARN' && e.date === p.date && e.category === p.category && e.status !== 'Rejected'; })) return fail('An offset for this date and type is already logged.');
-      entries.push({ id:'e' + (++n), username:who, type:'EARN', date:p.date, category:p.category, days:dd, event:p.event.trim(), venue:p.venue.trim(), status: adm ? 'Confirmed' : 'Pending', createdBy:me.username, createdAt:now, reviewedBy: adm ? me.username : '', reviewedAt: adm ? now : '' }); return ok(me);
+      var auto = adm && (who !== me.username || others(me) === 0);
+      entries.push({ id:'e' + (++n), username:who, type:'EARN', date:p.date, category:p.category, days:dd, event:p.event.trim(), venue:p.venue.trim(), status: auto ? 'Confirmed' : 'Pending', createdBy:me.username, createdAt:now, reviewedBy: auto ? me.username : '', reviewedAt: auto ? now : '' }); return ok(me);
     }
     if (a === 'deleteEntry'){ var i = entries.findIndex(function(e){ return e.id === p.id; }); if (i < 0) return fail('Entry not found.'); var e = entries[i]; if (!adm && !(e.username === me.username && e.status === 'Pending')) return fail('You can only remove your own pending entries.'); entries.splice(i,1); return ok(me); }
     if (a === 'changePin'){ if (p.oldPin !== me.pin) return fail('Current PIN is wrong.'); if (!/^\d{4,6}$/.test(p.newPin)) return fail('PIN must be 4 to 6 digits.'); me.pin = p.newPin; return ok(me); }
     if (!adm) return fail('Only admins can do that.');
-    if (a === 'review' || a === 'reviewMany'){ var ids = a === 'review' ? [p.id] : p.ids, c = 0; entries.forEach(function(e){ if (ids.indexOf(e.id) >= 0 && e.status === 'Pending'){ e.status = p.decision; e.reviewedBy = me.username; e.reviewedAt = now; c++; } }); return c ? ok(me, c) : fail('These entries were already reviewed.'); }
-    if (a === 'recordUse'){ var dy = Number(p.days), b = bal(p.username); if (!(dy > 0) || dy > 30) return fail('Days must be in quarter-day steps, up to 30.'); if (dy > b) return fail(find(p.username).name + ' has only ' + fD(b) + ' available.'); entries.push({ id:'e' + (++n), username:p.username, type:'USE', date:p.date, category:'Used', days:dy, event:'', venue:'', status:'Confirmed', createdBy:me.username, createdAt:now, reviewedBy:me.username, reviewedAt:now }); return ok(me); }
+    if (a === 'review' || a === 'reviewMany'){ var ids = a === 'review' ? [p.id] : p.ids, c = 0; if (a === 'review' && entries.some(function(e){ return e.id === p.id && e.username === me.username; }) && others(me)) return fail('Another admin needs to confirm your own offset.'); entries.forEach(function(e){ if (ids.indexOf(e.id) >= 0 && e.status === 'Pending' && !(e.username === me.username && others(me))){ e.status = p.decision; e.reviewedBy = me.username; e.reviewedAt = now; c++; } }); return c ? ok(me, c) : fail('These entries were already reviewed.'); }
+    if (a === 'recordUse'){ var dy = Number(p.days), b = bal(p.username); if (!(dy >= 0.5) || dy > 30 || Math.round(dy * 2) !== dy * 2) return fail('Days used must be in half-day steps, from ½ to 30.'); if (dy > b) return fail(find(p.username).name + ' has only ' + fD(b) + ' available.'); entries.push({ id:'e' + (++n), username:p.username, type:'USE', date:p.date, category:'Used', days:dy, event:'', venue:'', status:'Confirmed', createdBy:me.username, createdAt:now, reviewedBy:me.username, reviewedAt:now }); return ok(me); }
     if (a === 'addUser'){ var nu = String(p.username||'').trim().toLowerCase(); if (!/^[a-z0-9._-]{3,30}$/.test(nu)) return fail('Usernames use 3–30 letters, numbers, dots or dashes.'); if (find(nu)) return fail('That username is taken.'); if (!/^\d{4,6}$/.test(p.pin)) return fail('PIN must be 4 to 6 digits.'); users.push({ username:nu, name:p.name, role:p.role, division:p.division||'', pin:p.pin, active:true }); return ok(me); }
     if (a === 'resetPin'){ if (!/^\d{4,6}$/.test(p.pin)) return fail('PIN must be 4 to 6 digits.'); find(p.username).pin = p.pin; return ok(me); }
     if (a === 'setActive'){ find(p.username).active = p.active; return ok(me); }
+    if (a === 'removeUser'){ var ru = find(p.username); if (!ru) return fail('User not found.'); if (ru.username === me.username) return fail('You cannot remove your own account. Ask another admin.'); if (ru.role === 'admin' && users.filter(function(u){ return u.role === 'admin' && u.active; }).length <= 1) return fail('This is the only admin. Make someone else an admin first.'); users = users.filter(function(u){ return u !== ru; }); return ok(me); }
     if (a === 'setDivision'){ find(p.username).division = p.division || ''; return ok(me); }
     if (a === 'saveDivision'){
       if (!String(p.name||'').trim()) return fail('Division name is required.');
@@ -1166,6 +1273,9 @@ var Mock = (function(){
     return fail('Unknown action.');
   } };
 })();
+
+/* Installable app: cache the page shell so it opens fast and works as a home-screen app. */
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function(){});
 
 /* ---------- boot ----------
    A remembered device shows its last data instantly, then refreshes in the background. */

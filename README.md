@@ -10,6 +10,7 @@ The page is hosted on GitHub Pages. Data is saved in a Google Sheet through Goog
 | `index.html` | The whole app (design and screens). Edit this for most patches. |
 | `config.js` | The Apps Script link. Set once. |
 | `pio-logo.webp` | PIO seal. |
+| `manifest.webmanifest`, `sw.js`, `icon-*.png` | Make it installable as a phone/desktop app (Add to Home Screen). |
 | `pio-digital.webp`, `capitol.webp` | Sign-in page wordmark and Capitol photo. Replace with a file of the same name to change them. |
 | `apps-script/Code.gs` | The server code. It lives in Apps Script, not on GitHub Pages. This copy is for keeping versions. |
 
@@ -49,5 +50,10 @@ Then add staff in Staff. The three PIO divisions are created automatically.
 - PINs are stored only as salted hashes. 5 wrong PINs lock a username for 15 minutes.
 - "Keep me signed in" keeps a device signed in for 30 days, renewed with use. Unticked, the session ends when the browser closes.
 - Resetting a PIN or deactivating an account signs that person out on every device.
-- Offsets are recorded in days (¼, ½ or 1 day per entry).
+- Each offset entry is ½ day (about 4 hours) or 1 day (8 hours or more, including events that end past midnight). Offset use is recorded in half-day steps.
+- Unused offsets carry over month to month and do not expire.
+- Staff can log offsets for past months they forgot. Once confirmed, they count right away.
+- Admins can log their own offsets. Another admin confirms them (if there is only one admin, they are confirmed automatically).
+- Removing an account deletes it from Users but keeps their past entries in Entries. You cannot remove yourself or the last admin.
+- Install on a phone: open the site in Chrome (Android) or Safari (iPhone) > Add to Home Screen.
 - `WORKDAYS` (22) and `REMEMBER_DAYS` (30) are at the top of `Code.gs`.
