@@ -1,7 +1,7 @@
 // PIO Offset Tracker service worker.
 // Pages load from the network first so GitHub patches show up right away;
 // the cached copy is used only when offline. Data calls to Apps Script are never cached.
-var CACHE = 'pio-offsets-v5';
+var CACHE = 'pio-offsets-v6';
 var SHELL = ['./', 'index.html', 'config.js', 'pio-logo.webp', 'pio-digital.webp', 'capitol.webp', 'icon-192.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', function (e) {
