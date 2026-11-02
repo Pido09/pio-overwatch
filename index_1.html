@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PIO Offset Tracker</title>
+<meta name="theme-color" content="#0B4A25">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Offsets">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: deep-green sidebar (floating tab bar on phones). Each page opens with a green banner
+   woven with a banig pattern; panels rise over its lower edge on a 12-column widget grid. */
+:root{
+  --bg:#EEF3EF; --surface:#FFFFFF; --surface-2:#F3F7F4; --line:#E0E8E2; --line-strong:#C7D4CB;
+  --ink:#0E1E33; --ink-2:#34465A; --muted:#5D6D7D;
+  --brand:#16803A; --brand-strong:#0F6B2E; --brand-soft:#E2F2E7; --brand-glow:#3DBE5A; --mint:#5BD077;
+  --gold:#8A5A0B; --gold-soft:#FCF1DC; --sun:#F5B92E;
+  --red:#B42318; --red-soft:#FDE8E6;
+  --navy:#0B2C6E; --navy-soft:#E6EDFA;
+  --band:linear-gradient(135deg,#0F6B2E 0%,#0B4F27 100%);
+  --side:linear-gradient(185deg,#0E4A27 0%,#0A3A1E 55%,#072A16 100%);
+  --page:linear-gradient(180deg,#E6EFE8 0,#EEF3EF 360px);
+  --weave:none;
+  --weave-ink:none;
+  --shadow:0 1px 2px rgba(14,30,51,.05),0 4px 14px -6px rgba(14,30,51,.10);
+  --f-display:"Montserrat","Public Sans",system-ui,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:18px; --r-sm:11px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B1310; --surface:#121D18; --surface-2:#17251F; --line:#22332A; --line-strong:#304538;
+  --ink:#E7EFEA; --ink-2:#C2D0C8; --muted:#93A69B;
+  --brand:#2FA34E; --brand-strong:#5BD077; --brand-soft:#15321F; --brand-glow:#5BD077;
+  --gold:#E3A84A; --gold-soft:#30250F; --red:#F07167; --red-soft:#3A1715; --navy:#9DB8F2; --navy-soft:#16223A;
+  --band:linear-gradient(120deg,#11592C 0%,#0B3D21 50%,#072816 100%);
+  --side:linear-gradient(185deg,#0B3221 0%,#08261A 100%);
+  --page:linear-gradient(180deg,#0E1A15 0,#0B1310 360px);
+  --weave-ink:none;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -12px rgba(0,0,0,.6); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1310; --surface:#121D18; --surface-2:#17251F; --line:#22332A; --line-strong:#304538;
+  --ink:#E7EFEA; --ink-2:#C2D0C8; --muted:#93A69B;
+  --brand:#2FA34E; --brand-strong:#5BD077; --brand-soft:#15321F; --brand-glow:#5BD077;
+  --gold:#E3A84A; --gold-soft:#30250F; --red:#F07167; --red-soft:#3A1715; --navy:#9DB8F2; --navy-soft:#16223A;
+  --band:linear-gradient(120deg,#11592C 0%,#0B3D21 50%,#072816 100%);
+  --side:linear-gradient(185deg,#0B3221 0%,#08261A 100%);
+  --page:linear-gradient(180deg,#0E1A15 0,#0B1310 360px);
+  --weave-ink:none;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -12px rgba(0,0,0,.6); color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;min-height:100%}
+body{background-color:var(--bg);background-image:var(--weave-ink),var(--page);background-attachment:fixed;color:var(--ink);font:15px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
+body.locked{overflow:hidden}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brand-glow);outline-offset:2px;border-radius:6px}
+.num{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.cap{text-transform:capitalize}
+.center{text-align:center}
+.hint{font-size:12.5px;color:var(--muted)}
+svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.skip{position:absolute;left:8px;top:-60px;z-index:100;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;font-weight:600}
+.skip:focus{top:8px}
+.preview{background:var(--gold-soft);color:var(--ink);border-bottom:1px solid var(--line);font-size:13px;padding:8px max(16px,env(safe-area-inset-left,0px));text-align:center}
+
+/* ---------- controls ---------- */
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field>label,.label{font-size:13px;font-weight:600;color:var(--ink-2)}
+.input{height:44px;border:1px solid var(--line-strong);background:var(--surface);border-radius:var(--r-sm);padding:0 12px;width:100%}
+.input:focus{border-color:var(--brand);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 22%,transparent)}
+.pin{letter-spacing:.4em;font-variant-numeric:tabular-nums}
+.pinwrap{position:relative}.pinwrap .input{padding-right:48px}
+.pinwrap button{position:absolute;right:4px;top:4px;width:36px;height:36px;border:0;background:none;border-radius:8px;cursor:pointer;color:var(--muted);display:grid;place-items:center}
+.pinwrap button:hover{color:var(--ink);background:var(--surface-2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 16px;border-radius:var(--r-sm);border:1px solid transparent;font-weight:600;cursor:pointer;white-space:nowrap;text-decoration:none;transition:background .15s,box-shadow .15s,transform .1s}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-primary:hover{background:#0F6B2E}
+.btn-ghost{background:var(--surface);border-color:var(--line-strong);color:var(--ink)}
+.btn-ghost:hover{background:var(--surface-2)}
+.btn-danger{background:var(--surface);border-color:var(--line-strong);color:var(--red)}
+.btn-danger:hover{background:var(--red-soft)}
+.btn-glass{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.28);color:#fff;backdrop-filter:blur(6px)}
+.btn-glass:hover{background:rgba(255,255,255,.2)}
+.btn-sun{background:#F5B92E;color:#3A2600}
+.btn-sun:hover{background:#E5A520}
+.btn-sm{height:36px;padding:0 12px;font-size:13.5px}
+.btn-lg{height:48px;font-size:15.5px}
+.btn-block{width:100%}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.is-busy{opacity:.65;cursor:progress!important}
+.icon-btn{width:38px;height:38px;display:grid;place-items:center;border-radius:var(--r-sm);border:1px solid var(--line-strong);background:var(--surface);cursor:pointer;color:var(--ink)}
+.icon-btn:hover{background:var(--surface-2)}
+.icon-btn[disabled]{opacity:.4;cursor:default}
+.error{color:var(--red);font-size:13.5px;min-height:1em;margin:0}
+.warn-note{display:flex;gap:8px;align-items:flex-start;background:var(--gold-soft);color:var(--gold);border-radius:var(--r-sm);padding:10px 12px;font-size:13.5px;font-weight:600}
+.info-note{display:flex;gap:8px;align-items:flex-start;background:var(--navy-soft);color:var(--navy);border-radius:var(--r-sm);padding:10px 12px;font-size:13.5px;font-weight:600}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.seg.two-up{grid-template-columns:repeat(2,minmax(0,1fr))}
+.seg input{position:absolute;opacity:0}
+.seg label{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:10px 12px;cursor:pointer;background:var(--surface);transition:border-color .15s,background .15s}
+.seg label b{font-size:14px;display:flex;align-items:center;gap:6px}
+.seg label small{color:var(--muted);font-size:12px}
+.seg input:checked+label{border-color:var(--brand);background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)}
+.seg input:focus-visible+label{outline:3px solid var(--brand-glow);outline-offset:2px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line-strong);background:var(--surface);border-radius:999px;padding:4px 14px;min-height:36px;font-size:13.5px;cursor:pointer}
+.chip:hover{border-color:var(--brand);color:var(--brand-strong)}
+.check{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2);cursor:pointer}
+.check input,.keep input{width:18px;height:18px;margin-top:2px;accent-color:var(--brand);flex:none}
+.keep{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink-2);cursor:pointer}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row-btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* ---------- pills, chips, badges ---------- */
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.Confirmed{background:var(--brand-soft);color:var(--brand-strong)}
+.pill.Pending{background:var(--gold-soft);color:var(--gold)}
+.pill.Rejected{background:var(--red-soft);color:var(--red)}
+.pill.off{background:var(--surface-2);color:var(--muted)}
+.pill.hol{background:var(--navy-soft);color:var(--navy)}
+.badge{margin-left:auto;background:var(--sun);color:#3A2600;font-size:11.5px;font-weight:700;border-radius:999px;padding:1px 8px;font-variant-numeric:tabular-nums}
+.dbadge{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--dc);color:var(--dfg);flex:none;box-shadow:inset 0 0 0 1px rgba(14,30,51,.14);overflow:hidden}
+.dbadge img{width:100%;height:100%;object-fit:cover}
+.dbadge svg.i{width:56%;height:56%}
+.dchip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.dchip i{width:10px;height:10px;border-radius:3px;background:var(--dc);box-shadow:inset 0 0 0 1px rgba(14,30,51,.3);flex:none}
+.avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--mint);color:#08261A;font-weight:800;font-size:13px;flex:none}
+
+/* ---------- auth ---------- */
+.auth{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);background:var(--surface)}
+.auth-main{display:flex;align-items:center;justify-content:center;padding-block:40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background-image:var(--weave-ink)}
+.auth-card{width:100%;max-width:400px;display:flex;flex-direction:column;gap:18px}
+.auth-title{display:flex;align-items:center;gap:14px}
+.auth-title .seal{width:60px;height:60px;flex:none}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brand-strong);margin:0}
+.auth-card h1{font-size:30px;font-weight:800;margin-top:2px}
+.lede{color:var(--muted);margin:0}
+.auth-photo{order:2;position:relative;display:flex;align-items:flex-end;padding:48px;color:#fff;overflow:hidden;background:#0B3D20 url("capitol.webp") center 40%/cover no-repeat}
+.auth-photo::before{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(5,28,16,.9) 0%,rgba(5,28,16,.55) 32%,rgba(5,28,16,0) 62%)}
+.auth-brand{position:relative;display:flex;flex-direction:column;gap:16px}
+.wordmark{width:min(300px,60%);height:auto;filter:drop-shadow(0 2px 10px rgba(0,0,0,.35))}
+.socials{display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-size:16px}
+.socials span{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.16);display:grid;place-items:center}
+.socials svg.i{width:16px;height:16px}
+.socials b{margin-left:6px;font-weight:700}
+.divpick{border:0;padding:0;margin:0;min-width:0}
+.divpick legend{font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:6px;padding:0}
+.divgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.divpick input{position:absolute;opacity:0}
+.divpick label{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:12px 6px 10px;font-size:12.5px;line-height:1.25;font-weight:600;position:relative;height:100%;border:1px solid var(--line-strong);border-radius:var(--r-sm);background:var(--surface);cursor:pointer}
+.divpick label:hover{border-color:var(--brand)}
+.divpick .tick{position:absolute;top:6px;right:6px;color:var(--brand);opacity:0}
+.divpick .tick svg.i{width:14px;height:14px}
+.divpick input:checked+label{border-color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand);background:var(--brand-soft)}
+.divpick input:checked+label .tick{opacity:1}
+.divpick input:focus-visible+label{outline:3px solid var(--brand-glow);outline-offset:2px}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:256px minmax(0,1fr);min-height:100vh}
+.side{background:var(--weave),var(--side);color:#E8F3EC;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;padding:20px 14px}
+.brand{display:flex;gap:10px;align-items:center;padding:4px 6px 20px;border-bottom:1px solid rgba(232,243,236,.12)}
+.brand img{width:44px;height:44px}
+.brand b{font-family:var(--f-display);font-weight:800;font-size:15px;line-height:1.15;display:block}
+.brand small{color:#A9C7B4;font-size:12px}
+.nav{display:flex;flex-direction:column;gap:2px;margin-top:16px}
+.nav button{display:flex;align-items:center;gap:12px;background:none;border:0;color:#B9D3C2;padding:10px 12px;border-radius:var(--r-sm);cursor:pointer;text-align:left;font-weight:500;position:relative}
+.nav button:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav button[aria-current="page"]{background:rgba(255,255,255,.12);color:#fff;font-weight:600;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.nav button[aria-current="page"]::before{content:"";position:absolute;left:-14px;top:9px;bottom:9px;width:4px;border-radius:0 4px 4px 0;background:var(--mint)}
+.side-foot{margin-top:auto;border-top:1px solid rgba(232,243,236,.12);padding-top:14px}
+.side-foot .nav{margin-top:6px}
+.who{display:flex;gap:10px;align-items:center;padding:6px}
+.who b{display:block;font-size:14px}
+.who small{color:#A9C7B4;font-size:12px}
+.topbar,.tabbar{display:none}
+
+.main{min-width:0;padding-bottom:56px}
+.band{background:var(--weave),var(--band);color:#fff;padding:28px max(24px,env(safe-area-inset-right,0px)) 76px max(24px,env(safe-area-inset-left,0px));position:relative;overflow:hidden}
+
+.band-in{max-width:1180px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;position:relative;z-index:1}
+.band .eyebrow{color:#8FE3A6}
+.band h1{font-size:28px;font-weight:800;margin-top:4px}
+.band p{margin:6px 0 0;color:#CFE6D7;max-width:62ch}
+.band .dchip{color:#E8F3EC}
+.wrap{max-width:1180px;margin:-52px auto 0;padding-inline:max(24px,env(safe-area-inset-left,0px));position:relative;z-index:2;display:flex;flex-direction:column;gap:20px;animation:rise .28s ease-out}
+@keyframes rise{from{opacity:.001;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ---------- panels & widgets ---------- */
+.panel{background:var(--surface);border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:var(--r);box-shadow:var(--shadow);min-width:0}
+.panel-h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.panel-h h2{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+.panel-h h2 svg.i{color:var(--brand-strong)}
+.panel-h select.input{height:36px;width:auto;max-width:100%}
+.panel-b{padding:18px}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:20px;align-items:start}
+.span-12{grid-column:span 12}.span-7{grid-column:span 7}.span-5{grid-column:span 5}.span-6{grid-column:span 6}.span-8{grid-column:span 8}.span-4{grid-column:span 4}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.tiles.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tile{padding:16px 18px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
+button.tile{font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%;transition:border-color .15s,transform .15s,box-shadow .15s}
+button.tile:hover{border-color:var(--brand)}
+.tile .k{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px}
+.tile .k .ib{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-strong);flex:none}
+.tile .k .ib svg.i{width:16px;height:16px}
+.tile.warn .k{color:var(--gold)} .tile.warn .k .ib{background:var(--gold-soft);color:var(--gold)}
+.tile .go{margin-left:auto;color:var(--muted);display:flex}
+.tile .v{font-family:var(--f-display);font-weight:800;font-size:26px;font-variant-numeric:tabular-nums;line-height:1.1}
+.tile .s{font-size:13px;color:var(--muted)}
+
+
+.hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#127238 0%,#0B4F27 100%);color:#fff;border-radius:22px;padding:26px;display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;box-shadow:var(--shadow)}
+
+.hero>*{position:relative;z-index:1}
+.hero-main{font:inherit;color:inherit;text-align:left;background:none;border:0;padding:0;cursor:pointer;display:flex;flex-direction:column}
+.hero .k{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#A9DDB8}
+.hero .big{font-family:var(--f-display);font-weight:800;font-size:46px;line-height:1.05;margin-top:6px;font-variant-numeric:tabular-nums}
+.hero .sub{color:#CFE6D7;margin-top:6px;font-size:14px}
+.hero-main:hover .big{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px}
+.hero-r{display:flex;flex-direction:column;gap:10px;align-items:stretch;min-width:240px}
+.hero .box{font:inherit;color:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.09);border:1px solid rgba(232,243,236,.22);border-radius:12px;padding:12px 14px}
+.hero .box:hover{background:rgba(255,255,255,.15)}
+.hero .box b{font-family:var(--f-display);font-size:20px;font-variant-numeric:tabular-nums}
+.hero .box span{font-size:13px;color:#CFE6D7}
+
+.mine{display:flex;align-items:center;gap:14px;flex-wrap:wrap;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;background:var(--surface);border:1px solid color-mix(in srgb,var(--brand) 28%,transparent);border-radius:var(--r);padding:14px 18px;box-shadow:var(--shadow)}
+.mine .k{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--brand-strong)}
+.mine b{font-family:var(--f-display);font-size:18px;font-variant-numeric:tabular-nums}
+.mine .go{margin-left:auto;color:var(--brand-strong);display:flex}
+.mine:hover{border-color:var(--brand)}
+
+.list{list-style:none;margin:0;padding:0}
+.row{display:flex;align-items:center;gap:12px;padding:12px 18px;border-top:1px solid var(--line)}
+.list .row:first-child{border-top:0}
+.row .body{min-width:0;flex:1}
+.row .t{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .m{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.row .acts{display:flex;gap:6px;flex:none;flex-wrap:wrap}
+.row.rv{flex-wrap:wrap}.row.rv .body{flex:1 1 160px}.row.rv .acts{flex:1 0 100%;padding-left:48px}
+.mark{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;flex:none}
+.mark.earn{background:var(--brand-soft);color:var(--brand-strong)}
+.mark.use{background:var(--gold-soft);color:var(--gold)}
+.mark.pend{background:var(--surface-2);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line-strong)}
+.mark.hol{background:var(--navy-soft);color:var(--navy)}
+.mark.act{background:var(--surface-2);color:var(--ink-2)}
+.amt.plus,td.plus{color:var(--brand-strong)} .amt.minus,td.minus{color:var(--gold)}
+.tap{cursor:pointer}
+.list .row.tap:hover,tr.tap:hover td{background:var(--surface-2)}
+.list.boxed{border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
+.empty{padding:28px 18px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);margin-bottom:4px}
+.empty .ill{width:56px;height:56px;margin:0 auto 10px;border-radius:16px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-strong)}
+.empty .ill svg.i{width:26px;height:26px}
+
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:10px 18px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface-2)}
+td{padding:12px 18px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+tr.total td{border-top:2px solid var(--line-strong);background:var(--surface-2);font-weight:700}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filters select{height:36px;width:auto;min-width:130px}
+.tabs{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px}
+.tabs button{border:0;background:none;padding:7px 14px;border-radius:9px;font-weight:600;font-size:13.5px;cursor:pointer;color:var(--muted)}
+.tabs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(14,30,51,.12)}
+
+/* charts */
+.chart{padding:14px 18px 8px}
+.chart svg{width:100%;height:auto;display:block}
+.chart text{font:600 11px var(--f-body);fill:var(--muted)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);padding:0 18px 14px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.hbar{display:flex;flex-direction:column;gap:12px;padding:16px 18px}
+.hbar .r1{display:flex;justify-content:space-between;gap:8px;font-size:13.5px}
+.hbar .track{height:10px;border-radius:999px;background:var(--surface-2);overflow:hidden;margin-top:6px;box-shadow:inset 0 0 0 1px var(--line)}
+.hbar .fill{height:100%;border-radius:999px;background:var(--dc);box-shadow:inset 0 0 0 1px rgba(14,30,51,.35)}
+
+/* calendar */
+.cal-nav{display:flex;align-items:center;gap:8px}
+.cal-nav h2{min-width:170px;text-align:center}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.dow{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:10px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.day{min-height:108px;border:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px;display:flex;flex-direction:column;gap:3px;background:var(--surface);cursor:pointer;text-align:left;min-width:0;font:inherit;color:inherit}
+.day:nth-child(7n){border-right:0}
+.day:hover{background:var(--surface-2)}
+.day.out{background:var(--bg);color:var(--muted)}
+.day.wknd{background:color-mix(in srgb,var(--surface-2) 60%,var(--surface))}
+.day.isHol{background:color-mix(in srgb,var(--navy-soft) 55%,var(--surface))}
+.day.sel{box-shadow:inset 0 0 0 2px var(--brand)}
+.dn{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;width:26px;height:26px;display:grid;place-items:center;border-radius:50%}
+.day.today .dn{background:var(--brand);color:#fff}
+.hl{font-size:11px;font-weight:700;color:var(--navy);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev{font-size:11.5px;line-height:1.3;border-radius:5px;padding:2px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.ev.earn{background:var(--brand-soft);color:var(--brand-strong)}
+.ev.use{background:var(--gold-soft);color:var(--gold)}
+.ev.pend{background:transparent;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line-strong)}
+.more{font-size:11.5px;color:var(--muted)}
+
+/* sheets */
+.scrim{position:fixed;inset:0;background:rgba(6,20,13,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:grid;place-items:center;padding:16px;z-index:50}
+.modal{background:var(--surface);border-radius:22px;width:100%;max-width:480px;max-height:calc(100vh - 32px);overflow:auto;box-shadow:0 30px 80px -20px rgba(0,0,0,.45);border:1px solid var(--line);animation:pop .2s ease-out}
+@keyframes pop{from{opacity:.001;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+.modal .panel-b{display:flex;flex-direction:column;gap:14px}
+.modal-f{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--line);flex-wrap:wrap}
+.detail-top{display:flex;align-items:center;gap:14px}
+.detail-top .mark{width:46px;height:46px;border-radius:13px}
+.big-amt{font-family:var(--f-display);font-weight:800;font-size:26px;font-variant-numeric:tabular-nums;margin-bottom:4px}
+.big-amt.plus{color:var(--brand-strong)}.big-amt.minus{color:var(--gold)}
+.kvs{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r-sm)}
+.kv{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;padding:10px 12px;border-top:1px solid var(--line);font-size:14px}
+.kv:first-child{border-top:0}
+.kv span{color:var(--muted)}.kv b{font-weight:600;overflow-wrap:anywhere}
+.mini-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.mini-tiles div{background:var(--surface-2);border-radius:var(--r-sm);padding:10px 12px;display:flex;flex-direction:column}
+.mini-tiles span{font-size:12px;color:var(--muted);font-weight:600}
+.mini-tiles b{font-family:var(--f-display);font-size:18px;font-variant-numeric:tabular-nums}
+.wlist{display:flex;flex-direction:column;gap:6px}
+.wlist .w{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r-sm)}
+.wlist .w label{flex:1;display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600;font-size:14px}
+.wlist .w input{width:18px;height:18px;accent-color:var(--brand)}
+.wlist .w .icon-btn{width:32px;height:32px}
+.swatches{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sw{width:32px;height:32px;border-radius:8px;border:1px solid var(--line-strong);cursor:pointer;background:var(--dc);padding:0}
+.sw[aria-pressed="true"]{outline:3px solid var(--brand);outline-offset:2px}
+.swatches input[type=color]{width:44px;height:32px;padding:0 2px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);cursor:pointer}
+.iconpick{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+.iconpick button{height:38px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);display:grid;place-items:center;cursor:pointer;color:var(--ink-2)}
+.iconpick button[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft);color:var(--brand-strong)}
+.logo-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.acct{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:600;font-size:14px;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:calc(100vw - 32px);text-align:center}
+.loading{min-height:100vh;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;color:var(--muted);text-align:center;padding:16px}
+.loading img{width:72px;height:72px;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.5}}
+.print-head{display:none}
+
+/* ---------- responsive ---------- */
+@media (max-width:1100px){
+  .span-7,.span-5,.span-6,.span-8,.span-4{grid-column:span 12}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:860px){
+  .auth{grid-template-columns:minmax(0,1fr);min-height:0}
+  .auth-photo{order:0;min-height:230px;padding:20px max(16px,env(safe-area-inset-left,0px));background-position:center 30%}
+  .auth-photo::before{background:linear-gradient(to top,rgba(5,28,16,.92) 0%,rgba(5,28,16,.6) 45%,rgba(5,28,16,.1) 100%)}
+  .wordmark{width:120px}
+  .socials{font-size:14px}.socials span{width:26px;height:26px}
+  .auth-main{padding-block:24px 40px;align-items:flex-start}
+  .auth-title .seal{width:48px;height:48px}
+  .auth-card h1{font-size:26px}
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .side{display:none}
+  .topbar{display:flex;align-items:center;gap:6px;position:sticky;top:0;z-index:20;background:var(--weave),var(--band);color:#E8F3EC;padding:calc(10px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px))}
+  .topbar img{width:32px;height:32px}
+  .topbar b{font-family:var(--f-display);font-weight:800;font-size:15px;flex:1;margin-left:6px}
+  .topbar button{background:none;border:0;color:#E8F3EC;display:grid;place-items:center;width:40px;height:40px;border-radius:10px;cursor:pointer}
+  .band{padding:18px 16px 64px;background:var(--weave),var(--band)}
+  .band h1{font-size:23px}
+  .band-in{align-items:flex-start}
+  .wrap{padding-inline:max(16px,env(safe-area-inset-left,0px));margin-top:-48px}
+  .main{padding-bottom:120px}
+  .tabbar{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:20;
+    background:color-mix(in srgb,var(--surface) 84%,transparent);backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);border:1px solid var(--line);border-radius:22px;box-shadow:0 12px 30px -10px rgba(14,30,51,.35);padding:6px}
+  .tabbar button{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:var(--muted);padding:7px 2px;cursor:pointer;position:relative;border-radius:16px}
+  .tabbar button[aria-current="page"]{color:var(--brand-strong);background:var(--brand-soft)}
+  .tabbar .badge{position:absolute;top:2px;left:56%;margin:0;padding:0 6px}
+  .toast{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+  .scrim{align-items:end;padding:0}
+  .modal{max-width:none;border-radius:24px 24px 0 0;max-height:92vh;padding-bottom:env(safe-area-inset-bottom,0px);animation:sheet .25s ease-out}
+  @keyframes sheet{from{transform:translateY(40px);opacity:.001}to{transform:none;opacity:1}}
+  .day{min-height:68px;padding:4px}
+  .ev{font-size:0;padding:0;height:6px;border-radius:3px}
+  .hl{font-size:0;height:4px;border-radius:2px;background:var(--navy);width:70%}
+  .more{display:none}
+  .hero .big{font-size:38px}
+}
+@media (max-width:560px){
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .tiles.three{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .tiles.three .tile{padding:12px 10px}
+  .tiles.three .tile .k{font-size:10.5px;letter-spacing:.03em}
+  .tiles.three .tile .k .ib,.tiles.three .tile .go,.tiles.three .tile .s{display:none}
+  .tiles.three .tile .v{font-size:18px}
+  .tile .v{font-size:22px}
+  .seg{grid-template-columns:minmax(0,1fr)}
+  .two{grid-template-columns:minmax(0,1fr)}
+  .row{padding:12px 14px}
+  .cal-nav h2{min-width:0;font-size:15px}
+  .dn{font-size:12px;width:22px;height:22px}
+  .hero{padding:20px}
+  .hero-r{min-width:0;width:100%}
+  .iconpick{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .kv{grid-template-columns:96px minmax(0,1fr)}
+}
+@media print{
+  .side,.topbar,.tabbar,.band,.preview,.no-print,.toast,#modal{display:none!important}
+  body{background:#fff}
+  .shell{display:block}.wrap{margin:0;padding:0;max-width:none}
+  .panel{box-shadow:none;border:1px solid #ccc}
+  .print-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .print-head img{width:48px;height:48px}
+  th{background:#eee}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading"><img src="pio-logo.webp" alt="Loading"></div></div>
+<div id="modal"></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<script src="config.js"></script>
+<script>
+var LOGO = 'pio-logo.webp';
+var API = (window.PIO_API_URL || '').trim();
+var LIVE = /^https:\/\/script\.google\.com\//.test(API);
+var S = { token: null, me: null, users: [], entries: [], divisions: [], holidays: [], activity: [],
+          settings: { workdays: 22, carryCap: 0 }, view: 'dashboard', cal: null, mon: null, calUser: 'all', selDay: null,
+          dashDiv: 'all', rf: { user: 'all', div: 'all', type: 'all', status: 'all' }, recTab: 'entries', holYear: null,
+          needsSetup: false, prefill: null, loadedAt: 0 };
+
+/* ---------- storage ---------- */
+function sGet(k){ try { return sessionStorage.getItem(k); } catch(e){ return null; } }
+function sSet(k,v){ try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch(e){} }
+function lGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function lSet(k,v){ try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch(e){} }
+function remembered(){ return lGet('pio_tok') != null; }
+function saveSession(token, remember){
+  if (remember){ lSet('pio_tok', token); sSet('pio_tok', null); }
+  else { sSet('pio_tok', token); lSet('pio_tok', null); lSet('pio_cache', null); }
+}
+function clearSession(){ lSet('pio_tok', null); sSet('pio_tok', null); lSet('pio_cache', null); }
+
+/* ---------- utilities ---------- */
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function today(){ return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date()); }
+function curMonth(){ return today().slice(0,7); }
+function pd(s){ var a = s.split('-'); return new Date(+a[0], +a[1]-1, +(a[2]||1)); }
+function ymd(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function fDate(s, opt){ return pd(s).toLocaleDateString('en-PH', opt || { month:'short', day:'numeric', year:'numeric' }); }
+function fMonth(m){ return pd(m + '-01').toLocaleDateString('en-PH', { month:'long', year:'numeric' }); }
+function mShort(m){ return pd(m + '-01').toLocaleDateString('en-PH', { month:'short' }); }
+function shiftMonth(m, n){ var d = pd(m + '-01'); d.setMonth(d.getMonth() + n); return ymd(d).slice(0,7); }
+function nextMonthStart(m){ return shiftMonth(m, 1) + '-01'; }
+function addDays(s, n){ var d = pd(s); d.setDate(d.getDate() + n); return ymd(d); }
+function frac(d){ d = Math.round(Math.abs(d) * 4) / 4; var w = Math.floor(d), f = { 0:'', 0.25:'¼', 0.5:'½', 0.75:'¾' }[Math.round((d - w) * 100) / 100]; return (w || !f ? String(w) : '') + (f || ''); }
+function fD(d){ var v = Math.round(Math.abs(d) * 4) / 4; return (d < 0 ? '−' : '') + frac(v) + (v === 1 || (v < 1 && v > 0) ? ' day' : ' days'); }
+function fDs(d, sign){ return (sign ? (d < 0 ? '−' : '+') : '') + frac(d) + 'd'; }
+function fTime(t){ if (!t) return ''; var h = +t.slice(0,2), m = t.slice(3,5); return ((h % 12) || 12) + ':' + m + (h < 12 ? ' AM' : ' PM'); }
+function initials(n){ return String(n||'?').split(/\s+/).filter(Boolean).slice(0,2).map(function(w){return w[0];}).join('').toUpperCase(); }
+function userOf(u){ return S.users.filter(function(z){ return z.username === u; })[0]; }
+function userName(u){ var x = userOf(u); return x ? x.name : u; }
+function firstName(u){ return userName(u).split(' ')[0]; }
+function isAdmin(){ return S.me && S.me.role === 'admin'; }
+function when(iso){ if (!iso) return ''; var d = new Date(iso); if (isNaN(d)) return ''; return d.toLocaleDateString('en-PH', { month:'short', day:'numeric', year:'numeric' }) + ', ' + d.toLocaleTimeString('en-PH', { hour:'numeric', minute:'2-digit' }); }
+function ago(iso){
+  var d = new Date(iso); if (isNaN(d)) return '';
+  var s = (Date.now() - d) / 1000;
+  if (s < 60) return 'just now'; if (s < 3600) return Math.floor(s/60) + ' min ago'; if (s < 86400) return Math.floor(s/3600) + ' h ago';
+  if (s < 7*86400) return Math.floor(s/86400) + ' d ago'; return d.toLocaleDateString('en-PH', { month:'short', day:'numeric' });
+}
+function holidayOn(d){ return S.holidays.filter(function(h){ return h.date === d; })[0]; }
+function isWeekend(d){ var w = pd(d).getDay(); return w === 0 || w === 6; }
+
+var ICONS = {
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  cal:'<rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>',
+  month:'<rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 14h3M7.5 17.5h6"/>',
+  plus:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+  minus:'<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>',
+  check:'<circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/>',
+  tick:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  list:'<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.5 3.3-5.5 6.5-5.5s5.9 2 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.8c1.7.8 2.8 2.6 3 5.2"/>',
+  out:'<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10"/>',
+  key:'<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3M18 5l2 2"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>',
+  left:'<path d="m15 18-6-6 6-6"/>', right:'<path d="m9 18 6-6-6-6"/>', up:'<path d="m6 15 6-6 6 6"/>', down:'<path d="m6 9 6 6 6-6"/>',
+  trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  route:'<circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M8.5 19H17a3.5 3.5 0 0 0 0-7H7a3.5 3.5 0 0 1 0-7h8.5"/>',
+  edit:'<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/>',
+  upload:'<path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
+  download:'<path d="M12 4v12M7 11l5 5 5-5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
+  print:'<path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1"/>',
+  refresh:'<path d="M20 11a8 8 0 0 0-14.6-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.6 4.5L20 16M20 20v-4h-4"/>',
+  eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  cog:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  sliders:'<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+  more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+  history:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/>',
+  chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  pie:'<path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/>',
+  plane:'<path d="M2 16l20-8-6 12-3-5-5 3 1-5z"/>',
+  shield:'<path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
+  drive:'<path d="M8 3h8l6 11-4 7H6l-4-7z"/><path d="M8 3l6 11M2 14h12M16 3l-6 11"/>',
+  fb:'<path d="M14 8.5h2V5.5h-2.5A3.5 3.5 0 0 0 10 9v2H8v3h2v7h3v-7h2.5l.5-3h-3V9.2c0-.4.3-.7.7-.7z" fill="currentColor" stroke="none"/>',
+  yt:'<rect x="3" y="6" width="18" height="12" rx="3.5"/><path d="m10.5 9.5 4 2.5-4 2.5z" fill="currentColor"/>',
+  tt:'<path d="M14 4v10.5a3.5 3.5 0 1 1-3-3.46M14 4c.4 2.2 1.9 3.6 4 3.8"/>',
+  camera:'<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>',
+  monument:'<path d="M12 2.5 14 6v11h-4V6z"/><path d="M8.5 17h7l1 2.5h-9z"/><path d="M5.5 21.5h13"/>',
+  folder:'<path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/>',
+  megaphone:'<path d="M3 10v4h3l7 4V6l-7 4z"/><path d="M17 9a4 4 0 0 1 0 6"/>',
+  pen:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  radio:'<circle cx="12" cy="12" r="2"/><path d="M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/>',
+  star:'<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>'
+};
+var DIV_ICONS = ['camera','monument','folder','megaphone','pen','radio','users','star'];
+var SWATCHES = ['#0B2C6E','#1D4ED8','#C8202A','#16803A','#F2B233','#6D28D9','#0F766E','#FFFFFF'];
+var CAT_ICON = { 'Holiday':'flag', 'Weekend':'sun', 'After 5 PM':'moon' };
+function ic(n){ return '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || ICONS.star) + '</svg>'; }
+
+function divOf(id){ return S.divisions.filter(function(d){ return d.id === id; })[0]; }
+function fgFor(hex){ var n = parseInt(String(hex).slice(1), 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255; return (0.299*r + 0.587*g + 0.114*b) / 255 > 0.62 ? '#0B2C6E' : '#FFFFFF'; }
+function divBadge(d, size){
+  if (!d) return ''; size = size || 40;
+  return '<span class="dbadge" style="--dc:' + esc(d.color) + ';--dfg:' + fgFor(d.color) + ';width:' + size + 'px;height:' + size + 'px;border-radius:' + Math.round(size/4) + 'px">' + (d.logo ? '<img src="' + esc(d.logo) + '" alt="">' : ic(d.icon)) + '</span>';
+}
+function divChip(id){ var d = divOf(id); return d ? '<span class="dchip" style="--dc:' + esc(d.color) + '"><i></i>' + esc(d.short || d.name) + '</span>' : '<span class="dchip hint">No division</span>'; }
+function toast(msg){ var t = document.getElementById('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(function(){ t.hidden = true; }, 3000); }
+
+/* ---------- server ---------- */
+function apply(d){
+  S.me = d.me; S.users = d.users; S.entries = d.entries; S.divisions = d.divisions;
+  S.holidays = d.holidays || []; S.settings = d.settings || S.settings; S.activity = d.activity || [];
+  S.loadedAt = Date.now();
+  if (remembered()) lSet('pio_cache', JSON.stringify(d));
+}
+function call(action, p){
+  return new Promise(function(resolve, reject){
+    function done(r){
+      if (r && r.ok){ if (r.fresh) apply(r.fresh); return resolve(r.data); }
+      if (r && r.expired){ clearSession(); S.token = null; S.me = null; render(); }
+      reject(new Error(r && r.error ? r.error : 'Something went wrong. Please try again.'));
+    }
+    if (LIVE){
+      fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: action, p: p || {}, token: S.token }) })
+        .then(function(r){ return r.text(); }, function(){ throw new Error('net'); })
+        .then(function(t){ var j; try { j = JSON.parse(t); } catch(e){ throw new Error('html'); } done(j); })
+        .catch(function(e){ reject(new Error(e.message === 'html' ? 'The server sent a web page instead of data. In Apps Script, set the deployment’s access to Anyone and deploy a new version.' : 'Could not reach the server. Check your internet connection and try again.')); });
+    } else setTimeout(function(){ done(Mock.api(action, p || {}, S.token)); }, 150);
+  });
+}
+function refresh(){ return call('data').then(function(d){ apply(d); render(); }); }
+function act(action, p, msg){ return call(action, p).then(function(r){ if (msg) toast(typeof msg === 'function' ? msg(r) : msg); render(); return r; }); }
+
+/* ---------- balances ----------
+   Offsets earned in a month become usable on the 1st of the next month and carry over.
+   With a carry-over cap, anything above the cap is forfeited at the start of each month.
+   The server runs the same calculation (balance_ in Code.gs). */
+function ledgerFor(entries, u, cap){
+  var earn = {}, use = {}, first = null, cur = curMonth(), months = {};
+  entries.forEach(function(e){
+    if (e.username !== u || e.status !== 'Confirmed') return;
+    var m = e.date.slice(0,7);
+    if (e.type === 'EARN') earn[m] = (earn[m] || 0) + e.days; else use[m] = (use[m] || 0) + e.days;
+    if (!first || m < first) first = m;
+  });
+  if (!first) return { avail: 0, months: months };
+  var avail = 0, m = first, last = cur;
+  Object.keys(use).forEach(function(k){ if (k > last) last = k; });
+  while (m <= last){
+    var rec = { open: 0, forfeit: 0, earned: earn[m] || 0, used: use[m] || 0 };
+    if (m <= cur){
+      avail += earn[shiftMonth(m, -1)] || 0;
+      if (cap > 0 && avail > cap){ rec.forfeit = avail - cap; avail = cap; }
+    }
+    rec.open = avail;
+    avail -= use[m] || 0;
+    rec.close = avail + rec.earned;
+    months[m] = rec;
+    m = shiftMonth(m, 1);
+  }
+  return { avail: avail, months: months };
+}
+function stats(u){
+  var L = ledgerFor(S.entries, u, S.settings.carryCap);
+  var o = { avail: L.avail, month: 0, pending: 0, pendN: 0, reqDays: 0, reqN: 0, earnedY: 0, usedY: 0, usedM: 0, lastUse: null, upcoming: 0 };
+  var y = today().slice(0,4), m = curMonth(), td = today();
+  S.entries.forEach(function(e){
+    if (e.username !== u) return;
+    if (e.status === 'Confirmed'){
+      if (e.type === 'EARN'){ if (e.date.slice(0,7) === m) o.month += e.days; if (e.date.slice(0,4) === y) o.earnedY += e.days; }
+      else { if (e.date.slice(0,4) === y) o.usedY += e.days; if (e.date.slice(0,7) === m) o.usedM += e.days; if (e.date > td) o.upcoming += e.days; if (e.date <= td && (!o.lastUse || e.date > o.lastUse)) o.lastUse = e.date; }
+    } else if (e.status === 'Pending'){
+      if (e.type === 'EARN'){ o.pending += e.days; o.pendN++; } else { o.reqDays += e.days; o.reqN++; }
+    }
+  });
+  o.free = o.avail - o.reqDays;
+  return o;
+}
+function sumStats(users){
+  var t = { avail: 0, month: 0, pending: 0, usedM: 0 };
+  users.forEach(function(u){ var s = stats(u.username); t.avail += s.avail; t.month += s.month; t.pending += s.pending; t.usedM += s.usedM; });
+  return t;
+}
+function ledgerMonth(u, m){
+  var L = ledgerFor(S.entries, u, S.settings.carryCap), r = L.months[m];
+  var pend = S.entries.filter(function(e){ return e.username === u && e.status === 'Pending' && e.date.slice(0,7) === m && e.type === 'EARN'; }).reduce(function(s, e){ return s + e.days; }, 0);
+  if (!r){
+    var prior = Object.keys(L.months).filter(function(k){ return k < m; }).sort().pop();
+    var open = prior ? L.months[prior].close : 0;
+    if (m > curMonth()) open = L.avail;
+    r = { open: open, forfeit: 0, earned: 0, used: 0, close: open };
+  }
+  return { open: r.open, forfeit: r.forfeit, earned: r.earned, used: r.used, close: r.close, pending: pend };
+}
+function otherAdmins(){ return S.users.filter(function(u){ return u.role === 'admin' && u.active && u.username !== S.me.username; }).length; }
+function canReview(e){ return isAdmin() && e.status === 'Pending' && !(e.username === S.me.username && otherAdmins() > 0); }
+function sorted(list){ return list.slice().sort(function(a,b){ return a.date === b.date ? (b.createdAt > a.createdAt ? 1 : -1) : (b.date > a.date ? 1 : -1); }); }
+function pending(type){ return sorted(S.entries.filter(function(e){ return e.status === 'Pending' && (!type || e.type === type); })); }
+function closesOn(m){ return fDate(nextMonthStart(m), { month:'long', day:'numeric' }); }
+function goRecords(f){ S.rf = Object.assign({ user:'all', div:'all', type:'all', status:'all' }, f || {}); S.recTab = 'entries'; S.view = 'records'; render(); window.scrollTo(0,0); }
+
+/* ---------- files ---------- */
+function download(name, text, type){
+  var blob = new Blob([text], { type: type || 'text/plain' }), a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function csv(rows){ return '﻿' + rows.map(function(r){ return r.map(function(c){ c = c == null ? '' : String(c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\r\n'); }
+function entriesCsv(list){
+  return csv([['Date','Employee','Username','Division','Type','Category','Event','Venue','Ended at','Days','Status','Note','Logged by','Logged at','Reviewed by','Reviewed at']].concat(list.map(function(e){
+    var u = userOf(e.username), d = u && divOf(u.division);
+    return [e.date, userName(e.username), e.username, d ? d.name : '', e.type === 'USE' ? 'Used' : 'Earned', e.type === 'USE' ? '' : e.category, e.event, e.venue, e.endTime, e.type === 'USE' ? -e.days : e.days, e.status, e.note, e.createdBy, e.createdAt, e.reviewedBy, e.reviewedAt];
+  })));
+}
+
+/* ---------- render ---------- */
+function navItems(){
+  return isAdmin()
+    ? [['dashboard','grid','Dashboard'],['approvals','check','Approvals'],['calendar','cal','Calendar'],['monthly','month','Monthly'],['records','list','Records'],['staff','users','Staff'],['settings','cog','Settings']]
+    : [['dashboard','grid','Dashboard'],['log','plus','Log offset'],['calendar','cal','Calendar'],['monthly','month','Monthly'],['records','list','Records']];
+}
+function render(){
+  var app = document.getElementById('app');
+  var banner = LIVE ? '' : '<div class="preview">Preview mode with sample data. Nothing is saved. Sign in as <b>admin</b> or <b>jdelacruz</b>, PIN <b>1234</b>. To go live, put the Apps Script web app URL in config.js.</div>';
+  if (!S.me){ app.innerHTML = banner + (S.needsSetup ? viewSetup() : viewLogin()); return; }
+  var nav = navItems(), pc = isAdmin() ? pending().filter(canReview).length : 0;
+  function navBtn(n){ return '<button data-go="' + n[0] + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ic(n[1]) + '<span>' + n[2] + '</span>' + (n[0] === 'approvals' && pc ? '<span class="badge">' + pc + '</span>' : '') + '</button>'; }
+  var tabs = nav.length > 5 ? nav.slice(0, 4) : nav;
+  var moreOn = nav.length > 5 && !tabs.some(function(n){ return n[0] === S.view; });
+  var views = { dashboard: viewDashboard, log: viewLog, approvals: viewApprovals, calendar: viewCalendar, monthly: viewMonthly, records: viewRecords, staff: viewStaff, settings: viewSettings };
+  if (!views[S.view] || (['staff','approvals','settings'].indexOf(S.view) >= 0 && !isAdmin())) S.view = 'dashboard';
+  var v = views[S.view]();
+  var myDiv = divOf(S.me.division), y = window.scrollY;
+  app.innerHTML = banner + '<a class="skip" href="#main">Skip to content</a>' +
+    '<div class="shell">' +
+      '<aside class="side"><div class="brand"><img src="' + LOGO + '" alt="Provincial Information Office seal"><div><b>Offset Tracker</b><small>PIO Camarines Norte</small></div></div>' +
+        '<nav class="nav" aria-label="Main">' + nav.map(navBtn).join('') + '</nav>' +
+        '<div class="side-foot"><div class="who">' + (myDiv ? divBadge(myDiv, 36) : '<span class="avatar">' + esc(initials(S.me.name)) + '</span>') +
+          '<div style="min-width:0"><b>' + esc(S.me.name) + '</b><small><span class="cap">' + esc(S.me.role) + '</span> · ' + (myDiv ? esc(myDiv.short) : '@' + esc(S.me.username)) + '</small></div></div>' +
+        '<div class="nav"><button data-act="refresh">' + ic('refresh') + '<span>Refresh</span></button><button data-act="changePin">' + ic('key') + '<span>Change PIN</span></button><button data-act="logout">' + ic('out') + '<span>Sign out</span></button></div></div>' +
+      '</aside>' +
+      '<div style="min-width:0">' +
+        '<header class="topbar"><img src="' + LOGO + '" alt=""><b>Offset Tracker</b><button data-act="refresh" aria-label="Refresh">' + ic('refresh') + '</button><button data-act="changePin" aria-label="Change PIN">' + ic('key') + '</button><button data-act="logout" aria-label="Sign out">' + ic('out') + '</button></header>' +
+        '<main class="main" id="main" tabindex="-1">' +
+          '<section class="band"><div class="band-in"><div><p class="eyebrow">' + (v.eyebrow || 'PIO Offset Tracker') + '</p><h1>' + v.title + '</h1>' + (v.sub ? '<p>' + v.sub + '</p>' : '') + '</div>' + (v.actions ? '<div class="row-btns no-print">' + v.actions + '</div>' : '') + '</div></section>' +
+          '<div class="wrap">' + v.body + '</div>' +
+        '</main>' +
+      '</div>' +
+      '<nav class="tabbar" aria-label="Main">' + tabs.map(navBtn).join('') + (nav.length > 5 ? '<button data-act="moreNav"' + (moreOn ? ' aria-current="page"' : '') + '>' + ic('more') + '<span>More</span>' + (moreOn ? '' : '') + '</button>' : '') + '</nav>' +
+    '</div>';
+  window.scrollTo(0, y);
+  if (S.view === 'log') checkEarnForm(document);
+}
+
+/* ----- auth ----- */
+function brandPanel(){
+  return '<aside class="auth-photo" aria-label="Provincial Capitol of Camarines Norte"><div class="auth-brand"><img class="wordmark" src="pio-digital.webp" alt="Camarines Norte PIO">' +
+    '<div class="socials"><span>' + ic('fb') + '</span><span>' + ic('yt') + '</span><span>' + ic('tt') + '</span><b>@piocamnorte</b></div></div></aside>';
+}
+function divPicker(selected){
+  if (!S.divisions.length) return '';
+  return '<fieldset class="divpick"><legend>Your division</legend><div class="divgrid">' + S.divisions.map(function(d, i){
+    return '<input type="radio" name="division" id="dv' + i + '" value="' + esc(d.id) + '"' + (selected === d.id ? ' checked' : '') + '><label for="dv' + i + '" title="' + esc(d.name) + '">' + divBadge(d, 34) + '<span>' + esc(d.short || d.name) + '</span><span class="tick">' + ic('tick') + '</span></label>';
+  }).join('') + '</div></fieldset>';
+}
+function keepBox(){ return '<label class="keep"><input type="checkbox" name="remember" checked><span>Keep me signed in on this device</span></label>'; }
+function viewLogin(){
+  return '<div class="auth">' + brandPanel() + '<div class="auth-main"><form class="auth-card" data-form="login" autocomplete="on">' +
+    '<div class="auth-title"><img class="seal" src="' + LOGO + '" alt="Provincial Information Office, Camarines Norte seal"><div><p class="eyebrow">Provincial Information Office</p><h1>Offset Tracker</h1></div></div>' +
+    '<p class="lede">Sign in to log, request and check your offsets.</p>' + divPicker(lGet('pio_div')) +
+    '<div class="field"><label for="lu">Username</label><input class="input" id="lu" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>' +
+    '<div class="field"><label for="lp">PIN</label><div class="pinwrap"><input class="input pin" id="lp" name="pin" type="password" autocomplete="current-password" inputmode="numeric" pattern="[0-9]*" maxlength="6" required><button type="button" data-act="showPin" aria-label="Show PIN" aria-pressed="false">' + ic('eye') + '</button></div></div>' +
+    keepBox() + '<p class="error" id="err" role="alert"></p><button class="btn btn-primary btn-block btn-lg" type="submit">Sign in</button>' +
+    '<p class="hint center">Forgot your PIN? Ask an admin to reset it.</p></form></div></div>';
+}
+function viewSetup(){
+  return '<div class="auth">' + brandPanel() + '<div class="auth-main"><form class="auth-card" data-form="setup" autocomplete="off">' +
+    '<div class="auth-title"><img class="seal" src="' + LOGO + '" alt="Provincial Information Office, Camarines Norte seal"><div><p class="eyebrow">First-time setup</p><h1>Create the admin account</h1></div></div>' +
+    '<p class="lede">This account confirms offsets and manages staff, divisions and holidays. You can add more admins later.</p>' +
+    '<div class="field"><label for="sn">Full name</label><input class="input" id="sn" name="name" required></div>' +
+    '<div class="field"><label for="su">Username</label><input class="input" id="su" name="username" autocapitalize="none" spellcheck="false" required><span class="hint">Lowercase letters, numbers, dots or dashes.</span></div>' +
+    '<div class="two"><div class="field"><label for="sp">PIN</label><input class="input pin" id="sp" name="pin" type="password" inputmode="numeric" maxlength="6" required></div><div class="field"><label for="sp2">Repeat PIN</label><input class="input pin" id="sp2" name="pin2" type="password" inputmode="numeric" maxlength="6" required></div></div>' +
+    divPicker('') + keepBox() + '<p class="error" id="err" role="alert"></p><button class="btn btn-primary btn-block btn-lg" type="submit">Create admin account</button></form></div></div>';
+}
+
+/* ----- shared pieces ----- */
+function entryRow(e, opts){
+  opts = opts || {};
+  var use = e.type === 'USE', pend = e.status === 'Pending';
+  var cls = pend ? 'pend' : (use ? 'use' : 'earn');
+  var title = (opts.showName ? esc(userName(e.username)) + ' · ' : '') + (use ? (pend ? 'Day-off request' : 'Day off') : esc(e.event || e.category));
+  var meta = fDate(e.date, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + (use ? '' : ' · ' + esc(e.category) + (e.endTime ? ' until ' + fTime(e.endTime) : '')) + (e.venue ? ' · ' + esc(e.venue) : '');
+  var acts = '';
+  if (opts.review && !canReview(e)) acts = '<div class="acts"><span class="pill off">Needs another admin</span></div>';
+  else if (opts.review) acts = '<div class="acts"><button class="btn btn-sm btn-primary" data-act="review" data-id="' + e.id + '" data-d="Confirmed">' + (use ? 'Approve' : 'Confirm') + '</button><button class="btn btn-sm btn-danger" data-act="rejectModal" data-id="' + e.id + '">Reject</button></div>';
+  return '<li class="row tap' + (opts.review ? ' rv' : '') + '" data-entry="' + e.id + '" tabindex="0"><span class="mark ' + cls + '">' + ic(use ? 'plane' : (CAT_ICON[e.category] || 'plus')) + '</span>' +
+    '<div class="body"><div class="t">' + title + '</div><div class="m">' + meta + '</div></div>' +
+    (opts.review || e.status === 'Confirmed' ? '' : '<span class="pill ' + e.status + '">' + e.status + '</span>') +
+    '<span class="amt ' + (use ? 'minus' : 'plus') + '">' + fDs(use ? -e.days : e.days, true) + '</span>' + acts + '</li>';
+}
+function tile(k, v, s, cls, icon, go){
+  var tag = go ? 'button' : 'div';
+  return '<' + tag + ' class="panel tile ' + (cls||'') + '"' + (go ? ' ' + go : '') + '><span class="k">' + (icon ? '<span class="ib">' + ic(icon) + '</span>' : '') + k + (go ? '<span class="go">' + ic('right') + '</span>' : '') + '</span><span class="v">' + v + '</span><span class="s">' + s + '</span></' + tag + '>';
+}
+function divSelect(id, val, label, withAll, withNone){
+  return '<select class="input" id="' + id + '" name="division" aria-label="' + (label || 'Division') + '">' + (withAll ? '<option value="all">All divisions</option>' : '') + (withNone ? '<option value="">No division</option>' : '') +
+    S.divisions.map(function(d){ return '<option value="' + esc(d.id) + '"' + (val === d.id ? ' selected' : '') + '>' + esc(d.short || d.name) + '</option>'; }).join('') + '</select>';
+}
+function panel(title, icon, body, extra, span){ return '<section class="panel ' + (span || '') + '"><div class="panel-h"><h2>' + (icon ? ic(icon) : '') + title + '</h2>' + (extra || '') + '</div>' + body + '</section>'; }
+function empty(icon, title, text, btn){ return '<div class="empty"><div class="ill">' + ic(icon) + '</div><b>' + title + '</b>' + text + (btn ? '<div style="margin-top:12px">' + btn + '</div>' : '') + '</div>'; }
+
+/* ---------- charts ---------- */
+function trendData(users, n){
+  var m = curMonth(), out = [];
+  for (var i = n - 1; i >= 0; i--){
+    var mm = shiftMonth(m, -i), earned = 0, used = 0;
+    S.entries.forEach(function(e){ if (e.status !== 'Confirmed' || e.date.slice(0,7) !== mm || users.indexOf(e.username) < 0) return; if (e.type === 'EARN') earned += e.days; else used += e.days; });
+    out.push({ m: mm, earned: earned, used: used });
+  }
+  return out;
+}
+function trendChart(data){
+  var W = 560, H = 200, pl = 30, pb = 26, pt = 10, max = Math.max(2, Math.ceil(Math.max.apply(null, data.map(function(d){ return Math.max(d.earned, d.used); })))), step = max <= 4 ? 1 : Math.ceil(max / 4);
+  max = Math.ceil(max / step) * step;
+  var gw = (W - pl) / data.length, bw = Math.min(22, gw / 3.2), y = function(v){ return pt + (H - pt - pb) * (1 - v / max); };
+  var g = '';
+  for (var t = 0; t <= max; t += step) g += '<line x1="' + pl + '" x2="' + W + '" y1="' + y(t) + '" y2="' + y(t) + '" style="stroke:var(--line)" stroke-dasharray="3 4"/><text x="' + (pl - 8) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + t + '</text>';
+  data.forEach(function(d, i){
+    var cx = pl + gw * i + gw / 2, cur = i === data.length - 1;
+    g += '<rect x="' + (cx - bw - 2) + '" y="' + y(d.earned) + '" width="' + bw + '" height="' + (y(0) - y(d.earned)) + '" rx="4" style="fill:var(--brand)' + (cur ? ';opacity:.55' : '') + '"><title>' + fMonth(d.m) + ': earned ' + fD(d.earned) + '</title></rect>';
+    g += '<rect x="' + (cx + 2) + '" y="' + y(d.used) + '" width="' + bw + '" height="' + (y(0) - y(d.used)) + '" rx="4" style="fill:var(--sun)"><title>' + fMonth(d.m) + ': used ' + fD(d.used) + '</title></rect>';
+    g += '<text x="' + cx + '" y="' + (H - 6) + '" text-anchor="middle">' + mShort(d.m) + '</text>';
+  });
+  return '<div class="chart"><svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Offsets earned and used per month">' + g + '</svg></div>' +
+    '<div class="legend"><span><i style="background:var(--brand)"></i>Earned (confirmed)</span><span><i style="background:var(--sun)"></i>Used</span><span class="hint">This month is lighter: still counting</span></div>';
+}
+
+/* ---------- dashboard widgets ---------- */
+var WIDGETS = {
+  admin: [
+    ['mine', 'Your offset', 12], ['kpis', 'Summary tiles', 12], ['balances', 'Staff balances', 7], ['queue', 'Waiting for review', 5],
+    ['trend', 'Earned vs used chart', 7], ['divisions', 'Balances by division', 5], ['daysoff', 'Upcoming days off', 6], ['holidays', 'Upcoming holidays', 6], ['activity', 'Recent activity', 12]
+  ],
+  employee: [
+    ['hero', 'Balance card', 12], ['kpis', 'Summary tiles', 12], ['recent', 'Recent activity', 7], ['requests', 'My days off', 5], ['trend', 'My monthly chart', 7], ['holidays', 'Upcoming holidays', 5]
+  ]
+};
+function widgetPrefs(){
+  var role = isAdmin() ? 'admin' : 'employee', all = WIDGETS[role].map(function(w){ return w[0]; }), saved = null;
+  try { saved = JSON.parse(lGet('pio_w_' + role) || 'null'); } catch(e){}
+  if (!saved || !saved.order) return { order: all, hidden: [] };
+  all.forEach(function(id){ if (saved.order.indexOf(id) < 0) saved.order.push(id); });
+  saved.order = saved.order.filter(function(id){ return all.indexOf(id) >= 0; });
+  return saved;
+}
+function widgetDef(id){ return WIDGETS[isAdmin() ? 'admin' : 'employee'].filter(function(w){ return w[0] === id; })[0]; }
+
+/* Greeting by time of day in the Philippines. */
+function greeting(){
+  var h = +new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Manila', hour: '2-digit', hour12: false }).format(new Date()) % 24;
+  return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+}
+function viewDashboard(){
+  var adm = isAdmin(), P = widgetPrefs(), html = '';
+  var staff = S.users.filter(function(u){ return u.active && (!adm || S.dashDiv === 'all' || u.division === S.dashDiv); });
+  var W = adm ? adminWidgets(staff) : empWidgets();
+  P.order.forEach(function(id){ if (P.hidden.indexOf(id) < 0 && W[id]) html += W[id](widgetDef(id)[2]); });
+  var actions = (adm
+      ? '<button class="btn btn-glass" data-act="customize">' + ic('sliders') + 'Customize</button><button class="btn btn-glass" data-go="log">' + ic('plus') + 'Add offset</button><button class="btn btn-sun" data-act="useModal">' + ic('minus') + 'Record use</button>'
+      : '<button class="btn btn-glass" data-act="customize">' + ic('sliders') + 'Customize</button><button class="btn btn-sun" data-go="log">' + ic('plus') + 'Log offset</button>');
+  return { eyebrow: fDate(today(), { weekday:'long', month:'long', day:'numeric', year:'numeric' }),
+    title: greeting() + ', ' + esc(S.me.name.split(' ')[0]) + '!',
+    sub: adm ? 'Offsets across the office' + (S.dashDiv === 'all' ? '' : ' · ' + esc(divOf(S.dashDiv).short)) + '. Tap any number to see the details.' : (S.me.division ? divChip(S.me.division) + ' · ' : '') + 'Unused offsets carry over every month.',
+    actions: actions, body: '<div class="grid">' + (html || '<div class="span-12 panel">' + empty('sliders', 'Your dashboard is empty', 'Turn widgets back on to see your numbers.', '<button class="btn btn-primary" data-act="customize">Customize</button>') + '</div>') + '</div>' };
+}
+function span(n){ return 'span-' + n; }
+function adminWidgets(staff){
+  var all = sumStats(staff), pend = pending(), m = curMonth(), td = today(), mine = stats(S.me.username);
+  var rows = staff.map(function(u){ return { u: u, s: stats(u.username) }; }).sort(function(a,b){ return b.s.avail - a.s.avail || a.u.name.localeCompare(b.u.name); });
+  return {
+    mine: function(n){ return '<button class="mine ' + span(n) + '" data-person="' + esc(S.me.username) + '"><span class="k">Your offset</span><b>' + fD(mine.avail) + ' available</b><span class="hint">' + (mine.month ? '+' + fD(mine.month) + ' this month · ' : '') + (mine.pendN + mine.reqN ? (mine.pendN + mine.reqN) + ' waiting for another admin' : 'Nothing waiting') + '</span><span class="go">' + ic('right') + '</span></button>'; },
+    kpis: function(n){ return '<div class="tiles ' + span(n) + '">' +
+      tile('Waiting for review', pend.length, pending('USE').length + ' day-off ' + (pending('USE').length === 1 ? 'request' : 'requests') + ' · ' + pending('EARN').length + ' offsets', pend.length ? 'warn' : '', 'clock', 'data-go="approvals"') +
+      tile('Total available', fD(all.avail), 'Usable now · ' + staff.length + ' active staff', '', 'shield', 'data-go="staff"') +
+      tile(mShort(m) + ' so far', '+' + fD(all.month), 'Usable on ' + closesOn(m), '', 'month', 'data-go="monthly"') +
+      tile('Used this month', fD(all.usedM), 'Days off taken in ' + mShort(m), '', 'plane', 'data-rec="type:USE"') + '</div>'; },
+    balances: function(n){ return panel('Staff balances', 'users', rows.length ? '<div class="table-wrap"><table><thead><tr><th>Employee</th><th class="r">Available</th><th class="r">This month</th><th></th></tr></thead><tbody>' +
+        rows.map(function(r){ return '<tr class="tap" data-person="' + esc(r.u.username) + '" tabindex="0"><td><b>' + esc(r.u.name) + '</b><div>' + divChip(r.u.division) + '</div></td><td class="r num"><b>' + fD(r.s.avail) + '</b>' + (r.s.reqDays ? '<div class="hint">' + fD(r.s.reqDays) + ' requested</div>' : '') + '</td><td class="r num">' + (r.s.month ? '+' + fD(r.s.month) : '—') + '</td>' +
+          '<td class="r"><button class="btn btn-sm btn-ghost" data-act="useModal" data-u="' + esc(r.u.username) + '"' + (r.s.avail > 0 && r.u.username !== S.me.username ? '' : ' disabled') + ' aria-label="Record offset use for ' + esc(r.u.name) + '">' + ic('minus') + 'Use</button></td></tr>'; }).join('') + '</tbody></table></div>'
+        : empty('users', 'No staff here yet', 'Add employees in Staff, or pick another division.'), divSelect('dashDiv', S.dashDiv, 'Filter by division', true), span(n)); },
+    queue: function(n){ return panel('Waiting for review', 'clock', pend.length ? '<ul class="list">' + pend.slice(0, 4).map(function(e){ return entryRow(e, { showName: true, review: true }); }).join('') + '</ul>' : empty('check', 'All caught up', 'New offsets and day-off requests appear here.'),
+        pend.length > 4 ? '<button class="btn btn-sm btn-ghost" data-go="approvals">All ' + pend.length + '</button>' : '', span(n)); },
+    trend: function(n){ return panel('Earned vs used, last 6 months', 'chart', trendChart(trendData(staff.map(function(u){ return u.username; }), 6)), '', span(n)); },
+    divisions: function(n){
+      var data = S.divisions.map(function(d){ var us = S.users.filter(function(u){ return u.active && u.division === d.id; }); return { d: d, n: us.length, v: sumStats(us).avail }; });
+      var mx = Math.max.apply(null, data.map(function(x){ return x.v; }).concat([1]));
+      return panel('Balances by division', 'pie', data.length ? '<div class="hbar">' + data.map(function(x){ return '<div class="tap" data-div="' + esc(x.d.id) + '"><div class="r1"><span class="dchip" style="--dc:' + esc(x.d.color) + '"><i></i>' + esc(x.d.short) + '</span><b class="num">' + fD(x.v) + ' <span class="hint">· ' + x.n + ' staff</span></b></div><div class="track"><div class="fill" style="--dc:' + esc(x.d.color) + ';width:' + Math.max(2, x.v / mx * 100) + '%"></div></div></div>'; }).join('') + '</div>' : empty('pie', 'No divisions', 'Add divisions in Staff.'), '', span(n)); },
+    daysoff: function(n){
+      var list = S.entries.filter(function(e){ return e.type === 'USE' && e.status !== 'Rejected' && (e.date >= td || e.status === 'Pending'); }).sort(function(a,b){ return a.date < b.date ? -1 : 1; }).slice(0, 6);
+      return panel('Upcoming days off', 'plane', list.length ? '<ul class="list">' + list.map(function(e){ return entryRow(e, { showName: true }); }).join('') + '</ul>' : empty('plane', 'No days off coming up', 'Approved requests and recorded days off appear here.'), '', span(n)); },
+    holidays: function(n){ return holidayWidget(n); },
+    activity: function(n){ return panel('Recent activity', 'history', S.activity.length ? '<ul class="list">' + S.activity.slice(0, 6).map(activityRow).join('') + '</ul>' : empty('history', 'No activity yet', 'Every change made in the app is recorded here.'),
+        '<button class="btn btn-sm btn-ghost" data-act="openActivity">Full log</button>', span(n)); }
+  };
+}
+function empWidgets(){
+  var st = stats(S.me.username), m = curMonth(), td = today();
+  return {
+    hero: function(n){ return '<section class="hero ' + span(n) + '"><button class="hero-main" data-go="monthly"><span class="k">Available offset</span><span class="big">' + fD(st.avail) + '</span>' +
+      '<span class="sub">' + (st.reqDays ? fD(st.reqDays) + ' requested · ' + fD(Math.max(st.free, 0)) + ' free to request' : 'Tap to see each month') + '</span></button>' +
+      '<div class="hero-r"><button class="box" data-go="monthly"><span>' + fMonth(m) + ' so far</span><b>+' + fD(st.month) + '</b><span>Usable on ' + closesOn(m) + '</span></button>' +
+      '<button class="btn btn-sun" data-act="requestModal"' + (st.free > 0 ? '' : ' disabled') + '>' + ic('plane') + 'Request day off</button></div></section>'; },
+    kpis: function(n){ return '<div class="tiles three ' + span(n) + '">' +
+      tile('Waiting for review', fD(st.pending + st.reqDays), (st.pendN + st.reqN) + ' not yet reviewed', st.pendN + st.reqN ? 'warn' : '', 'clock', 'data-rec="status:Pending"') +
+      tile('Earned this year', fD(st.earnedY), 'Confirmed in ' + td.slice(0,4), '', 'plus', 'data-rec="type:EARN"') +
+      tile('Used this year', fD(st.usedY), st.lastUse ? 'Last day off ' + fDate(st.lastUse) : 'No days off yet', '', 'plane', 'data-rec="type:USE"') + '</div>'; },
+    recent: function(n){ var list = sorted(S.entries.filter(function(e){ return e.type === 'EARN'; })).slice(0, 6);
+      return panel('Recent offsets', 'list', list.length ? '<ul class="list">' + list.map(function(e){ return entryRow(e); }).join('') + '</ul>' : empty('plus', 'No offsets logged yet', 'When you work beyond the ' + S.settings.workdays + '-day schedule, log it with the event and venue.', '<button class="btn btn-primary" data-go="log">' + ic('plus') + 'Log your first offset</button>'),
+        '<button class="btn btn-sm btn-ghost" data-go="records">See all</button>', span(n)); },
+    requests: function(n){ var list = S.entries.filter(function(e){ return e.type === 'USE' && (e.date >= td || e.status === 'Pending'); }).sort(function(a,b){ return a.date < b.date ? -1 : 1; });
+      return panel('My days off', 'plane', list.length ? '<ul class="list">' + list.map(function(e){ return entryRow(e); }).join('') + '</ul>' : empty('plane', 'No days off planned', 'Request a day off and an admin will approve it.', st.free > 0 ? '<button class="btn btn-ghost" data-act="requestModal">' + ic('plane') + 'Request day off</button>' : ''), '', span(n)); },
+    trend: function(n){ return panel('My last 6 months', 'chart', trendChart(trendData([S.me.username], 6)), '', span(n)); },
+    holidays: function(n){ return holidayWidget(n); }
+  };
+}
+function holidayWidget(n){
+  var td = today(), list = S.holidays.filter(function(h){ return h.date >= td; }).slice(0, 5);
+  return panel('Upcoming holidays', 'flag', list.length ? '<ul class="list">' + list.map(function(h){
+    var days = Math.round((pd(h.date) - pd(td)) / 864e5);
+    return '<li class="row tap" data-calday="' + h.date + '" tabindex="0"><span class="mark hol">' + ic('flag') + '</span><div class="body"><div class="t">' + esc(h.name) + '</div><div class="m">' + fDate(h.date, { weekday:'long', month:'long', day:'numeric' }) + '</div></div><span class="pill hol">' + (days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : 'In ' + days + ' days') + '</span></li>';
+  }).join('') + '</ul>' : empty('flag', 'No holidays listed', isAdmin() ? 'Add holidays in Settings.' : 'An admin can add holidays in Settings.'), '', span(n));
+}
+function activityRow(a){
+  var tgt = a.target && userOf(a.target) ? userName(a.target) : a.target;
+  return '<li class="row"><span class="mark act">' + ic('history') + '</span><div class="body"><div class="t">' + esc(userName(a.actor)) + ' · ' + esc(a.action.toLowerCase()) + (tgt && a.target !== a.actor ? ' · ' + esc(tgt) : '') + '</div><div class="m">' + esc(a.details) + '</div></div><span class="hint" title="' + esc(when(a.at)) + '">' + ago(a.at) + '</span></li>';
+}
+
+/* ----- log offset ----- */
+function earnFields(e, adm){
+  e = e || {};
+  var cat = e.category || 'Holiday', cats = [['Holiday','flag','Regular, special or local holiday'],['Weekend','sun','Saturday or Sunday'],['After 5 PM','moon','Events past office hours']];
+  return (adm ? '<div class="field"><label for="fu">Employee</label><select class="input" id="fu" name="username">' +
+      S.users.filter(function(u){ return u.active; }).map(function(u){ return '<option value="' + esc(u.username) + '"' + ((e.username || S.me.username) === u.username ? ' selected' : '') + '>' + esc(u.name) + (u.username === S.me.username ? ' (you)' : '') + '</option>'; }).join('') + '</select>' +
+      '<span class="hint">Offsets you add for staff are confirmed right away.' + (otherAdmins() ? ' Your own go to another admin.' : '') + '</span></div>' : '') +
+    '<div class="field"><label for="fe">Event name</label><input class="input" id="fe" name="event" maxlength="120" value="' + esc(e.event) + '" placeholder="e.g. Bantayog Festival opening program" required></div>' +
+    '<div class="field"><label for="fv">Venue</label><input class="input" id="fv" name="venue" maxlength="120" value="' + esc(e.venue) + '" placeholder="e.g. Provincial Capitol Grounds, Daet" required></div>' +
+    '<div class="field"><label for="fd">Date worked</label><input class="input" id="fd" name="date" type="date" max="' + today() + '" value="' + (e.date || today()) + '" required><span class="hint">Forgot to log? Pick the past date. It counts once confirmed.</span></div>' +
+    '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">Type of extra work</legend><div class="seg">' +
+      cats.map(function(c, i){ return '<input type="radio" name="category" id="c' + i + '" value="' + c[0] + '"' + (cat === c[0] ? ' checked' : '') + '><label for="c' + i + '"><b>' + ic(c[1]) + c[0] + '</b><small>' + c[2] + '</small></label>'; }).join('') +
+    '</div></fieldset>' +
+    '<div id="dateCheck"></div>' +
+    '<div class="field" id="endWrap"' + (cat === 'After 5 PM' ? '' : ' hidden') + '><label for="ft">Event ended at</label><input class="input" id="ft" name="endTime" type="time" value="' + esc(e.endTime || '') + '"><span class="hint" id="endHint">Ends 1:00 AM or later = 1 day (8 hours or more). Earlier = ½ day.</span></div>' +
+    '<fieldset class="field" id="amtWrap" style="border:0;padding:0;margin:0"' + (cat === 'After 5 PM' ? ' hidden' : '') + '><legend class="label" style="margin-bottom:6px">How much offset</legend><div class="seg two-up">' +
+      '<input type="radio" name="days" id="a0" value="1"' + (e.days !== 0.5 ? ' checked' : '') + '><label for="a0"><b>1 day</b><small>8 hours or more</small></label>' +
+      '<input type="radio" name="days" id="a1" value="0.5"' + (e.days === 0.5 ? ' checked' : '') + '><label for="a1"><b>½ day</b><small>About 4 hours</small></label>' +
+    '</div></fieldset>' +
+    '<label class="check"><input type="checkbox" name="noTravelOrder" required' + (e.id ? ' checked' : '') + '><span><b>This work was not under a travel order.</b><br><span class="hint">Work covered by a travel order is already counted in the DTR and is not an offset.</span></span></label>';
+}
+/* Smart checks: match the date with the type of work, and show what an "After 5 PM" entry counts as. */
+function checkEarnForm(root, auto){
+  root = root || document;
+  var d = root.querySelector('#fd'), box = root.querySelector('#dateCheck'); if (!d || !box) return;
+  var cat = (root.querySelector('input[name=category]:checked') || {}).value, h = holidayOn(d.value), wk = d.value && isWeekend(d.value);
+  if (auto && h && cat !== 'Holiday'){ root.querySelector('#c0').checked = true; cat = 'Holiday'; }
+  else if (auto && !h && wk && cat === 'Holiday'){ root.querySelector('#c1').checked = true; cat = 'Weekend'; }
+  var msg = '';
+  if (h) msg = '<div class="info-note">' + ic('flag') + '<span>' + fDate(d.value, { month:'long', day:'numeric' }) + ' is ' + esc(h.name) + ' (' + esc(h.kind) + ').</span></div>';
+  if (cat === 'Weekend' && d.value && !wk) msg = '<div class="warn-note">' + ic('sun') + '<span>' + fDate(d.value, { weekday:'long' }) + ' is a weekday. Is this the right date?</span></div>';
+  if (cat === 'Holiday' && d.value && !h) msg = '<div class="warn-note">' + ic('flag') + '<span>This date is not in the holiday list. If it is a local holiday, ask an admin to add it in Settings.</span></div>';
+  box.innerHTML = msg;
+  var after = cat === 'After 5 PM';
+  root.querySelector('#endWrap').hidden = !after; root.querySelector('#amtWrap').hidden = after;
+  root.querySelector('#ft').required = after;
+  var t = root.querySelector('#ft').value, hint = root.querySelector('#endHint');
+  if (after && t) hint.innerHTML = (t >= '17:00' && t < '19:00') ? '<b style="color:var(--red)">Events that end before 7:00 PM are not counted.</b>' : 'Counts as <b>' + ((t >= '01:00' && t < '12:00') ? '1 day' : '½ day') + '</b>. Ends 1:00 AM or later = 1 day.';
+}
+function viewLog(){
+  var adm = isAdmin(), pre = S.prefill || {}; S.prefill = null;
+  return { eyebrow: 'Offsets', title: adm ? 'Add an offset' : 'Log an offset', sub: adm ? 'Log your own extra work, or add one for a staff member who forgot.' : 'Log extra work beyond the ' + S.settings.workdays + '-day schedule. An admin confirms it before it counts.',
+    actions: '<button class="btn btn-glass" data-act="requestModal">' + ic('plane') + 'Request day off</button>',
+    body: '<div class="grid"><form class="panel panel-b stack span-7" data-form="earn" id="earnForm">' + earnFields({ username: pre.username }, adm) +
+      '<p class="error" id="err" role="alert"></p><div><button class="btn btn-primary btn-lg" type="submit">' + ic('plus') + (adm ? 'Save offset' : 'Submit for confirmation') + '</button></div></form>' +
+      panel('How offsets are counted', 'shield', '<div class="panel-b stack" style="font-size:14px;color:var(--ink-2)">' +
+        [['month','The regular schedule is ' + S.settings.workdays + ' workdays a month. Days worked beyond it are offsets.'],
+         ['moon','After 5 PM: events that end 1:00 AM or later count as 1 day. Earlier counts as ½ day.'],
+         ['clock','What you log in ' + fMonth(curMonth()) + ' becomes usable on ' + closesOn(curMonth()) + '.'],
+         ['refresh', S.settings.carryCap ? 'Unused offsets carry over, up to ' + fD(S.settings.carryCap) + '. Anything above that is forfeited at the start of a month.' : 'Unused offsets carry over to the next months. They do not expire.'],
+         ['route','Work done under a travel order is not an offset. It is already counted in your DTR.']].map(function(x){ return '<div style="display:flex;gap:10px"><span style="color:var(--brand-strong)">' + ic(x[0]) + '</span><span>' + x[1] + '</span></div>'; }).join('') + '</div>', '', 'span-5') + '</div>' };
+}
+
+/* ----- approvals ----- */
+function viewApprovals(){
+  var req = pending('USE'), off = pending('EARN');
+  function block(list, title, icon, kind){
+    var ok = list.filter(canReview).length;
+    return panel(title + ' <span class="pill ' + (list.length ? 'Pending' : 'off') + '">' + list.length + '</span>', icon,
+      list.length ? '<ul class="list">' + list.map(function(e){ return entryRow(e, { showName: true, review: true }); }).join('') + '</ul>' : empty(icon, 'All caught up', kind === 'USE' ? 'Day-off requests from staff appear here.' : 'Offsets logged by staff appear here.'),
+      ok > 1 ? '<button class="btn btn-sm btn-primary" data-act="confirmAll" data-k="' + kind + '">' + ic('check') + (kind === 'USE' ? 'Approve all ' : 'Confirm all ') + ok + '</button>' : '', 'span-12');
+  }
+  return { eyebrow: 'Approvals', title: 'Waiting for review', sub: (req.length + off.length) ? 'Tap an entry to see its details before deciding. Rejections ask for a short reason.' : 'Nothing to review right now.',
+    body: '<div class="grid">' + block(req, 'Day-off requests', 'plane', 'USE') + block(off, 'Offsets logged', 'plus', 'EARN') + '</div>' };
+}
+
+/* ----- calendar ----- */
+function viewCalendar(){
+  if (!S.cal){ var t = pd(today()); S.cal = { y: t.getFullYear(), m: t.getMonth() }; }
+  var y = S.cal.y, m = S.cal.m, first = new Date(y, m, 1), start = new Date(y, m, 1 - first.getDay()), ym = ymd(first).slice(0,7);
+  var adm = isAdmin(), td = today();
+  var list = S.entries.filter(function(e){ return e.status !== 'Rejected' && (!adm || S.calUser === 'all' || e.username === S.calUser); });
+  var byDay = {}; list.forEach(function(e){ (byDay[e.date] = byDay[e.date] || []).push(e); });
+  var cells = '';
+  for (var i = 0; i < 42; i++){
+    var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), k = ymd(d), evs = byDay[k] || [], h = holidayOn(k);
+    if (i >= 35 && d.getMonth() !== m) break;
+    var cls = 'day' + (d.getMonth() !== m ? ' out' : '') + (d.getDay() % 6 === 0 ? ' wknd' : '') + (h ? ' isHol' : '') + (k === td ? ' today' : '') + (k === S.selDay ? ' sel' : '');
+    var chips = (h ? '<span class="hl" title="' + esc(h.name) + '">' + esc(h.name) + '</span>' : '') + evs.slice(0, h ? 2 : 3).map(function(e){
+      var c = e.status === 'Pending' ? 'pend' : (e.type === 'USE' ? 'use' : 'earn');
+      var label = adm && S.calUser === 'all' ? firstName(e.username) : (e.type === 'USE' ? 'Day off' : e.event);
+      return '<span class="ev ' + c + '">' + fDs(e.type === 'USE' ? -e.days : e.days, true) + ' ' + esc(label) + '</span>';
+    }).join('') + (evs.length > (h ? 2 : 3) ? '<span class="more">+' + (evs.length - (h ? 2 : 3)) + ' more</span>' : '');
+    var aria = fDate(k, { weekday:'long', month:'long', day:'numeric' }) + (h ? ', ' + h.name : '') + (evs.length ? ': ' + evs.map(function(e){ return (e.type === 'USE' ? 'day off ' : (e.status === 'Pending' ? 'pending ' : 'earned ')) + fD(e.days); }).join(', ') : '');
+    cells += '<button class="' + cls + '" data-day="' + k + '" aria-label="' + esc(aria) + '"><span class="dn">' + d.getDate() + '</span>' + chips + '</button>';
+  }
+  var filter = adm ? '<select class="input" id="calUser" aria-label="Show employee"><option value="all">All staff</option>' + S.users.map(function(u){ return '<option value="' + esc(u.username) + '"' + (S.calUser === u.username ? ' selected' : '') + '>' + esc(u.name) + '</option>'; }).join('') + '</select>' : '';
+  var sel = '';
+  if (S.selDay){
+    var de = sorted(byDay[S.selDay] || []), hh = holidayOn(S.selDay), future = S.selDay >= td;
+    sel = panel(fDate(S.selDay, { weekday:'long', month:'long', day:'numeric', year:'numeric' }), 'cal',
+      (hh ? '<div class="panel-b" style="padding-bottom:0"><div class="info-note">' + ic('flag') + '<span>' + esc(hh.name) + ' · ' + esc(hh.kind) + ' holiday</span></div></div>' : '') +
+      (de.length ? '<ul class="list">' + de.map(function(e){ return entryRow(e, { showName: adm }); }).join('') + '</ul>' : '<div class="empty">No offsets on this day.</div>'),
+      '<div class="row-btns">' + (adm ? '<button class="btn btn-sm btn-ghost" data-act="useModal" data-date="' + S.selDay + '"' + (S.calUser !== 'all' ? ' data-u="' + esc(S.calUser) + '"' : '') + '>' + ic('minus') + 'Record use</button>' : '') +
+        (future ? '<button class="btn btn-sm btn-ghost" data-act="requestModal" data-date="' + S.selDay + '">' + ic('plane') + 'Request this day off</button>' : '<button class="btn btn-sm btn-ghost" data-act="logOn" data-date="' + S.selDay + '">' + ic('plus') + 'Log offset on this day</button>') + '</div>', 'span-12" id="daypanel');
+  }
+  var mh = S.holidays.filter(function(h){ return h.date.slice(0,7) === ym; });
+  return { eyebrow: 'Calendar', title: first.toLocaleDateString('en-PH', { month:'long', year:'numeric' }), sub: 'Holidays, offsets and days off. Tap a day for details.',
+    actions: '<button class="btn btn-glass" data-act="calPrev" aria-label="Previous month">' + ic('left') + '</button><button class="btn btn-glass" data-act="calToday">Today</button><button class="btn btn-glass" data-act="calNext" aria-label="Next month">' + ic('right') + '</button>',
+    body: '<div class="grid"><section class="panel span-12"><div class="panel-h"><div class="legend" style="padding:0"><span><i style="background:var(--navy-soft);box-shadow:inset 0 0 0 1px var(--navy)"></i>Holiday</span><span><i style="background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)"></i>Earned</span><span><i style="box-shadow:inset 0 0 0 1px var(--line-strong)"></i>Waiting for review</span><span><i style="background:var(--gold-soft);box-shadow:inset 0 0 0 1px var(--gold)"></i>Day off</span></div>' + filter + '</div>' +
+      '<div class="cal">' + ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(d){ return '<div class="dow">' + d + '</div>'; }).join('') + cells + '</div></section>' + sel +
+      panel('Holidays in ' + mShort(ym), 'flag', mh.length ? '<ul class="list">' + mh.map(function(h){ return '<li class="row tap" data-day="' + h.date + '" tabindex="0"><span class="mark hol">' + ic('flag') + '</span><div class="body"><div class="t">' + esc(h.name) + '</div><div class="m">' + fDate(h.date, { weekday:'long', month:'long', day:'numeric' }) + '</div></div><span class="pill hol">' + esc(h.kind) + '</span></li>'; }).join('') + '</ul>' : '<div class="empty">No holidays this month.</div>', adm ? '<button class="btn btn-sm btn-ghost" data-go="settings">Edit holidays</button>' : '', 'span-12') + '</div>' };
+}
+
+/* ----- monthly summary & report ----- */
+function monthRows(m){
+  var dv = S.dashDiv;
+  return S.users.filter(function(u){ return dv === 'all' || u.division === dv; }).map(function(u){ return { u: u, s: ledgerMonth(u.username, m) }; })
+    .filter(function(r){ return r.u.active || r.s.earned || r.s.used || r.s.open; }).sort(function(a,b){ return a.u.name.localeCompare(b.u.name); });
+}
+function viewMonthly(){
+  var m = S.mon || curMonth(), adm = isAdmin(), open = m >= curMonth(), cap = S.settings.carryCap, nm = fDate(nextMonthStart(m), { month:'short', day:'numeric' });
+  var status = open ? '<span class="pill Pending">Counting · closes ' + nm + '</span>' : '<span class="pill Confirmed">Counted</span>';
+  var nav = '<div class="cal-nav"><button class="icon-btn" data-act="monPrev" aria-label="Previous month">' + ic('left') + '</button><h2>' + fMonth(m) + '</h2><button class="icon-btn" data-act="monNext" aria-label="Next month"' + (m >= curMonth() ? ' disabled' : '') + '>' + ic('right') + '</button></div>';
+  var body, head = '<div class="print-head"><img src="' + LOGO + '" alt=""><div><b>Provincial Information Office · Camarines Norte</b><div>Offset report · ' + fMonth(m) + (S.dashDiv !== 'all' ? ' · ' + esc(divOf(S.dashDiv).name) : '') + '</div></div></div>';
+  if (adm){
+    var rows = monthRows(m), tot = { open: 0, forfeit: 0, earned: 0, used: 0, close: 0, pending: 0 };
+    rows.forEach(function(r){ Object.keys(tot).forEach(function(k){ tot[k] += r.s[k]; }); });
+    function cells(x){ return '<td class="r num">' + (x.open ? fD(x.open) : '—') + '</td>' + (cap ? '<td class="r num minus">' + (x.forfeit ? '−' + fD(x.forfeit) : '—') + '</td>' : '') + '<td class="r num plus">' + (x.earned ? '+' + fD(x.earned) : '—') + '</td><td class="r num minus">' + (x.used ? '−' + fD(x.used) : '—') + '</td><td class="r num"><b>' + fD(x.close) + '</b></td><td class="r num">' + (x.pending ? fD(x.pending) : '—') + '</td>'; }
+    body = head + '<section class="panel"><div class="panel-h no-print">' + nav + '<div class="filters">' + divSelect('dashDiv', S.dashDiv, 'Filter by division', true) + status + '</div></div>' +
+      '<div class="table-wrap"><table><thead><tr><th>Employee</th><th>Division</th><th class="r">Carried over</th>' + (cap ? '<th class="r">Forfeited</th>' : '') + '<th class="r">Earned</th><th class="r">Used</th><th class="r">Balance ' + nm + '</th><th class="r">Pending</th></tr></thead><tbody>' +
+      rows.map(function(r){ return '<tr class="tap" data-person="' + esc(r.u.username) + '" tabindex="0"><td><b>' + esc(r.u.name) + '</b></td><td>' + divChip(r.u.division) + '</td>' + cells(r.s) + '</tr>'; }).join('') +
+      '<tr class="total"><td>Total</td><td>' + rows.length + ' staff</td>' + cells(tot) + '</tr></tbody></table></div></section>';
+  } else {
+    var s = ledgerMonth(S.me.username, m), list = sorted(S.entries.filter(function(e){ return e.date.slice(0,7) === m; }));
+    body = head + '<section class="panel"><div class="panel-h no-print">' + nav + status + '</div><div class="panel-b"><div class="tiles">' +
+      tile('Carried over', fD(s.open), s.forfeit ? fD(s.forfeit) + ' forfeited (over the cap)' : 'Left from earlier months', '', 'refresh') +
+      tile('Earned', '+' + fD(s.earned), s.pending ? fD(s.pending) + ' still waiting for review' : 'Confirmed offsets', s.pending ? 'warn' : '', 'plus') +
+      tile('Used', '−' + fD(s.used), 'Days off in ' + mShort(m), '', 'plane') +
+      tile('Balance on ' + nm, fD(s.close), open ? 'If nothing else changes' : 'Carried into ' + mShort(shiftMonth(m, 1)), '', 'shield') + '</div></div>' +
+      (list.length ? '<ul class="list" style="border-top:1px solid var(--line)">' + list.map(function(e){ return entryRow(e); }).join('') + '</ul>' : '<div class="empty">No offsets recorded in ' + fMonth(m) + '.</div>') + '</section>';
+  }
+  return { eyebrow: 'Monthly summary', title: fMonth(m), sub: 'Carried over + earned − used = balance on the 1st. ' + (cap ? 'Carry-over is capped at ' + fD(cap) + '.' : 'Unused offsets carry over.'),
+    actions: '<button class="btn btn-glass" data-act="exportMonth">' + ic('download') + 'Download CSV</button><button class="btn btn-sun" data-act="print">' + ic('print') + 'Print report</button>', body: body };
+}
+
+/* ----- records & activity log ----- */
+function viewRecords(){
+  var adm = isAdmin(), f = S.rf;
+  var tabs = adm ? '<div class="tabs" role="group" aria-label="Records view"><button data-act="recTab" data-t="entries" aria-pressed="' + (S.recTab === 'entries') + '">Entries</button><button data-act="recTab" data-t="activity" aria-pressed="' + (S.recTab === 'activity') + '">Activity log</button></div>' : '';
+  if (adm && S.recTab === 'activity'){
+    return { eyebrow: 'Records', title: 'Activity log', sub: 'Every change made in the app: who did it, what changed and when. Nobody can edit or delete this log in the app.',
+      actions: '<button class="btn btn-glass" data-act="exportActivity">' + ic('download') + 'Download CSV</button>',
+      body: '<section class="panel"><div class="panel-h">' + tabs + '<span class="hint">' + S.activity.length + ' most recent actions</span></div>' + (S.activity.length ? '<ul class="list">' + S.activity.map(activityRow).join('') + '</ul>' : empty('history', 'No activity yet', 'Changes will appear here.')) + '</section>' };
+  }
+  var list = filteredRecords();
+  var net = list.reduce(function(s, e){ return e.status === 'Confirmed' ? s + (e.type === 'USE' ? -e.days : e.days) : s; }, 0);
+  function sel(id, label, opts, val){ return '<select class="input" id="' + id + '" aria-label="' + label + '">' + opts.map(function(o){ return '<option value="' + esc(o[0]) + '"' + (val === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; }
+  var filters = '<div class="filters">' + tabs + (adm ? divSelect('rfDiv', f.div, 'Division', true) + sel('rfUser', 'Employee', [['all','All staff']].concat(S.users.map(function(u){ return [u.username, u.name]; })), f.user) : '') +
+    sel('rfType', 'Type', [['all','Earned and used'],['EARN','Earned only'],['USE','Days off only']], f.type) + sel('rfStatus', 'Status', [['all','Any status'],['Confirmed','Confirmed'],['Pending','Pending'],['Rejected','Rejected']], f.status) + '</div>';
+  var rows = list.map(function(e){
+    return '<tr class="tap" data-entry="' + e.id + '" tabindex="0"><td class="num">' + fDate(e.date, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + '</td>' + (adm ? '<td>' + esc(userName(e.username)) + '</td>' : '') +
+      '<td style="white-space:normal;min-width:180px"><b>' + (e.type === 'USE' ? 'Day off' : esc(e.event || '—')) + '</b><div class="hint">' + (e.type === 'USE' ? '' : esc(e.category) + (e.endTime ? ' · until ' + fTime(e.endTime) : '')) + '</div></td>' +
+      '<td class="hint" style="white-space:normal;min-width:150px">' + esc(e.venue || '—') + '</td><td class="r num amt ' + (e.type === 'USE' ? 'minus' : 'plus') + '">' + fDs(e.type === 'USE' ? -e.days : e.days, true) + '</td>' +
+      '<td><span class="pill ' + e.status + '">' + e.status + '</span>' + (e.note ? '<div class="hint" style="white-space:normal;max-width:220px">' + esc(e.note) + '</div>' : '') + '</td></tr>';
+  }).join('');
+  return { eyebrow: 'Records', title: adm ? 'All records' : 'My records', sub: 'Every offset earned and every day off. Tap a row for details.',
+    actions: '<button class="btn btn-glass" data-act="exportRecords">' + ic('download') + 'Download CSV</button>',
+    body: '<section class="panel"><div class="panel-h">' + filters + '<span class="hint num">' + list.length + (list.length === 1 ? ' entry' : ' entries') + ' · net ' + fD(net) + ' confirmed</span></div>' +
+      (list.length ? '<div class="table-wrap"><table><thead><tr><th>Date</th>' + (adm ? '<th>Employee</th>' : '') + '<th>Event</th><th>Venue</th><th class="r">Days</th><th>Status</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+        : empty('list', 'No matching entries', 'Try different filters.', '<button class="btn btn-sm btn-ghost" data-act="clearFilters">Clear filters</button>')) + '</section>' };
+}
+function filteredRecords(){
+  var adm = isAdmin(), f = S.rf;
+  return sorted(S.entries.filter(function(e){ var u = userOf(e.username);
+    return (!adm || f.user === 'all' || e.username === f.user) && (!adm || f.div === 'all' || (u && u.division === f.div)) && (f.type === 'all' || e.type === f.type) && (f.status === 'all' || e.status === f.status); }));
+}
+
+/* ----- staff & divisions ----- */
+function viewStaff(){
+  var rows = S.users.slice().sort(function(a,b){ return (b.active - a.active) || a.name.localeCompare(b.name); }).map(function(u){
+    var st = stats(u.username), self = u.username === S.me.username;
+    return '<tr class="tap" data-person="' + esc(u.username) + '" tabindex="0"><td><b>' + esc(u.name) + '</b><div class="hint">@' + esc(u.username) + ' · <span class="cap">' + esc(u.role) + '</span></div></td>' +
+      '<td>' + divSelect('ud_' + u.username, u.division, 'Division of ' + u.name, false, true).replace('class="input"', 'class="input" data-setdiv="' + esc(u.username) + '" style="height:36px;min-width:160px"') + '</td>' +
+      '<td>' + (u.active ? '<span class="pill Confirmed">Active</span>' : '<span class="pill off">Inactive</span>') + '</td><td class="r num">' + fD(st.avail) + '</td>' +
+      '<td class="r"><button class="btn btn-sm btn-ghost" data-person="' + esc(u.username) + '">Manage' + (self ? ' (you)' : '') + '</button></td></tr>';
+  }).join('');
+  var divs = S.divisions.map(function(d){ var n = S.users.filter(function(u){ return u.division === d.id && u.active; }).length;
+    return '<li class="row tap" data-act="divModal" data-id="' + esc(d.id) + '" tabindex="0">' + divBadge(d, 38) + '<div class="body"><div class="t">' + esc(d.name) + '</div><div class="m">' + n + ' active staff · shown as “' + esc(d.short) + '”</div></div><span class="hint">' + ic('edit') + '</span></li>'; }).join('');
+  return { eyebrow: 'People', title: 'Staff', sub: 'Tap a person to see their offsets, reset their PIN, change their role, deactivate or remove them.',
+    actions: '<button class="btn btn-sun" data-act="focusAdd">' + ic('plus') + 'Add staff</button>',
+    body: '<div class="grid">' + panel('Accounts', 'users', '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Division</th><th>Status</th><th class="r">Available</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>', '<span class="hint num">' + S.users.length + ' total</span>', 'span-12') +
+      panel('Divisions', 'pie', (divs ? '<ul class="list">' + divs + '</ul>' : empty('pie', 'No divisions', 'Add the PIO divisions so staff can choose theirs at sign-in.')) + '<div class="panel-b hint" style="border-top:1px solid var(--line)">Staff pick their division on the sign-in page. You can also change it in the table above.</div>', '<button class="btn btn-sm btn-primary" data-act="divModal">' + ic('plus') + 'Add division</button>', 'span-6') +
+      '<form class="panel span-6" data-form="addUser" autocomplete="off" id="addUser"><div class="panel-h"><h2>' + ic('plus') + 'Add staff</h2></div><div class="panel-b stack">' +
+        '<div class="field"><label for="an">Full name</label><input class="input" id="an" name="name" required></div>' +
+        '<div class="two"><div class="field"><label for="au">Username</label><input class="input" id="au" name="username" autocapitalize="none" spellcheck="false" placeholder="e.g. jdelacruz" required></div><div class="field"><label for="ap">Starting PIN</label><input class="input pin" id="ap" name="pin" inputmode="numeric" maxlength="6" placeholder="4–6 digits" required></div></div>' +
+        '<div class="two"><div class="field"><label for="ad">Division</label>' + divSelect('ad', '', 'Division', false, true) + '</div><div class="field"><label for="ar">Role</label><select class="input" id="ar" name="role"><option value="employee">Employee</option><option value="admin">Admin</option></select></div></div>' +
+        '<span class="hint">Give the PIN to the employee in person. They can change it after signing in.</span><p class="error" id="err" role="alert"></p><div><button class="btn btn-primary" type="submit">' + ic('plus') + 'Add staff</button></div></div></form></div>' };
+}
+
+/* ----- settings: rules, holidays, backup ----- */
+function viewSettings(){
+  var yr = S.holYear || today().slice(0,4);
+  var years = {}; S.holidays.forEach(function(h){ years[h.date.slice(0,4)] = 1; }); years[today().slice(0,4)] = 1; years[String(+today().slice(0,4) + 1)] = 1;
+  var hol = S.holidays.filter(function(h){ return h.date.slice(0,4) === yr; });
+  return { eyebrow: 'Admin', title: 'Settings', sub: 'Office rules, holidays, reports and backups.',
+    body: '<div class="grid">' +
+      '<form class="panel span-6" data-form="settings"><div class="panel-h"><h2>' + ic('shield') + 'Office rules</h2></div><div class="panel-b stack">' +
+        '<div class="field"><label for="sw">Regular workdays a month</label><input class="input num" id="sw" name="workdays" type="number" min="15" max="26" step="1" value="' + S.settings.workdays + '" required><span class="hint">Shown to staff as the schedule. Days worked beyond it are offsets.</span></div>' +
+        '<div class="field"><label for="sc">Carry-over cap (days)</label><input class="input num" id="sc" name="carryCap" type="number" min="0" max="365" step="0.5" value="' + S.settings.carryCap + '" required><span class="hint">0 means no limit. With a cap, anything above it is forfeited at the start of each month. This applies to everyone right away, so tell staff first.</span></div>' +
+        '<p class="error" id="err" role="alert"></p><div><button class="btn btn-primary" type="submit">Save rules</button></div></div></form>' +
+      panel('Backup and export', 'drive', '<div class="panel-b stack">' +
+        '<div><b>Save a copy to Google Drive</b><p class="hint" style="margin:4px 0 8px">Makes a full copy of the Sheet in the admin’s Drive, PIN hashes included. Do this before big changes or at year-end.</p><button class="btn btn-ghost" data-act="backupDrive">' + ic('drive') + 'Save copy to Drive</button></div>' +
+        '<div><b>Download a backup file</b><p class="hint" style="margin:4px 0 8px">Everything except PINs, as one JSON file, plus all entries as CSV for Excel.</p><div class="row-btns"><button class="btn btn-ghost" data-act="exportJson">' + ic('download') + 'Backup (.json)</button><button class="btn btn-ghost" data-act="exportAllCsv">' + ic('download') + 'All entries (.csv)</button></div></div>' +
+        '<div><b>Monthly report</b><p class="hint" style="margin:4px 0 8px">Print or download per division from the Monthly page.</p><button class="btn btn-ghost" data-go="monthly">' + ic('month') + 'Open monthly report</button></div></div>', '', 'span-6') +
+      panel('Holidays', 'flag', '<div class="table-wrap"><table><thead><tr><th>Date</th><th>Holiday</th><th>Kind</th><th></th></tr></thead><tbody>' +
+          (hol.length ? hol.map(function(h){ return '<tr><td class="num">' + fDate(h.date, { weekday:'short', month:'short', day:'numeric' }) + '</td><td><b>' + esc(h.name) + '</b></td><td><span class="pill hol">' + esc(h.kind) + '</span></td><td class="r"><button class="icon-btn" data-act="delHoliday" data-date="' + h.date + '" aria-label="Delete ' + esc(h.name) + '">' + ic('trash') + '</button></td></tr>'; }).join('') : '<tr><td colspan="4" class="hint">No holidays for ' + yr + ' yet. Add them below when the Palace releases the list.</td></tr>') +
+        '</tbody></table></div><form class="panel-b" data-form="holiday" style="border-top:1px solid var(--line)"><div class="filters" style="align-items:flex-end">' +
+          '<div class="field"><label for="hd">Date</label><input class="input" id="hd" name="date" type="date" required></div><div class="field" style="flex:1;min-width:180px"><label for="hn">Name</label><input class="input" id="hn" name="name" maxlength="80" placeholder="e.g. Eid’l Fitr, Bantayog Festival" required></div>' +
+          '<div class="field"><label for="hk">Kind</label><select class="input" id="hk" name="kind"><option>Regular</option><option>Special</option><option>Local</option></select></div><button class="btn btn-primary" type="submit">' + ic('plus') + 'Add</button></div><p class="error" id="herr" role="alert"></p>' +
+          '<p class="hint" style="margin:0">Eid’l Fitr and Eid’l Adha are proclaimed separately each year. Add them when announced, plus any provincial holidays.</p></form>',
+        '<select class="input" id="holYear" aria-label="Year">' + Object.keys(years).sort().map(function(x){ return '<option' + (x === yr ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select>', 'span-12') + '</div>' };
+}
+
+/* ---------- sheets (modals) ---------- */
+var M = {}, lastFocus = null;
+function modal(title, body, foot, form){
+  if (!document.querySelector('#modal .scrim')) lastFocus = document.activeElement;
+  var tag = form ? 'form data-form="' + form + '"' : 'div';
+  document.getElementById('modal').innerHTML = '<div class="scrim" data-act="closeScrim"><' + tag + ' class="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="panel-h"><h2 id="mt">' + title + '</h2><button type="button" class="icon-btn" data-act="close" aria-label="Close">' + ic('x') + '</button></div>' +
+    '<div class="panel-b">' + body + '<p class="error" id="merr" role="alert"></p></div>' + (foot ? '<div class="modal-f">' + foot + '</div>' : '') + '</' + (form ? 'form' : 'div') + '></div>';
+  document.body.classList.add('locked');
+  var f = document.querySelector('#modal input:not([type=hidden]):not([type=file]):not([type=radio]):not([type=checkbox]), #modal select, #modal textarea');
+  (form && f ? f : document.querySelector('#modal [data-act=close]')).focus();
+}
+function closeModal(){
+  var open = !!document.querySelector('#modal .scrim');
+  document.getElementById('modal').innerHTML = ''; document.body.classList.remove('locked'); M = {};
+  if (open && lastFocus && document.body.contains(lastFocus)) lastFocus.focus();
+  lastFocus = null;
+}
+function entryModal(id){
+  var e = S.entries.filter(function(x){ return x.id === id; })[0]; if (!e) return;
+  var use = e.type === 'USE', adm = isAdmin(), u = userOf(e.username), pend = e.status === 'Pending';
+  function f(k, v){ return v ? '<div class="kv"><span>' + k + '</span><b>' + v + '</b></div>' : ''; }
+  var body = '<div class="detail-top"><span class="mark ' + (pend ? 'pend' : (use ? 'use' : 'earn')) + '">' + ic(use ? 'plane' : (CAT_ICON[e.category] || 'plus')) + '</span><div><div class="big-amt ' + (use ? 'minus' : 'plus') + '">' + (use ? '−' : '+') + fD(e.days) + '</div><span class="pill ' + e.status + '">' + e.status + '</span></div></div>' +
+    (e.status === 'Rejected' && e.note ? '<div class="warn-note" style="background:var(--red-soft);color:var(--red)">' + ic('x') + '<span>Reason: ' + esc(e.note) + '</span></div>' : '') +
+    '<div class="kvs">' + f('Employee', esc(userName(e.username)) + (u && u.division ? ' · ' + divChip(u.division) : '')) + f(use ? 'Day off' : 'Date', fDate(e.date, { weekday:'long', month:'long', day:'numeric', year:'numeric' }) + (holidayOn(e.date) ? ' · ' + esc(holidayOn(e.date).name) : '')) +
+      (use ? '' : f('Type', esc(e.category) + (e.endTime ? ' · ended ' + fTime(e.endTime) : '')) + f('Event', esc(e.event)) + f('Venue', esc(e.venue)) +
+        f('Counts toward', fMonth(e.date.slice(0,7)) + (e.date.slice(0,7) < curMonth() ? ' (usable now)' : ' (usable on ' + closesOn(e.date.slice(0,7)) + ')'))) +
+      f(use && e.createdBy === e.username ? 'Requested by' : 'Logged by', (e.createdBy === e.username ? 'Self' : esc(userName(e.createdBy))) + ' · ' + when(e.createdAt)) +
+      (e.reviewedBy && e.createdBy !== e.reviewedBy ? f(e.status === 'Rejected' ? 'Rejected by' : 'Approved by', esc(userName(e.reviewedBy)) + ' · ' + when(e.reviewedAt)) : '') + '</div>';
+  var foot = '', mine = e.username === S.me.username;
+  if (adm || (mine && pend)) foot += '<button type="button" class="btn btn-danger" data-act="del" data-id="' + e.id + '" style="margin-right:auto">' + ic('trash') + 'Remove</button>';
+  if (pend && (adm || mine)) foot += '<button type="button" class="btn btn-ghost" data-act="editEntry" data-id="' + e.id + '">' + ic('edit') + 'Edit</button>';
+  if (pend && canReview(e)) foot += '<button type="button" class="btn btn-ghost" data-act="rejectModal" data-id="' + e.id + '">Reject</button><button type="button" class="btn btn-primary" data-act="review" data-id="' + e.id + '" data-d="Confirmed">' + ic('check') + (use ? 'Approve' : 'Confirm') + '</button>';
+  else if (pend && adm) foot += '<span class="hint" style="align-self:center">Another admin needs to review your own entry.</span>';
+  else foot += '<button type="button" class="btn btn-ghost" data-act="close">Close</button>';
+  modal(use ? (pend ? 'Day-off request' : 'Day off') : esc(e.event || 'Offset'), body, foot);
+}
+function editModal(id){
+  var e = S.entries.filter(function(x){ return x.id === id; })[0]; if (!e) return;
+  M = { id: id };
+  if (e.type === 'EARN') modal('Edit offset', '<div class="stack" id="editEarn">' + earnFields(e, false) + '</div>', '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Save changes</button>', 'editEntry');
+  else modal('Edit day-off request', daysFields(e.date, e.days), '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Save changes</button>', 'editEntry');
+  checkEarnForm(document.getElementById('modal'));
+}
+function daysFields(date, days){
+  return '<div class="two"><div class="field"><label for="mdt">First day off</label><input class="input" id="mdt" name="date" type="date" value="' + (date || today()) + '" required></div>' +
+    '<div class="field"><label for="md">Days</label><input class="input num" id="md" name="days" type="number" min="0.5" max="30" step="0.5" value="' + (days || 1) + '" required>' +
+    '<div class="chips"><button type="button" class="chip" data-d="0.5">½ day</button><button type="button" class="chip" data-d="1">1 day</button><button type="button" class="chip" data-d="2">2 days</button></div></div></div>';
+}
+function requestModal(date){
+  var st = stats(S.me.username);
+  modal('Request a day off', '<div class="mini-tiles"><div><span>Available</span><b>' + fD(st.avail) + '</b></div><div><span>Free to request</span><b>' + fD(Math.max(st.free, 0)) + '</b></div></div>' + daysFields(date) +
+    '<span class="hint">' + (isAdmin() && otherAdmins() ? 'Another admin approves your request.' : isAdmin() ? 'You are the only admin, so this is approved right away.' : 'An admin approves it, then the days are deducted.') + '</span>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit"' + (st.free > 0 ? '' : ' disabled') + '>' + ic('plane') + 'Send request</button>', 'requestUse');
+}
+function useModal(u, date){
+  var staff = S.users.filter(function(x){ return x.active && !(x.username === S.me.username && otherAdmins()); });
+  if (!staff.length) return toast('No staff to record for.');
+  u = u && staff.some(function(x){ return x.username === u; }) ? u : staff[0].username;
+  modal('Record offset use', '<div class="field"><label for="mu">Employee</label><select class="input" id="mu" name="username">' + staff.map(function(x){ return '<option value="' + esc(x.username) + '"' + (x.username === u ? ' selected' : '') + '>' + esc(x.name) + ' · ' + fD(stats(x.username).avail) + ' available</option>'; }).join('') + '</select></div>' +
+    daysFields(date) + '<span class="hint">For days off agreed in person. Staff can also send requests from their own accounts.</span>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Record use</button>', 'recordUse');
+}
+function rejectModal(id){
+  var e = S.entries.filter(function(x){ return x.id === id; })[0]; if (!e) return;
+  M = { id: id };
+  modal('Reject this ' + (e.type === 'USE' ? 'request' : 'offset') + '?', '<p style="margin:0"><b>' + esc(userName(e.username)) + '</b> · ' + (e.type === 'USE' ? 'Day off' : esc(e.event)) + ' · ' + fDate(e.date) + ' · ' + fD(e.days) + '</p>' +
+    '<div class="field"><label for="rn">Reason</label><input class="input" id="rn" name="note" maxlength="200" placeholder="e.g. Covered by travel order, wrong date" required><span class="hint">The employee sees this.</span></div>' +
+    '<div class="chips">' + ['Covered by travel order','Wrong date','Already logged','Not past office hours','Conflicts with schedule'].map(function(r){ return '<button type="button" class="chip" data-reason="' + r + '">' + r + '</button>'; }).join('') + '</div>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-danger" type="submit">Reject</button>', 'reject');
+}
+function personModal(username){
+  var u = userOf(username); if (!u) return;
+  var st = stats(username), recent = sorted(S.entries.filter(function(e){ return e.username === username; })).slice(0, 5), self = username === S.me.username;
+  modal(esc(u.name), '<div class="detail-top">' + (divOf(u.division) ? divBadge(divOf(u.division), 44) : '<span class="avatar">' + esc(initials(u.name)) + '</span>') + '<div><div class="hint">@' + esc(u.username) + ' · <span class="cap">' + esc(u.role) + '</span>' + (u.active ? '' : ' · Inactive') + '</div>' + divChip(u.division) + '</div></div>' +
+    '<div class="mini-tiles"><div><span>Available</span><b>' + fD(st.avail) + '</b></div><div><span>' + mShort(curMonth()) + ' so far</span><b>+' + fD(st.month) + '</b></div><div><span>Waiting for review</span><b>' + fD(st.pending + st.reqDays) + '</b></div><div><span>Used this year</span><b>' + fD(st.usedY) + '</b></div></div>' +
+    (isAdmin() ? '<div class="label">Account</div><div class="acct"><button type="button" class="btn btn-sm btn-ghost" data-act="pinModal" data-u="' + esc(username) + '">' + ic('key') + 'Reset PIN</button>' +
+      (self ? '<span class="hint">Another admin manages your own role and status.</span>' :
+        '<button type="button" class="btn btn-sm btn-ghost" data-act="setRole" data-u="' + esc(username) + '" data-r="' + (u.role === 'admin' ? 'employee' : 'admin') + '">' + ic('shield') + (u.role === 'admin' ? 'Make employee' : 'Make admin') + '</button>' +
+        '<button type="button" class="btn btn-sm btn-ghost" data-act="toggleActive" data-u="' + esc(username) + '" data-a="' + (u.active ? '0' : '1') + '">' + (u.active ? 'Deactivate' : 'Activate') + '</button>' +
+        '<button type="button" class="btn btn-sm btn-danger" data-act="removeUser" data-u="' + esc(username) + '">' + ic('trash') + 'Remove ' + (u.role === 'admin' ? 'admin' : 'staff') + '</button>') + '</div>' +
+      (!self && st.avail > 0 ? '<div class="warn-note">' + ic('clock') + '<span>' + esc(u.name.split(' ')[0]) + ' still has ' + fD(st.avail) + ' available. Settle or record it before removing the account.</span></div>' : '') +
+      '<p class="hint" style="margin:0">Deactivate blocks sign-in but keeps them on the lists. Remove deletes the account; their past entries stay in the records and the activity log.</p>' : '') +
+    (recent.length ? '<div class="label" style="display:flex;justify-content:space-between;align-items:center">Recent<button type="button" class="btn btn-sm btn-ghost" data-act="personRecords" data-u="' + esc(username) + '">' + ic('list') + 'All records</button></div><ul class="list boxed">' + recent.map(function(e){ return entryRow(e); }).join('') + '</ul>' : '<p class="hint">No offsets yet.</p>'),
+    isAdmin() ? '<button type="button" class="btn btn-ghost" data-act="personAdd" data-u="' + esc(username) + '">' + ic('plus') + 'Add offset</button>' +
+      (self ? '<button type="button" class="btn btn-primary" data-act="requestModal">' + ic('plane') + 'Request day off</button>' : '<button type="button" class="btn btn-primary" data-act="useModal" data-u="' + esc(username) + '"' + (st.avail > 0 ? '' : ' disabled') + '>' + ic('minus') + 'Record use</button>') : '');
+}
+function customizeModal(){
+  var role = isAdmin() ? 'admin' : 'employee', P = widgetPrefs();
+  M = { order: P.order.slice(), hidden: P.hidden.slice() };
+  function draw(){
+    document.getElementById('wl').innerHTML = M.order.map(function(id, i){ var w = widgetDef(id);
+      return '<div class="w"><label><input type="checkbox" data-w="' + id + '"' + (M.hidden.indexOf(id) < 0 ? ' checked' : '') + '>' + esc(w[1]) + '</label><button type="button" class="icon-btn" data-act="wUp" data-i="' + i + '" aria-label="Move ' + esc(w[1]) + ' up"' + (i ? '' : ' disabled') + '>' + ic('up') + '</button><button type="button" class="icon-btn" data-act="wDown" data-i="' + i + '" aria-label="Move ' + esc(w[1]) + ' down"' + (i < M.order.length - 1 ? '' : ' disabled') + '>' + ic('down') + '</button></div>'; }).join('');
+  }
+  M.draw = draw; M.role = role;
+  modal('Customize your dashboard', '<p class="hint" style="margin:0">Choose what shows on your dashboard and in what order. Saved on this device.</p><div class="wlist" id="wl"></div>',
+    '<button type="button" class="btn btn-ghost" data-act="wReset" style="margin-right:auto">Reset</button><button type="button" class="btn btn-primary" data-act="wSave">Save layout</button>');
+  draw();
+}
+function divModal(id){
+  var d = divOf(id) || { id:'', name:'', short:'', color:'#16803A', icon:'star', logo:'' };
+  M = { id: d.id, color: d.color, icon: d.icon, logo: d.logo };
+  modal(d.id ? 'Edit division' : 'Add division',
+    '<div class="logo-row"><span id="dprev">' + divBadge(d, 56) + '</span><div class="hint" style="flex:1;min-width:160px">This is how the division appears on the sign-in page and staff lists.</div></div>' +
+    '<div class="field"><label for="dn">Division name</label><input class="input" id="dn" name="name" value="' + esc(d.name) + '" maxlength="80" required></div>' +
+    '<div class="field"><label for="ds">Short label</label><input class="input" id="ds" name="short" value="' + esc(d.short) + '" maxlength="30" placeholder="e.g. Bantayog"><span class="hint">Used on the sign-in page, in tables and chips.</span></div>' +
+    '<div class="field"><span class="label">Color</span><div class="swatches">' + SWATCHES.map(function(c){ return '<button type="button" class="sw" style="--dc:' + c + '" data-act="divColor" data-c="' + c + '" aria-label="Color ' + c + '" aria-pressed="' + (c.toUpperCase() === String(d.color).toUpperCase()) + '"></button>'; }).join('') + '<input type="color" id="dcol" value="' + esc(d.color) + '" aria-label="Custom color"></div></div>' +
+    '<div class="field"><span class="label">Icon</span><div class="iconpick">' + DIV_ICONS.map(function(n){ return '<button type="button" data-act="divIcon" data-n="' + n + '" aria-label="' + n + ' icon" aria-pressed="' + (n === d.icon) + '">' + ic(n) + '</button>'; }).join('') + '</div></div>' +
+    '<div class="field"><span class="label">Logo (optional)</span><div class="logo-row"><label class="btn btn-sm btn-ghost" for="dlogo">' + ic('upload') + 'Upload logo</label><input type="file" id="dlogo" accept="image/png,image/jpeg,image/webp" class="sr"><button type="button" class="btn btn-sm btn-ghost" data-act="divNoLogo" id="dnolog"' + (d.logo ? '' : ' hidden') + '>Remove logo</button></div><span class="hint">A square PNG or JPG works best. It replaces the icon.</span></div>',
+    (d.id ? '<button type="button" class="btn btn-danger" data-act="divDelete" style="margin-right:auto">' + ic('trash') + 'Delete</button>' : '') + '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Save division</button>', 'saveDivision');
+}
+function divPreview(){
+  var p = document.getElementById('dprev'); if (!p) return;
+  p.innerHTML = divBadge({ color: M.color, icon: M.icon, logo: M.logo }, 56);
+  document.querySelectorAll('#modal .sw').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.c.toUpperCase() === M.color.toUpperCase())); });
+  document.querySelectorAll('#modal .iconpick button').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.n === M.icon)); });
+  var nl = document.getElementById('dnolog'); if (nl) nl.hidden = !M.logo;
+}
+function readLogo(file){
+  return new Promise(function(resolve, reject){
+    var r = new FileReader();
+    r.onload = function(){ var img = new Image();
+      img.onload = function(){ var c = document.createElement('canvas'), s = 128; c.width = s; c.height = s;
+        var x = c.getContext('2d'), k = Math.max(s / img.width, s / img.height), w = img.width * k, h = img.height * k; x.drawImage(img, (s - w) / 2, (s - h) / 2, w, h);
+        var out = c.toDataURL('image/png'); if (out.length > 45000) out = c.toDataURL('image/webp', 0.85); if (out.indexOf('data:image/webp') !== 0 && out.length > 45000) out = c.toDataURL('image/jpeg', 0.82);
+        out.length > 45000 ? reject(new Error('That image is too detailed. Try a simpler logo.')) : resolve(out); };
+      img.onerror = function(){ reject(new Error('That file is not an image we can read.')); }; img.src = r.result; };
+    r.readAsDataURL(file);
+  });
+}
+function sure(t, label){ if (t.dataset.sure === '1') return true; t.dataset.sure = '1'; t.innerHTML = ic('trash') + label; return false; }
+
+/* ---------- events ---------- */
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-go],[data-act],[data-day],[data-d],[data-rec],[data-entry],[data-person],[data-reason],[data-calday],[data-div]');
+  if (!t) return;
+  if (t.dataset.go){ closeModal(); S.view = t.dataset.go; S.selDay = null; render(); window.scrollTo(0,0); return; }
+  if (t.dataset.rec){ var kv = t.dataset.rec.split(':'), o = {}; o[kv[0]] = kv[1]; goRecords(o); return; }
+  if (t.dataset.calday){ var cd = pd(t.dataset.calday); S.cal = { y: cd.getFullYear(), m: cd.getMonth() }; S.selDay = t.dataset.calday; S.view = 'calendar'; render(); window.scrollTo(0,0); return; }
+  if (t.dataset.div && !t.dataset.act){ S.dashDiv = t.dataset.div; render(); return; }
+  if (t.dataset.day){ S.selDay = S.selDay === t.dataset.day ? null : t.dataset.day; render(); var dp = document.getElementById('daypanel'); if (dp && S.selDay) dp.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); return; }
+  if (t.dataset.reason){ var rn = document.getElementById('rn'); if (rn) rn.value = t.dataset.reason; return; }
+  if (t.dataset.d && !t.dataset.act){ var md = document.getElementById('md'); if (md) md.value = t.dataset.d; return; }
+  if (t.dataset.entry && !t.dataset.act) return entryModal(t.dataset.entry);
+  if (t.dataset.person && !t.dataset.act) return personModal(t.dataset.person);
+  var a = t.dataset.act;
+  if (a === 'closeScrim'){ if (ev.target === t) closeModal(); return; }
+  if (a === 'close') return closeModal();
+  if (a === 'showPin'){ var pi = document.getElementById('lp'), on = pi.type === 'password'; pi.type = on ? 'text' : 'password'; t.setAttribute('aria-pressed', String(on)); t.setAttribute('aria-label', on ? 'Hide PIN' : 'Show PIN'); return; }
+  if (a === 'refresh'){ busy(t, refresh().then(function(){ toast('Up to date'); })); return; }
+  if (a === 'logout'){ call('logout').catch(function(){}); clearSession(); S.token = null; S.me = null; S.view = 'dashboard'; render(); return; }
+  if (a === 'moreNav'){ var rest = navItems().slice(4); return modal('More', '<div class="wlist">' + rest.map(function(n){ return '<button type="button" class="btn btn-ghost btn-lg" style="justify-content:flex-start" data-go="' + n[0] + '">' + ic(n[1]) + n[2] + '</button>'; }).join('') + '</div>'); }
+  if (a === 'calPrev' || a === 'calNext'){ var n = new Date(S.cal.y, S.cal.m + (a === 'calNext' ? 1 : -1), 1); S.cal = { y: n.getFullYear(), m: n.getMonth() }; S.selDay = null; render(); return; }
+  if (a === 'calToday'){ S.cal = null; S.selDay = today(); render(); return; }
+  if (a === 'monPrev' || a === 'monNext'){ S.mon = shiftMonth(S.mon || curMonth(), a === 'monNext' ? 1 : -1); if (S.mon > curMonth()) S.mon = curMonth(); render(); return; }
+  if (a === 'recTab'){ S.recTab = t.dataset.t; render(); return; }
+  if (a === 'openActivity'){ S.recTab = 'activity'; S.view = 'records'; render(); window.scrollTo(0,0); return; }
+  if (a === 'clearFilters'){ goRecords({}); return; }
+  if (a === 'logOn'){ S.prefill = {}; S.view = 'log'; render(); var fd = document.getElementById('fd'); if (fd){ fd.value = t.dataset.date; checkEarnForm(document, true); } window.scrollTo(0,0); return; }
+  if (a === 'focusAdd'){ var an = document.getElementById('an'); if (an){ an.scrollIntoView({ behavior: 'smooth', block: 'center' }); an.focus({ preventScroll: true }); } return; }
+  if (a === 'print'){ window.print(); return; }
+  if (a === 'exportMonth'){
+    var mm = S.mon || curMonth();
+    if (isAdmin()) download('offsets-' + mm + (S.dashDiv !== 'all' ? '-' + S.dashDiv : '') + '.csv', csv([['Employee','Username','Division','Carried over','Forfeited','Earned','Used','Balance on ' + nextMonthStart(mm),'Pending']].concat(monthRows(mm).map(function(r){ var d = divOf(r.u.division); return [r.u.name, r.u.username, d ? d.name : '', r.s.open, r.s.forfeit, r.s.earned, r.s.used, r.s.close, r.s.pending]; }))), 'text/csv');
+    else download('my-offsets-' + mm + '.csv', entriesCsv(S.entries.filter(function(e){ return e.date.slice(0,7) === mm; })), 'text/csv');
+    return toast('Report downloaded');
+  }
+  if (a === 'exportRecords'){ download('offset-records-' + today() + '.csv', entriesCsv(filteredRecords()), 'text/csv'); return toast('Records downloaded'); }
+  if (a === 'exportActivity'){ download('activity-log-' + today() + '.csv', csv([['When','By','Action','About','Details']].concat(S.activity.map(function(x){ return [x.at, userName(x.actor), x.action, userOf(x.target) ? userName(x.target) : x.target, x.details]; }))), 'text/csv'); return toast('Activity log downloaded'); }
+  if (a === 'exportAllCsv'){ busy(t, call('exportAll').then(function(d){ download('all-offset-entries-' + today() + '.csv', entriesCsv(d.entries), 'text/csv'); toast('All entries downloaded'); })); return; }
+  if (a === 'exportJson'){ busy(t, call('exportAll').then(function(d){ download('pio-offsets-backup-' + today() + '.json', JSON.stringify(d, null, 2), 'application/json'); toast('Backup downloaded'); })); return; }
+  if (a === 'backupDrive'){ busy(t, call('backupToDrive').then(function(r){ modal('Backup saved', '<p style="margin:0">A copy named <b>' + esc(r.name) + '</b> was saved to the admin’s Google Drive.</p><a class="btn btn-ghost" href="' + esc(r.url) + '" target="_blank" rel="noopener">' + ic('drive') + 'Open in Google Drive</a>', '<button type="button" class="btn btn-primary" data-act="close">Done</button>'); render(); })); return; }
+  if (a === 'customize') return customizeModal();
+  if (a === 'wUp' || a === 'wDown'){ var i = +t.dataset.i, j = a === 'wUp' ? i - 1 : i + 1, tmp = M.order[i]; M.order[i] = M.order[j]; M.order[j] = tmp; M.draw(); return; }
+  if (a === 'wReset'){ lSet('pio_w_' + M.role, null); closeModal(); render(); toast('Dashboard reset'); return; }
+  if (a === 'wSave'){ M.hidden = []; document.querySelectorAll('#wl input[data-w]').forEach(function(x){ if (!x.checked) M.hidden.push(x.dataset.w); }); lSet('pio_w_' + M.role, JSON.stringify({ order: M.order, hidden: M.hidden })); closeModal(); render(); toast('Layout saved'); return; }
+  if (a === 'useModal') return useModal(t.dataset.u, t.dataset.date);
+  if (a === 'requestModal') return requestModal(t.dataset.date);
+  if (a === 'rejectModal') return rejectModal(t.dataset.id);
+  if (a === 'editEntry') return editModal(t.dataset.id);
+  if (a === 'personRecords'){ closeModal(); goRecords({ user: t.dataset.u }); return; }
+  if (a === 'personAdd'){ closeModal(); S.prefill = { username: t.dataset.u }; S.view = 'log'; render(); window.scrollTo(0,0); return; }
+  if (a === 'divModal') return divModal(t.dataset.id);
+  if (a === 'divColor'){ M.color = t.dataset.c; document.getElementById('dcol').value = M.color; divPreview(); return; }
+  if (a === 'divIcon'){ M.icon = t.dataset.n; divPreview(); return; }
+  if (a === 'divNoLogo'){ M.logo = ''; divPreview(); return; }
+  if (a === 'divDelete'){ if (!sure(t, 'Tap again to delete')) return; busy(t, act('deleteDivision', { id: M.id }, 'Division deleted').then(closeModal), 'merr'); return; }
+  if (a === 'delHoliday'){ if (t.dataset.sure !== '1'){ t.dataset.sure = '1'; t.style.color = 'var(--red)'; t.setAttribute('aria-label', 'Tap again to delete'); toast('Tap again to delete'); return; } busy(t, act('deleteHoliday', { date: t.dataset.date }, 'Holiday deleted')); return; }
+  if (a === 'changePin') return modal('Change your PIN', '<div class="field"><label for="op">Current PIN</label><input class="input pin" id="op" name="oldPin" type="password" inputmode="numeric" maxlength="6" required></div><div class="field"><label for="np">New PIN</label><input class="input pin" id="np" name="newPin" type="password" inputmode="numeric" maxlength="6" required><span class="hint">4 to 6 digits. Other devices will be signed out.</span></div>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Save PIN</button>', 'changePin');
+  if (a === 'pinModal') return modal('Reset PIN for ' + esc(userName(t.dataset.u)), '<input type="hidden" name="username" value="' + esc(t.dataset.u) + '"><div class="field"><label for="rp">New PIN</label><input class="input pin" id="rp" name="pin" inputmode="numeric" maxlength="6" required><span class="hint">They will be signed out on all devices. Tell them the new PIN in person.</span></div>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Reset PIN</button>', 'resetPin');
+  if (a === 'del'){ if (!sure(t, 'Tap again to remove')) return; busy(t, act('deleteEntry', { id: t.dataset.id }, 'Entry removed').then(closeModal), 'merr'); return; }
+  if (a === 'review'){ var d = t.dataset.d; busy(t, act('review', { id: t.dataset.id, decision: d }, d === 'Confirmed' ? 'Approved' : 'Rejected').then(closeModal), document.querySelector('#modal .scrim') ? 'merr' : null); return; }
+  if (a === 'confirmAll'){ if (t.dataset.sure !== '1'){ t.dataset.sure = '1'; t.innerHTML = ic('check') + 'Tap again to approve all'; return; }
+    busy(t, act('reviewMany', { ids: pending(t.dataset.k).filter(canReview).map(function(e){ return e.id; }), decision: 'Confirmed' }, function(n){ return n + ' approved'; })); return; }
+  if (a === 'toggleActive'){ var on2 = t.dataset.a === '1', tu = t.dataset.u; busy(t, act('setActive', { username: tu, active: on2 }, on2 ? 'Account activated' : 'Account deactivated').then(function(){ personModal(tu); }), 'merr'); return; }
+  if (a === 'setRole'){ var tu2 = t.dataset.u, r = t.dataset.r; busy(t, act('setRole', { username: tu2, role: r }, firstName(tu2) + ' is now ' + (r === 'admin' ? 'an admin' : 'an employee')).then(function(){ personModal(tu2); }), 'merr'); return; }
+  if (a === 'removeUser'){ if (!sure(t, 'Tap again to remove ' + esc(firstName(t.dataset.u)))) return; var nm2 = userName(t.dataset.u); busy(t, act('removeUser', { username: t.dataset.u }, nm2 + ' was removed').then(closeModal), 'merr'); return; }
+});
+document.addEventListener('keydown', function(ev){
+  if (ev.key === 'Escape' && document.querySelector('#modal .scrim')) closeModal();
+  if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches && ev.target.matches('.tap[tabindex]')){ ev.preventDefault(); ev.target.click(); }
+  if (ev.key === 'Tab' && document.querySelector('#modal .scrim')){
+    var f = Array.prototype.filter.call(document.querySelectorAll('#modal button, #modal a[href], #modal input:not([type=hidden]):not(.sr), #modal select, #modal label[for=dlogo], #modal [tabindex]'), function(x){ return !x.disabled && x.offsetParent !== null; });
+    if (f.length){ var first = f[0], last = f[f.length - 1];
+      if (ev.shiftKey && document.activeElement === first){ ev.preventDefault(); last.focus(); } else if (!ev.shiftKey && document.activeElement === last){ ev.preventDefault(); first.focus(); } }
+  }
+});
+document.addEventListener('change', function(ev){
+  var el = ev.target, id = el.id;
+  if (id === 'calUser'){ S.calUser = el.value; render(); }
+  if (id === 'dashDiv'){ S.dashDiv = el.value; render(); }
+  if (id === 'holYear'){ S.holYear = el.value; render(); }
+  if (id === 'rfUser' || id === 'rfType' || id === 'rfStatus' || id === 'rfDiv'){ S.rf[{ rfUser:'user', rfType:'type', rfStatus:'status', rfDiv:'div' }[id]] = el.value; render(); }
+  if (el.name === 'category' || id === 'fd' || id === 'ft'){ checkEarnForm(el.closest('form') || document, id === 'fd'); }
+  if (id === 'dcol'){ M.color = el.value.toUpperCase(); divPreview(); }
+  if (id === 'dlogo' && el.files[0]){ readLogo(el.files[0]).then(function(u){ M.logo = u; divPreview(); }).catch(function(e){ document.getElementById('merr').textContent = e.message; }); }
+  if (el.dataset.setdiv){ el.disabled = true; act('setDivision', { username: el.dataset.setdiv, division: el.value }, 'Division updated').catch(function(e){ toast(e.message); el.disabled = false; }); }
+});
+document.addEventListener('input', function(ev){ if (ev.target.id === 'ft') checkEarnForm(ev.target.closest('form') || document); });
+document.addEventListener('click', function(ev){ if (ev.target.closest('[data-setdiv],#calUser,#dashDiv')) ev.stopPropagation(); }, true);
+
+function busy(btn, p, errId){
+  btn.disabled = true; btn.classList.add('is-busy');
+  return p.catch(function(e){ var el = errId && document.getElementById(errId); if (el) el.textContent = e.message; else toast(e.message); })
+    .then(function(){ if (document.body.contains(btn)){ btn.disabled = false; btn.classList.remove('is-busy'); } });
+}
+document.addEventListener('submit', function(ev){
+  var f = ev.target.closest('form[data-form]'); if (!f) return;
+  ev.preventDefault();
+  var d = {}; new FormData(f).forEach(function(v, k){ if (typeof v === 'string') d[k] = v; });
+  var kind = f.dataset.form, btn = f.querySelector('[type=submit]'), inModal = !!f.closest('#modal'), errId = kind === 'holiday' ? 'herr' : (inModal ? 'merr' : 'err');
+  var err = document.getElementById(errId); if (err) err.textContent = '';
+  var p;
+  if (kind === 'login' || kind === 'setup'){
+    if (kind === 'setup' && d.pin !== d.pin2){ err.textContent = 'The two PINs do not match.'; return; }
+    var remember = !!d.remember; d.remember = remember;
+    if (d.division) lSet('pio_div', d.division);
+    p = call(kind, d).then(function(r){ S.token = r.token; saveSession(r.token, remember); S.view = 'dashboard'; if (!S.me) return refresh(); if (remember) lSet('pio_cache', JSON.stringify({ me:S.me, users:S.users, entries:S.entries, divisions:S.divisions, holidays:S.holidays, settings:S.settings, activity:S.activity })); render(); });
+  }
+  else if (kind === 'earn'){ d.noTravelOrder = !!d.noTravelOrder; var selfLog = !isAdmin() || !d.username || d.username === S.me.username;
+    p = act('logEarn', d, isAdmin() && !(selfLog && otherAdmins()) ? 'Offset saved and confirmed' : 'Sent for confirmation').then(function(){ S.view = 'dashboard'; render(); window.scrollTo(0,0); }); }
+  else if (kind === 'editEntry'){ d.id = M.id; d.noTravelOrder = d.noTravelOrder !== undefined || !f.querySelector('input[name=noTravelOrder]'); p = act('editEntry', d, 'Changes saved').then(closeModal); }
+  else if (kind === 'requestUse') p = act('requestUse', d, isAdmin() && !otherAdmins() ? 'Day off recorded' : 'Request sent').then(closeModal);
+  else if (kind === 'recordUse') p = act('recordUse', d, 'Offset use recorded').then(closeModal);
+  else if (kind === 'reject') p = act('review', { id: M.id, decision: 'Rejected', note: d.note }, 'Rejected').then(closeModal);
+  else if (kind === 'addUser') p = act('addUser', d, d.name + ' can now sign in');
+  else if (kind === 'resetPin') p = act('resetPin', d, 'PIN reset').then(closeModal);
+  else if (kind === 'changePin') p = act('changePin', d, 'Your PIN was changed').then(closeModal);
+  else if (kind === 'settings') p = act('saveSettings', d, 'Rules saved');
+  else if (kind === 'holiday') p = act('saveHoliday', d, 'Holiday saved');
+  else if (kind === 'saveDivision'){ d.id = M.id; d.color = M.color; d.icon = M.icon; d.logo = M.logo || ''; p = act('saveDivision', d, 'Division saved').then(closeModal); }
+  if (p) busy(btn, p, errId);
+});
+document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible' && S.me && !document.querySelector('#modal .scrim') && Date.now() - S.loadedAt > 60000) refresh().catch(function(){}); });
+window.addEventListener('afterprint', function(){});
+
+/* ---------- preview backend (used only when config.js has no API URL) ---------- */
+var Mock = (function(){
+  var divisions = [
+    { id:'smpd', name:'Social Media and Production Division', short:'Social Media & Production', color:'#C8202A', icon:'camera', logo:'', order:1 },
+    { id:'bantayog', name:'Bantayog Division', short:'Bantayog', color:'#0B2C6E', icon:'monument', logo:'', order:2 },
+    { id:'asd', name:'Admin and Support Division', short:'Admin & Support', color:'#FFFFFF', icon:'folder', logo:'', order:3 }
+  ];
+  var users = [
+    { username:'admin', name:'Maria Santos', role:'admin', division:'asd', pin:'1234', active:true },
+    { username:'rmendoza', name:'Ramon Mendoza', role:'admin', division:'bantayog', pin:'1234', active:true },
+    { username:'jdelacruz', name:'Juan Dela Cruz', role:'employee', division:'smpd', pin:'1234', active:true },
+    { username:'areyes', name:'Ana Reyes', role:'employee', division:'bantayog', pin:'1234', active:true },
+    { username:'mbautista', name:'Mark Bautista', role:'employee', division:'smpd', pin:'1234', active:true },
+    { username:'cvillanueva', name:'Carlo Villanueva', role:'employee', division:'asd', pin:'1234', active:true },
+    { username:'lgarcia', name:'Liza Garcia', role:'employee', division:'bantayog', pin:'1234', active:false }
+  ];
+  var holidays = [['2026-01-01',"New Year's Day",'Regular'],['2026-02-17','Chinese New Year','Special'],['2026-04-02','Maundy Thursday','Regular'],['2026-04-03','Good Friday','Regular'],['2026-04-04','Black Saturday','Special'],['2026-04-09','Araw ng Kagitingan','Regular'],['2026-05-01','Labor Day','Regular'],['2026-06-12','Independence Day','Regular'],['2026-08-21','Ninoy Aquino Day','Special'],['2026-08-31','National Heroes Day','Regular'],['2026-09-28','Wenceslao Vinzons Day (Camarines Norte)','Local'],['2026-11-01',"All Saints' Day",'Special'],['2026-11-02',"All Souls' Day",'Special'],['2026-11-30','Bonifacio Day','Regular'],['2026-12-08','Immaculate Conception','Special'],['2026-12-24','Christmas Eve','Special'],['2026-12-25','Christmas Day','Regular'],['2026-12-30','Rizal Day','Regular'],['2026-12-31','Last Day of the Year','Special']]
+    .map(function(h){ return { date:h[0], name:h[1], kind:h[2] }; });
+  var settings = { workdays: 22, carryCap: 0 };
+  var entries = [], activity = [], sessions = {}, n = 0;
+  function off(days){ return addDays(today(), -days); }
+  function add(u, type, days, cat, amt, ev, venue, status, end){ var at = new Date(Date.now() - days*864e5).toISOString();
+    entries.push({ id:'e' + (++n), username:u, type:type, date:off(days), category:cat, days:amt, event:ev||'', venue:venue||'', endTime:end||'', status:status, note:'', createdBy: type === 'USE' && status === 'Confirmed' ? 'admin' : u, createdAt:at, reviewedBy: status === 'Pending' ? '' : 'admin', reviewedAt: status === 'Pending' ? '' : at }); }
+  add('jdelacruz','EARN',160,'Weekend',1,'Provincial sports meet','Camarines Norte Sports Complex','Confirmed');
+  add('jdelacruz','EARN',130,'After 5 PM',1,'Bantayog Festival night parade','Daet Town Plaza','Confirmed','01:30');
+  add('areyes','EARN',125,'Holiday',1,'Independence Day rites','Rizal Monument, Daet','Confirmed');
+  add('mbautista','EARN',100,'Weekend',1,'Coastal clean-up','Bagasbas Beach, Daet','Confirmed');
+  add('jdelacruz','USE',90,'Used',1,'','','Confirmed');
+  add('areyes','EARN',72,'Weekend',1,'Medical mission','Brgy. Tulay na Lupa, Labo','Confirmed');
+  add('cvillanueva','EARN',66,'Weekend',1,'Year-end inventory','PIO Supply Room','Confirmed');
+  add('jdelacruz','EARN',41,'Weekend',1,'Barangay assembly coverage','Brgy. Lag-on, Daet','Confirmed');
+  add('jdelacruz','EARN',34,'After 5 PM',0.5,'Provincial Board session','Sangguniang Panlalawigan Hall','Confirmed','21:30');
+  add('jdelacruz','EARN',27,'Weekend',1,'Bayanihan clean-up drive','Bagasbas Beach, Daet','Confirmed');
+  add('areyes','EARN',31,'Weekend',1,'Livelihood caravan','Labo Municipal Gym','Confirmed');
+  add('mbautista','EARN',22,'Weekend',1,'Bantayog Festival street dance','Daet Town Plaza','Confirmed');
+  add('mbautista','EARN',10,'After 5 PM',0.5,"Governor's town hall",'Jose Panganiban Covered Court','Confirmed','22:00');
+  add('admin','EARN',38,'Weekend',1,'Provincial press conference','Capitol Session Hall','Confirmed');
+  add('mbautista','USE',6,'Used',0.5,'','','Confirmed');
+  add('jdelacruz','EARN',4,'After 5 PM',1,'Typhoon advisory livestream','PIO Studio, Capitol','Pending','02:00');
+  add('areyes','EARN',3,'Weekend',1,'Coastal clean-up','Mercedes Fish Port','Pending');
+  add('mbautista','EARN',2,'After 5 PM',0.5,'PDRRMO briefing','PDRRMO Operations Center','Pending','20:30');
+  add('admin','EARN',2,'After 5 PM',0.5,'Media briefing on typhoon response','PDRRMO Operations Center','Pending','21:00');
+  add('jdelacruz','EARN',1,'Holiday',1,'Undas road monitoring','Camambugan Cemetery, Daet','Confirmed');
+  add('areyes','USE',-6,'Used',1,'','','Pending');
+  add('mbautista','USE',-9,'Used',0.5,'','','Confirmed');
+  entries.forEach(function(e){ activity.unshift({ at: e.createdAt, actor: e.createdBy, action: e.type === 'USE' ? (e.status === 'Pending' ? 'Requested a day off' : 'Recorded offset use') : 'Logged an offset', target: e.username, details: (e.event ? e.event + ' · ' : '') + e.date + ' · ' + e.days + ' day(s)' }); });
+  activity.sort(function(a,b){ return a.at < b.at ? 1 : -1; });
+  function pub(u){ return { username:u.username, name:u.name, role:u.role, division:u.division, active:u.active }; }
+  function find(u){ return users.filter(function(x){ return x.username === String(u||'').toLowerCase(); })[0]; }
+  function bal(u){ return ledgerFor(entries, u, settings.carryCap).avail; }
+  function fail(m){ return { ok:false, error:m }; }
+  function copy(x){ return JSON.parse(JSON.stringify(x)); }
+  function others(me){ return users.filter(function(u){ return u.role === 'admin' && u.active && u.username !== me.username; }).length; }
+  function log(me, action, target, details){ activity.unshift({ at: new Date().toISOString(), actor: me.username, action: action, target: target || '', details: details || '' }); }
+  function data(me){ var adm = me.role === 'admin'; return { me:pub(me), users: adm ? users.map(pub) : [pub(me)], divisions:copy(divisions), holidays:copy(holidays), settings:copy(settings), activity: adm ? copy(activity) : [], entries: copy(entries.filter(function(e){ return adm || e.username === me.username; })) }; }
+  function ok(me, d){ return { ok:true, data:d === undefined ? true : d, fresh: data(me) }; }
+  function earn(p){
+    if (!String(p.event||'').trim()) throw 'Event name is required.';
+    if (!String(p.venue||'').trim()) throw 'Venue is required.';
+    if (!p.date || p.date > today()) throw 'You cannot log an offset for a future date.';
+    if (!p.noTravelOrder) throw 'Confirm that this work was not under a travel order.';
+    var days = Number(p.days), end = '';
+    if (p.category === 'After 5 PM'){ end = String(p.endTime||''); if (!/^\d\d:\d\d$/.test(end)) throw 'Enter the time the event ended.'; if (end >= '17:00' && end < '19:00') throw 'Events that end before 7:00 PM are not counted as offset.'; days = (end >= '01:00' && end < '12:00') ? 1 : 0.5; }
+    else if (days !== 0.5 && days !== 1) throw 'Pick ½ day or 1 day.';
+    return { date:p.date, category:p.category, days:days, event:p.event.trim(), venue:p.venue.trim(), endTime:end };
+  }
+  return { api: function(a, p, tok){
+    try {
+    var me = sessions[tok] && find(sessions[tok]);
+    if (a === 'status') return { ok:true, data:{ needsSetup:false, divisions:copy(divisions) } };
+    if (a === 'login'){ var u = find(p.username); if (!u || !u.active || u.pin !== p.pin) return fail('Wrong username or PIN.'); if (p.division && divisions.some(function(d){ return d.id === p.division; })) u.division = p.division; var t = 't' + Math.random(); sessions[t] = u.username; return ok(u, { token:t }); }
+    if (!me) return { ok:false, error:'Your session has ended. Please sign in again.', expired:true };
+    var adm = me.role === 'admin', now = new Date().toISOString();
+    if (a === 'logout'){ delete sessions[tok]; return { ok:true }; }
+    if (a === 'data') return { ok:true, data: data(me) };
+    if (a === 'logEarn'){
+      var who = adm && p.username ? p.username : me.username, f = earn(p);
+      if (entries.some(function(e){ return e.username === who && e.type === 'EARN' && e.date === f.date && e.category === f.category && e.status !== 'Rejected'; })) return fail('An offset for this date and type is already logged.');
+      var auto = adm && (who !== me.username || others(me) === 0);
+      entries.push(Object.assign({ id:'e' + (++n), username:who, type:'EARN', status: auto ? 'Confirmed' : 'Pending', note:'', createdBy:me.username, createdAt:now, reviewedBy: auto ? me.username : '', reviewedAt: auto ? now : '' }, f));
+      log(me, auto ? 'Added a confirmed offset' : 'Logged an offset', who, f.event + ' · ' + f.date + ' · ' + f.days + ' day(s)'); return ok(me);
+    }
+    if (a === 'editEntry'){ var x = entries.filter(function(e){ return e.id === p.id; })[0]; if (!x || x.status !== 'Pending') return fail('Only entries waiting for review can be edited.'); if (!adm && x.username !== me.username) return fail('You can only edit your own entries.');
+      if (x.type === 'EARN') Object.assign(x, earn(p)); else { x.date = p.date; x.days = Number(p.days); } log(me, 'Edited an entry', x.username, x.date); return ok(me); }
+    if (a === 'requestUse'){ var held = entries.filter(function(e){ return e.username === me.username && e.type === 'USE' && e.status === 'Pending'; }).reduce(function(s,e){ return s + e.days; }, 0), free = bal(me.username) - held, dd = Number(p.days);
+      if (!(dd >= 0.5) || dd * 2 !== Math.round(dd * 2)) return fail('Days must be in half-day steps.'); if (dd > free) return fail('You have ' + fD(Math.max(free,0)) + ' available to request.');
+      var au = adm && others(me) === 0; entries.push({ id:'e' + (++n), username:me.username, type:'USE', date:p.date, category:'Used', days:dd, event:'', venue:'', endTime:'', status: au ? 'Confirmed' : 'Pending', note:'', createdBy:me.username, createdAt:now, reviewedBy: au ? me.username : '', reviewedAt: au ? now : '' });
+      log(me, 'Requested a day off', me.username, p.date + ' · ' + dd + ' day(s)'); return ok(me); }
+    if (a === 'deleteEntry'){ var i = entries.findIndex(function(e){ return e.id === p.id; }); if (i < 0) return fail('Entry not found.'); var e = entries[i]; if (!adm && !(e.username === me.username && e.status === 'Pending')) return fail('You can only remove your own pending entries.'); entries.splice(i,1); log(me, 'Removed an entry', e.username, e.date + ' · ' + e.days + ' day(s)'); return ok(me); }
+    if (a === 'changePin'){ if (p.oldPin !== me.pin) return fail('Current PIN is wrong.'); if (!/^\d{4,6}$/.test(p.newPin)) return fail('PIN must be 4 to 6 digits.'); me.pin = p.newPin; log(me, 'Changed own PIN', me.username); return ok(me); }
+    if (!adm) return fail('Only admins can do that.');
+    if (a === 'review' || a === 'reviewMany'){ var ids = a === 'review' ? [p.id] : p.ids, c = 0;
+      if (a === 'review' && entries.some(function(e){ return e.id === p.id && e.username === me.username; }) && others(me)) return fail('Another admin needs to review your own entry.');
+      entries.forEach(function(e){ if (ids.indexOf(e.id) < 0 || e.status !== 'Pending' || (e.username === me.username && others(me))) return; if (e.type === 'USE' && p.decision === 'Confirmed' && e.days > bal(e.username)) return;
+        e.status = p.decision; e.reviewedBy = me.username; e.reviewedAt = now; if (p.decision === 'Rejected') e.note = p.note || ''; c++; log(me, (p.decision === 'Confirmed' ? 'Approved ' : 'Rejected ') + (e.type === 'USE' ? 'a day-off request' : 'an offset'), e.username, e.date + (p.note ? ' · Reason: ' + p.note : '')); });
+      return c ? ok(me, c) : fail('Nothing was reviewed.'); }
+    if (a === 'recordUse'){ var dy = Number(p.days), b = bal(p.username); if (!(dy >= 0.5) || dy > 30 || dy * 2 !== Math.round(dy * 2)) return fail('Days must be in half-day steps, from ½ to 30.'); if (dy > b) return fail(find(p.username).name + ' has only ' + fD(b) + ' available.');
+      entries.push({ id:'e' + (++n), username:p.username, type:'USE', date:p.date, category:'Used', days:dy, event:'', venue:'', endTime:'', status:'Confirmed', note:'', createdBy:me.username, createdAt:now, reviewedBy:me.username, reviewedAt:now }); log(me, 'Recorded offset use', p.username, p.date + ' · ' + dy + ' day(s)'); return ok(me); }
+    if (a === 'addUser'){ var nu = String(p.username||'').trim().toLowerCase(); if (!/^[a-z0-9._-]{3,30}$/.test(nu)) return fail('Usernames use 3–30 letters, numbers, dots or dashes.'); if (find(nu)) return fail('That username is taken.'); if (!/^\d{4,6}$/.test(p.pin)) return fail('PIN must be 4 to 6 digits.'); users.push({ username:nu, name:p.name, role:p.role, division:p.division||'', pin:p.pin, active:true }); log(me, 'Added an account', nu, p.role); return ok(me); }
+    if (a === 'resetPin'){ if (!/^\d{4,6}$/.test(p.pin)) return fail('PIN must be 4 to 6 digits.'); find(p.username).pin = p.pin; log(me, 'Reset a PIN', p.username); return ok(me); }
+    if (a === 'setActive'){ find(p.username).active = p.active; log(me, p.active ? 'Activated an account' : 'Deactivated an account', p.username); return ok(me); }
+    if (a === 'setRole'){ find(p.username).role = p.role; log(me, 'Changed a role', p.username, 'Now ' + p.role); return ok(me); }
+    if (a === 'setDivision'){ find(p.username).division = p.division || ''; log(me, 'Changed a division', p.username); return ok(me); }
+    if (a === 'removeUser'){ var ru = find(p.username); if (!ru) return fail('User not found.'); if (ru.username === me.username) return fail('You cannot remove your own account. Ask another admin.'); if (ru.role === 'admin' && users.filter(function(u){ return u.role === 'admin' && u.active; }).length <= 1) return fail('This is the only admin. Make someone else an admin first.');
+      log(me, 'Removed an account', ru.username, ru.name + ' · balance left: ' + fD(bal(ru.username))); users = users.filter(function(u){ return u !== ru; }); return ok(me); }
+    if (a === 'saveDivision'){ if (!String(p.name||'').trim()) return fail('Division name is required.'); var fd2 = { name:p.name.trim(), short:(p.short||'').trim() || p.name.trim(), color:p.color, icon:p.icon, logo:p.logo||'' }, ex = divisions.filter(function(d){ return d.id === p.id; })[0];
+      if (ex) Object.assign(ex, fd2); else divisions.push(Object.assign({ id:'d' + (++n), order:divisions.length + 1 }, fd2)); log(me, ex ? 'Edited a division' : 'Added a division', fd2.name); return ok(me); }
+    if (a === 'deleteDivision'){ var cc = users.filter(function(u){ return u.division === p.id; }).length; if (cc) return fail('Move the ' + cc + ' staff in this division to another division first.'); divisions = divisions.filter(function(d){ return d.id !== p.id; }); log(me, 'Deleted a division', p.id); return ok(me); }
+    if (a === 'saveHoliday'){ if (!p.date || !String(p.name||'').trim()) return fail('Enter a date and a name.'); holidays = holidays.filter(function(h){ return h.date !== p.date; }); holidays.push({ date:p.date, name:p.name.trim(), kind:p.kind }); holidays.sort(function(x,y){ return x.date < y.date ? -1 : 1; }); log(me, 'Added a holiday', p.date, p.name); return ok(me); }
+    if (a === 'deleteHoliday'){ holidays = holidays.filter(function(h){ return h.date !== p.date; }); log(me, 'Deleted a holiday', p.date); return ok(me); }
+    if (a === 'saveSettings'){ var cap = Number(p.carryCap), wd = Number(p.workdays); if (!(cap >= 0)) return fail('Carry-over cap must be 0 (no limit) or a number of days.'); if (!(wd >= 15 && wd <= 26)) return fail('Workdays must be a whole number from 15 to 26.'); settings = { workdays: wd, carryCap: cap }; log(me, 'Changed settings', '', 'Carry-over cap: ' + (cap || 'no limit') + ' · Workdays: ' + wd); return ok(me); }
+    if (a === 'backupToDrive'){ log(me, 'Saved a backup to Google Drive', 'Preview'); return ok(me, { url: 'https://drive.google.com/', name: 'PIO Offset Tracker — backup (preview)' }); }
+    if (a === 'exportAll') return { ok:true, data: { exportedAt: now, users: users.map(pub), entries: copy(entries), divisions: copy(divisions), holidays: copy(holidays), settings: copy(settings), activity: copy(activity) } };
+    return fail('Unknown action.');
+    } catch(err){ return fail(typeof err === 'string' ? err : 'Something went wrong.'); }
+  } };
+})();
+
+/* Installable app: cache the page shell so it opens fast and works as a home-screen app. */
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function(){});
+
+/* ---------- boot ----------
+   A remembered device shows its last data instantly, then refreshes in the background. */
+(function boot(){
+  S.token = lGet('pio_tok') || sGet('pio_tok');
+  if (!LIVE && S.token && S.token.charAt(0) !== 't'){ clearSession(); S.token = null; }
+  var cached = null;
+  try { cached = JSON.parse(lGet('pio_cache') || 'null'); } catch(e){}
+  if (S.token && cached && LIVE){ apply(cached); render(); }
+  var first = S.token ? refresh().catch(function(e){ if (!S.me){ clearSession(); S.token = null; } else toast(e.message); }) : Promise.resolve();
+  first.then(function(){
+    if (S.me) return;
+    return call('status').then(function(st){ S.needsSetup = st.needsSetup; S.divisions = st.divisions || []; render(); var f = document.getElementById('lu') || document.getElementById('sn'); if (f && window.innerWidth > 860) f.focus(); });
+  }).catch(function(e){ document.getElementById('app').innerHTML = '<div class="loading"><p>' + esc(e.message) + '</p><button class="btn btn-primary" onclick="location.reload()">Try again</button></div>'; });
+})();
+</script>
+</body>
+</html>
