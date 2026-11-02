@@ -479,7 +479,7 @@ table.week th:first-child{background:var(--surface-2)}
 .copybox{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;line-height:1.6;background:var(--surface-2);border:1px dashed var(--line-strong);border-radius:var(--r-sm);padding:12px 14px;user-select:all}
 @media (max-width:560px){.to-card{flex-wrap:wrap}.to-acts{flex-direction:row;flex-wrap:wrap;width:100%;padding-left:74px}}
 /* ---------- fit every screen: nothing may push the page wider than the phone ---------- */
-html,body{overflow-x:hidden}
+html,body{overflow-x:clip}
 .pill{max-width:100%;min-width:0}
 .pill{overflow:hidden;text-overflow:ellipsis}
 .row>.pill{flex:0 1 auto;max-width:55%;display:inline-block;line-height:1.6}
