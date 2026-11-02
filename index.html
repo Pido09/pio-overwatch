@@ -452,6 +452,9 @@ table.week th.c,table.week td.c{text-align:center;padding:8px 6px;min-width:56px
 table.week th.c .num{font-size:15px;color:var(--ink)}
 table.week .nw{background:var(--surface-2)}
 table.week .on{box-shadow:inset 0 0 0 2px var(--brand)}
+table.week th:first-child,table.week td:first-child{position:sticky;left:0;z-index:1;background:var(--surface);box-shadow:1px 0 0 var(--line)}
+table.week th:first-child{background:var(--surface-2)}
+@media (max-width:560px){table.week td:first-child b{display:block;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}table.week th.c,table.week td.c{min-width:44px;padding:8px 4px}}
 .dot{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;font-size:12px;font-weight:800}
 .dot.ok{background:var(--brand-soft);color:var(--brand-strong);font-weight:700}
 .to-card{display:flex;gap:16px;padding:16px 18px;border-top:1px solid var(--line);align-items:flex-start}
@@ -475,6 +478,56 @@ table.week .on{box-shadow:inset 0 0 0 2px var(--brand)}
 .sug li[aria-selected="true"],.sug li:hover{background:var(--brand-soft)}
 .copybox{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;line-height:1.6;background:var(--surface-2);border:1px dashed var(--line-strong);border-radius:var(--r-sm);padding:12px 14px;user-select:all}
 @media (max-width:560px){.to-card{flex-wrap:wrap}.to-acts{flex-direction:row;flex-wrap:wrap;width:100%;padding-left:74px}}
+/* ---------- fit every screen: nothing may push the page wider than the phone ---------- */
+html,body{overflow-x:hidden}
+.pill{max-width:100%;min-width:0}
+.pill{overflow:hidden;text-overflow:ellipsis}
+.row>.pill{flex:0 1 auto;max-width:55%;display:inline-block;line-height:1.6}
+.row>.pill::before{display:inline-block;vertical-align:middle;margin-right:5px}
+.tabs{max-width:100%;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{white-space:nowrap;flex:none}
+.panel-h>*{min-width:0}
+.to-names span{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:860px){
+  .input,select.input,textarea{font-size:16px}            /* stops iPhone from zooming in on fields */
+  .band .row-btns{width:100%}
+  .band .row-btns .btn{flex:1 1 auto}
+  .band input[type=date]{flex:1 1 140px;min-width:0}
+}
+@media (max-width:560px){
+  .row.avail{flex-wrap:wrap}
+  .row.avail>.pill{max-width:100%;margin-left:46px}
+  .to-card{padding:14px}
+  .to-date{width:52px}
+  .to-acts{padding-left:0}
+  .to-acts .btn{flex:1 1 0}
+  .panel-h{padding:14px}
+  .filters select{min-width:0;flex:1 1 140px}
+  .band{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+}
+/* ---------- phones: slide-in menu on the left, short header, four main tabs ---------- */
+.drawer-scrim{display:none}
+.show-sm{display:none!important}
+@media (max-width:860px){
+  .side{display:flex;position:fixed;left:0;top:0;bottom:0;height:100%;width:min(84vw,320px);z-index:70;transform:translateX(-104%);transition:transform .25s ease;
+    padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));box-shadow:none}
+  body.drawer-open{overflow:hidden}
+  body.drawer-open .side{transform:none;box-shadow:12px 0 40px rgba(0,0,0,.35)}
+  body.drawer-open .drawer-scrim{display:block;position:fixed;inset:0;z-index:65;background:rgba(6,20,13,.45)}
+  .nav button[aria-current="page"]::before{left:-14px}
+  .topbar button[data-act=drawer]{margin-left:-6px}
+  .topbar img{margin-left:2px}
+  .show-sm{display:flex!important}
+}
+@media (max-width:560px){
+  .hide-sm{display:none!important}
+  .band{padding-top:14px;padding-bottom:58px}
+  .band .eyebrow{font-size:11px}
+  .band h1{font-size:21px}
+  .band p:not(.keep-sub){display:none}
+  .band .keep-sub{font-size:13.5px}
+}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -564,6 +617,7 @@ var ICONS = {
   eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   cog:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
   sliders:'<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+  menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
   more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
   history:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/>',
   chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
@@ -724,29 +778,30 @@ function render(){
   if (!S.me){ app.innerHTML = banner + (S.needsSetup ? viewSetup() : viewLogin()); return; }
   var nav = navItems(), pc = isAdmin() ? pending().filter(canReview).length : 0;
   function navBtn(n){ return '<button data-go="' + n[0] + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ic(n[1]) + '<span>' + n[2] + '</span>' + (n[0] === 'approvals' && pc ? '<span class="badge">' + pc + '</span>' : '') + '</button>'; }
-  var tabs = nav.length > 5 ? nav.slice(0, 4) : nav;
-  var moreOn = nav.length > 5 && !tabs.some(function(n){ return n[0] === S.view; });
+  var tabs = nav.slice(0, 4);
+  var moreOn = !tabs.some(function(n){ return n[0] === S.view; });
   var views = { dashboard: viewDashboard, log: viewLog, approvals: viewApprovals, calendar: viewCalendar, monthly: viewMonthly, records: viewRecords, staff: viewStaff, settings: viewSettings, availability: viewAvailability, travel: viewTravel, leaves: viewLeaves };
   if (!views[S.view] || (['staff','approvals','settings'].indexOf(S.view) >= 0 && !isAdmin())) S.view = 'dashboard';
   var v = views[S.view]();
   var myDiv = divOf(S.me.division), y = window.scrollY;
   app.innerHTML = banner + '<a class="skip" href="#main">Skip to content</a>' +
     '<div class="shell">' +
-      '<aside class="side"><div class="brand"><img src="' + LOGO + '" alt="Provincial Information Office seal"><div><b>PIO Overwatch</b><small>Camarines Norte</small></div></div>' +
+      '<div class="drawer-scrim" data-act="drawerClose"></div><aside class="side" id="sidenav"><div class="brand"><img src="' + LOGO + '" alt="Provincial Information Office seal"><div><b>PIO Overwatch</b><small>Camarines Norte</small></div></div>' +
         '<nav class="nav" aria-label="Main">' + sideNav(nav, navBtn) + '</nav>' +
         '<div class="side-foot"><div class="who">' + (myDiv ? divBadge(myDiv, 36) : '<span class="avatar">' + esc(initials(S.me.name)) + '</span>') +
           '<div style="min-width:0"><b>' + esc(S.me.name) + '</b><small><span class="cap">' + esc(S.me.role) + '</span> · ' + (myDiv ? esc(myDiv.short) : '@' + esc(S.me.username)) + '</small></div></div>' +
-        '<div class="nav"><button data-act="refresh">' + ic('refresh') + '<span>Refresh</span></button><button data-act="changePin">' + ic('key') + '<span>Change PIN</span></button><button data-act="logout">' + ic('out') + '<span>Sign out</span></button></div></div>' +
+        '<div class="nav">' + (S.view === 'dashboard' ? '<button data-act="customize" class="show-sm">' + ic('sliders') + '<span>Customize dashboard</span></button>' : '') + '<button data-act="refresh">' + ic('refresh') + '<span>Refresh</span></button><button data-act="changePin">' + ic('key') + '<span>Change PIN</span></button><button data-act="logout">' + ic('out') + '<span>Sign out</span></button></div></div>' +
       '</aside>' +
       '<div style="min-width:0">' +
-        '<header class="topbar"><img src="' + LOGO + '" alt=""><b>PIO Overwatch</b><button data-act="refresh" aria-label="Refresh">' + ic('refresh') + '</button><button data-act="changePin" aria-label="Change PIN">' + ic('key') + '</button><button data-act="logout" aria-label="Sign out">' + ic('out') + '</button></header>' +
+        '<header class="topbar"><button data-act="drawer" aria-label="Open menu" aria-controls="sidenav" aria-expanded="false">' + ic('menu') + '</button><img src="' + LOGO + '" alt=""><b>PIO Overwatch</b><button data-act="refresh" aria-label="Refresh">' + ic('refresh') + '</button></header>' +
         '<main class="main" id="main" tabindex="-1">' +
-          '<section class="band"><div class="band-in"><div><p class="eyebrow">' + (v.eyebrow || 'PIO Overwatch') + '</p><h1>' + v.title + '</h1>' + (v.sub ? '<p>' + v.sub + '</p>' : '') + '</div>' + (v.actions ? '<div class="row-btns no-print">' + v.actions + '</div>' : '') + '</div></section>' +
+          '<section class="band"><div class="band-in"><div><p class="eyebrow">' + (v.eyebrow || 'PIO Overwatch') + '</p><h1>' + v.title + '</h1>' + (v.sub ? '<p' + (S.view === 'dashboard' ? ' class="keep-sub"' : '') + '>' + v.sub + '</p>' : '') + '</div>' + (v.actions ? '<div class="row-btns no-print">' + v.actions + '</div>' : '') + '</div></section>' +
           '<div class="wrap">' + v.body + '</div>' +
         '</main>' +
       '</div>' +
-      '<nav class="tabbar" aria-label="Main">' + tabs.map(navBtn).join('') + (nav.length > 5 ? '<button data-act="moreNav"' + (moreOn ? ' aria-current="page"' : '') + '>' + ic('more') + '<span>More</span>' + (moreOn ? '' : '') + '</button>' : '') + '</nav>' +
+      '<nav class="tabbar" aria-label="Main">' + tabs.map(navBtn).join('') + '<button data-act="drawer"' + (moreOn ? ' aria-current="page"' : '') + '>' + ic('menu') + '<span>Menu</span></button>' + '</nav>' +
     '</div>';
+  document.body.classList.remove('drawer-open');
   window.scrollTo(0, y);
   if (S.view === 'log') checkEarnForm(document);
 }
@@ -848,7 +903,8 @@ var WIDGETS = {
 function widgetPrefs(){
   var role = isAdmin() ? 'admin' : 'employee', all = WIDGETS[role].map(function(w){ return w[0]; }), saved = null;
   try { saved = JSON.parse(lGet('pio_w_' + role) || 'null'); } catch(e){}
-  if (!saved || !saved.order) return { order: all, hidden: [] };
+  // Phones start with a shorter dashboard; everything can be turned back on in Customize.
+  if (!saved || !saved.order) return { order: all, hidden: window.innerWidth < 700 ? (role === 'admin' ? ['balances','trend','divisions','daysoff','holidays','activity'] : ['trend','holidays','recent']) : [] };
   all.forEach(function(id){ if (saved.order.indexOf(id) < 0) saved.order.push(id); });
   saved.order = saved.order.filter(function(id){ return all.indexOf(id) >= 0; });
   return saved;
@@ -914,8 +970,8 @@ function viewDashboard(){
   var W = adm ? adminWidgets(staff) : empWidgets();
   P.order.forEach(function(id){ if (P.hidden.indexOf(id) < 0 && W[id]) html += W[id](widgetDef(id)[2]); });
   var actions = (adm
-      ? '<button class="btn btn-glass" data-act="customize">' + ic('sliders') + 'Customize</button><button class="btn btn-glass" data-go="log">' + ic('plus') + 'Add offset</button><button class="btn btn-sun" data-act="useModal">' + ic('minus') + 'Record use</button>'
-      : '<button class="btn btn-glass" data-act="customize">' + ic('sliders') + 'Customize</button><button class="btn btn-sun" data-go="log">' + ic('plus') + 'Log offset</button>');
+      ? '<button class="btn btn-glass hide-sm" data-act="customize">' + ic('sliders') + 'Customize</button><button class="btn btn-glass" data-go="log">' + ic('plus') + 'Add offset</button><button class="btn btn-sun" data-act="useModal">' + ic('minus') + 'Record use</button>'
+      : '<button class="btn btn-glass hide-sm" data-act="customize">' + ic('sliders') + 'Customize</button><button class="btn btn-sun" data-go="log">' + ic('plus') + 'Log offset</button>');
   return { eyebrow: fDate(today(), { weekday:'long', month:'long', day:'numeric', year:'numeric' }),
     title: greeting() + ', ' + esc(S.me.name.split(' ')[0]) + '!',
     sub: (adm ? 'Offsets across the office' + (S.dashDiv === 'all' ? '' : ' · ' + esc(divOf(S.dashDiv).short)) + '.' : (S.me.division ? divChip(S.me.division) + ' · ' : '') + 'Unused offsets carry over every month.') + '<span class="quip">' + ic('star') + '<span>' + esc(quip()) + '</span></span>',
@@ -1358,6 +1414,8 @@ document.addEventListener('click', function(ev){
   if (a === 'showPin'){ var pi = document.getElementById('lp'), on = pi.type === 'password'; pi.type = on ? 'text' : 'password'; t.setAttribute('aria-pressed', String(on)); t.setAttribute('aria-label', on ? 'Hide PIN' : 'Show PIN'); return; }
   if (a === 'refresh'){ busy(t, refresh().then(function(){ toast('Up to date'); })); return; }
   if (a === 'logout'){ call('logout').catch(function(){}); clearSession(); S.token = null; S.me = null; S.view = 'dashboard'; render(); return; }
+  if (a === 'drawer'){ var on3 = !document.body.classList.contains('drawer-open'); document.body.classList.toggle('drawer-open', on3); document.querySelectorAll('[data-act=drawer]').forEach(function(b){ b.setAttribute('aria-expanded', String(on3)); }); if (on3){ var f3 = document.querySelector('.side .nav button'); if (f3) f3.focus(); } return; }
+  if (a === 'drawerClose'){ document.body.classList.remove('drawer-open'); return; }
   if (a === 'moreNav'){ var rest = navItems().slice(4); return modal('More', '<div class="wlist">' + rest.map(function(n){ return '<button type="button" class="btn btn-ghost btn-lg" style="justify-content:flex-start" data-go="' + n[0] + '">' + ic(n[1]) + n[2] + '</button>'; }).join('') + '</div>'); }
   if (a === 'calPrev' || a === 'calNext'){ var n = new Date(S.cal.y, S.cal.m + (a === 'calNext' ? 1 : -1), 1); S.cal = { y: n.getFullYear(), m: n.getMonth() }; S.selDay = null; render(); return; }
   if (a === 'calToday'){ S.cal = null; S.selDay = today(); render(); return; }
@@ -1379,7 +1437,7 @@ document.addEventListener('click', function(ev){
   if (a === 'exportAllCsv'){ busy(t, call('exportAll').then(function(d){ download('all-offset-entries-' + today() + '.csv', entriesCsv(d.entries), 'text/csv'); toast('All entries downloaded'); })); return; }
   if (a === 'exportJson'){ busy(t, call('exportAll').then(function(d){ download('pio-offsets-backup-' + today() + '.json', JSON.stringify(d, null, 2), 'application/json'); toast('Backup downloaded'); })); return; }
   if (a === 'backupDrive'){ busy(t, call('backupToDrive').then(function(r){ modal('Backup saved', '<p style="margin:0">A copy named <b>' + esc(r.name) + '</b> was saved to the admin’s Google Drive.</p><a class="btn btn-ghost" href="' + esc(r.url) + '" target="_blank" rel="noopener">' + ic('drive') + 'Open in Google Drive</a>', '<button type="button" class="btn btn-primary" data-act="close">Done</button>'); render(); })); return; }
-  if (a === 'customize') return customizeModal();
+  if (a === 'customize'){ document.body.classList.remove('drawer-open'); return customizeModal(); }
   if (a === 'wUp' || a === 'wDown'){ var i = +t.dataset.i, j = a === 'wUp' ? i - 1 : i + 1, tmp = M.order[i]; M.order[i] = M.order[j]; M.order[j] = tmp; M.draw(); return; }
   if (a === 'wReset'){ lSet('pio_w_' + M.role, null); closeModal(); render(); toast('Dashboard reset'); return; }
   if (a === 'wSave'){ M.hidden = []; document.querySelectorAll('#wl input[data-w]').forEach(function(x){ if (!x.checked) M.hidden.push(x.dataset.w); }); lSet('pio_w_' + M.role, JSON.stringify({ order: M.order, hidden: M.hidden })); closeModal(); render(); toast('Layout saved'); return; }
@@ -1409,6 +1467,7 @@ document.addEventListener('click', function(ev){
 });
 document.addEventListener('keydown', function(ev){
   if (ev.key === 'Escape' && document.querySelector('#modal .scrim')) closeModal();
+  if (ev.key === 'Escape' && document.body.classList.contains('drawer-open')){ document.body.classList.remove('drawer-open'); var dbtn = document.querySelector('.topbar [data-act=drawer]'); if (dbtn) dbtn.focus(); }
   if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches && ev.target.matches('.tap[tabindex]')){ ev.preventDefault(); ev.target.click(); }
   if (ev.key === 'Tab' && document.querySelector('#modal .scrim')){
     var f = Array.prototype.filter.call(document.querySelectorAll('#modal button, #modal a[href], #modal input:not([type=hidden]):not(.sr), #modal select, #modal label[for=dlogo], #modal [tabindex]'), function(x){ return !x.disabled && x.offsetParent !== null; });
@@ -1523,7 +1582,7 @@ function statusOn(u, d){
   return null;
 }
 var KIND = { to: ['Travel order', 'route', 'to'], leave: ['On leave', 'plane', 'lv'], off: ['Day off', 'sun', 'off'] };
-function statusPill(s){ return s ? '<span class="pill st-' + KIND[s.kind][2] + '">' + esc(s.kind === 'to' ? 'Field · ' + s.label : s.label) + '</span>' : '<span class="pill Confirmed">Available</span>'; }
+function statusPill(s){ return s ? '<span class="pill st-' + KIND[s.kind][2] + '" title="' + esc(s.kind === 'to' ? 'In the field · ' + s.label : s.label) + '">' + esc(s.kind === 'to' ? 'Field · ' + s.label : s.label) + '</span>' : '<span class="pill Confirmed">Available</span>'; }
 
 /* ----- availability ----- */
 function viewAvailability(){
@@ -1541,7 +1600,7 @@ function viewAvailability(){
     actions: '<button class="btn btn-glass" data-act="avPrev" aria-label="Previous day">' + ic('left') + '</button><input class="input" type="date" id="avDate" value="' + d + '" aria-label="Pick a date" style="width:auto;height:42px;color:var(--ink)"><button class="btn btn-glass" data-act="avToday">Today</button><button class="btn btn-glass" data-act="avNext" aria-label="Next day">' + ic('right') + '</button>',
     body: '<div class="grid"><div class="tiles span-12">' + tile('Available', count.avail, 'In the office', '', 'check') + tile('In the field', count.to, 'On a travel order', '', 'route') + tile('On leave', count.leave, isAdmin() ? 'Any leave type' : 'Leave types are private', '', 'plane') + tile('Day off', count.off, 'Using offsets', '', 'sun') + '</div>' +
       panel('Staff today', 'users', rows.length ? '<ul class="list">' + rows.map(function(r){ var dd = divOf(r.u.division);
-        return '<li class="row' + (isAdmin() ? ' tap" data-person="' + esc(r.u.username) + '" tabindex="0' : '') + '">' + (dd ? divBadge(dd, 34) : '<span class="avatar">' + esc(initials(r.u.name)) + '</span>') + '<div class="body"><div class="t">' + esc(r.u.name) + '</div><div class="m">' + (dd ? esc(dd.short) : 'No division') + ' · ' + esc(r.u.empType) + (r.s && r.s.kind === 'to' && r.s.ref.destination ? ' · ' + esc(r.s.ref.destination) : '') + '</div></div>' + statusPill(r.s) + '</li>'; }).join('') + '</ul>' : empty('users', 'No staff', 'Pick another division.'),
+        return '<li class="row avail' + (isAdmin() ? ' tap" data-person="' + esc(r.u.username) + '" tabindex="0' : '') + '">' + (dd ? divBadge(dd, 34) : '<span class="avatar">' + esc(initials(r.u.name)) + '</span>') + '<div class="body"><div class="t">' + esc(r.u.name) + '</div><div class="m">' + (dd ? esc(dd.short) : 'No division') + ' · ' + esc(r.u.empType) + (r.s && r.s.kind === 'to' && r.s.ref.destination ? ' · ' + esc(r.s.ref.destination) : '') + '</div></div>' + statusPill(r.s) + '</li>'; }).join('') + '</ul>' : empty('users', 'No staff', 'Pick another division.'),
         divSelect('dashDiv', dv, 'Filter by division', true), 'span-12') +
       panel('This week', 'cal', week, '', 'span-12') + '</div>' };
 }
@@ -1694,7 +1753,7 @@ WIDGETS.employee.splice(2, 0, ['out', 'Who’s out today', 6], ['mytos', 'My tra
 WIDGETS.employee.push(['leave', 'My leave credits', 12]);
 function outWidget(n){
   var td = today(), rows = S.users.filter(function(u){ return u.active; }).map(function(u){ return { u: u, s: statusOn(u.username, td) }; }).filter(function(r){ return r.s; });
-  return panel('Who’s out today', 'users', rows.length ? '<ul class="list">' + rows.slice(0, 6).map(function(r){ return '<li class="row"><span class="avatar">' + esc(initials(r.u.name)) + '</span><div class="body"><div class="t">' + esc(r.u.name) + '</div><div class="m">' + esc((divOf(r.u.division) || {}).short || '') + '</div></div>' + statusPill(r.s) + '</li>'; }).join('') + '</ul>'
+  return panel('Who’s out today', 'users', rows.length ? '<ul class="list">' + rows.slice(0, 6).map(function(r){ return '<li class="row avail"><span class="avatar">' + esc(initials(r.u.name)) + '</span><div class="body"><div class="t">' + esc(r.u.name) + '</div><div class="m">' + esc((divOf(r.u.division) || {}).short || '') + '</div></div>' + statusPill(r.s) + '</li>'; }).join('') + '</ul>'
     : empty('check', 'Everyone is in today', isWeekend(td) || holidayOn(td) ? 'It’s a non-working day anyway.' : 'No travel orders, leaves or days off today.'), '<button class="btn btn-sm btn-ghost" data-go="availability">Availability</button>', span(n));
 }
 function tosWidget(n, mine){
