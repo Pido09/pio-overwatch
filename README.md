@@ -10,6 +10,7 @@ The page is hosted on GitHub Pages. Data is saved in a Google Sheet through Goog
 | `index.html` | The whole app (design and screens). Edit this for most patches. |
 | `config.js` | The Apps Script link. Set once. |
 | `pio-logo.webp` | PIO seal. |
+| `pio-digital.webp`, `capitol.webp` | Sign-in page wordmark and Capitol photo. Replace with a file of the same name to change them. |
 | `apps-script/Code.gs` | The server code. It lives in Apps Script, not on GitHub Pages. This copy is for keeping versions. |
 
 ## Setup (once)
@@ -46,5 +47,7 @@ Then add staff in Staff. The three PIO divisions are created automatically.
 - Records are in the Google Sheet tabs `Users`, `Entries` and `Divisions`. Don't rename the column headers.
 - Offsets logged in a month are added to balances on the 1st of the next month.
 - PINs are stored only as salted hashes. 5 wrong PINs lock a username for 15 minutes.
-- Sessions end after 6 hours of no activity.
-- `HOURS_PER_DAY` (8) and `WORKDAYS` (22) are at the top of `Code.gs`.
+- "Keep me signed in" keeps a device signed in for 30 days, renewed with use. Unticked, the session ends when the browser closes.
+- Resetting a PIN or deactivating an account signs that person out on every device.
+- Offsets are recorded in days (¼, ½ or 1 day per entry).
+- `WORKDAYS` (22) and `REMEMBER_DAYS` (30) are at the top of `Code.gs`.
