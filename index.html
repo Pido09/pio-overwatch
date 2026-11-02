@@ -109,6 +109,7 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .info-note{display:flex;gap:8px;align-items:flex-start;background:var(--navy-soft);color:var(--navy);border-radius:var(--r-sm);padding:10px 12px;font-size:13.5px;font-weight:600}
 .seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .seg.two-up{grid-template-columns:repeat(2,minmax(0,1fr))}
+.seg.four{grid-template-columns:repeat(2,minmax(0,1fr))}
 .seg input{position:absolute;opacity:0}
 .seg label{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:10px 12px;cursor:pointer;background:var(--surface);transition:border-color .15s,background .15s}
 .seg label b{font-size:14px;display:flex;align-items:center;gap:6px}
@@ -640,7 +641,7 @@ var ICONS = {
 };
 var DIV_ICONS = ['camera','monument','folder','megaphone','pen','radio','users','star'];
 var SWATCHES = ['#0B2C6E','#1D4ED8','#C8202A','#16803A','#F2B233','#6D28D9','#0F766E','#FFFFFF'];
-var CAT_ICON = { 'Holiday':'flag', 'Weekend':'sun', 'After 5 PM':'moon' };
+var CAT_ICON = { 'Holiday':'flag', 'Weekend':'sun', 'After 5 PM':'moon', 'Travel order':'route' };
 function ic(n){ return '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || ICONS.star) + '</svg>'; }
 
 function divOf(id){ return S.divisions.filter(function(d){ return d.id === id; })[0]; }
@@ -805,7 +806,7 @@ function render(){
     '</div>';
   document.body.classList.remove('drawer-open');
   window.scrollTo(0, y);
-  if (S.view === 'log') checkEarnForm(document);
+  if (S.view === 'log') checkEarnForm(document, true);
 }
 
 /* ----- auth ----- */
@@ -851,7 +852,7 @@ function entryRow(e, opts){
   else if (opts.review) acts = '<div class="acts"><button class="btn btn-sm btn-primary" data-act="review" data-id="' + e.id + '" data-d="Confirmed">' + (use ? 'Approve' : 'Confirm') + '</button><button class="btn btn-sm btn-danger" data-act="rejectModal" data-id="' + e.id + '">Reject</button></div>';
   return '<li class="row tap' + (opts.review ? ' rv' : '') + '" data-entry="' + e.id + '" tabindex="0"><span class="mark ' + cls + '">' + ic(use ? 'plane' : (CAT_ICON[e.category] || 'plus')) + '</span>' +
     '<div class="body"><div class="t">' + title + '</div><div class="m">' + meta + '</div></div>' +
-    (e.type === 'EARN' && typeof toOn === 'function' && toOn(e.username, e.date) ? '<span class="pill Rejected" title="This person is on a travel order on this date">On TO</span>' : '') +
+    (e.type === 'EARN' && e.category !== 'Travel order' && typeof toOn === 'function' && toOn(e.username, e.date) ? '<span class="pill Rejected" title="This person is on a travel order on this date">On TO</span>' : '') +
     (opts.review || e.status === 'Confirmed' ? '' : '<span class="pill ' + e.status + '">' + e.status + '</span>') +
     '<span class="amt ' + (use ? 'minus' : 'plus') + '">' + fDs(use ? -e.days : e.days, true) + '</span>' + acts + '</li>';
 }
@@ -1044,23 +1045,25 @@ function activityRow(a){
 /* ----- log offset ----- */
 function earnFields(e, adm){
   e = e || {};
-  var cat = e.category || 'Holiday', cats = [['Holiday','flag','Regular, special or local holiday'],['Weekend','sun','Saturday or Sunday'],['After 5 PM','moon','Events past office hours']];
+  var cat = e.category || 'Holiday', cats = [['Holiday','flag','Regular, special or local holiday'],['Weekend','sun','Saturday or Sunday'],['After 5 PM','moon','Events past office hours'],['Travel order','route','Beyond your ' + S.settings.workdays + ' workdays, not in payroll']];
   return (adm ? '<div class="field"><label for="fu">Employee</label><select class="input" id="fu" name="username">' +
       S.users.filter(function(u){ return u.active; }).map(function(u){ return '<option value="' + esc(u.username) + '"' + ((e.username || S.me.username) === u.username ? ' selected' : '') + '>' + esc(u.name) + (u.username === S.me.username ? ' (you)' : '') + '</option>'; }).join('') + '</select>' +
       '<span class="hint">Offsets you add for staff are confirmed right away.' + (otherAdmins() ? ' Your own go to another admin.' : '') + '</span></div>' : '') +
     '<div class="field"><label for="fe">Event name</label><input class="input" id="fe" name="event" maxlength="120" value="' + esc(e.event) + '" placeholder="e.g. Bantayog Festival opening program" required></div>' +
     '<div class="field"><label for="fv">Venue</label><input class="input" id="fv" name="venue" maxlength="120" value="' + esc(e.venue) + '" placeholder="e.g. Provincial Capitol Grounds, Daet" required></div>' +
     '<div class="field"><label for="fd">Date worked</label><input class="input" id="fd" name="date" type="date" max="' + today() + '" value="' + (e.date || today()) + '" required><span class="hint">Forgot to log? Pick the past date. It counts once confirmed.</span></div>' +
-    '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">Type of extra work</legend><div class="seg">' +
+    '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">Type of extra work</legend><div class="seg four">' +
       cats.map(function(c, i){ return '<input type="radio" name="category" id="c' + i + '" value="' + c[0] + '"' + (cat === c[0] ? ' checked' : '') + '><label for="c' + i + '"><b>' + ic(c[1]) + c[0] + '</b><small>' + c[2] + '</small></label>'; }).join('') +
     '</div></fieldset>' +
     '<div id="dateCheck"></div>' +
+    '<div class="field" id="toWrap"' + (cat === 'Travel order' ? '' : ' hidden') + '><label for="fto">Travel order</label><select class="input" id="fto" name="toId" data-cur="' + esc(e.toId || '') + '"></select><span class="hint">The travel order you were on that day.</span></div>' +
     '<div class="field" id="endWrap"' + (cat === 'After 5 PM' ? '' : ' hidden') + '><label for="ft">Event ended at</label><input class="input" id="ft" name="endTime" type="time" value="' + esc(e.endTime || '') + '"><span class="hint" id="endHint">Ends 1:00 AM or later = 1 day (8 hours or more). Earlier = ½ day.</span></div>' +
     '<fieldset class="field" id="amtWrap" style="border:0;padding:0;margin:0"' + (cat === 'After 5 PM' ? ' hidden' : '') + '><legend class="label" style="margin-bottom:6px">How much offset</legend><div class="seg two-up">' +
       '<input type="radio" name="days" id="a0" value="1"' + (e.days !== 0.5 ? ' checked' : '') + '><label for="a0"><b>1 day</b><small>8 hours or more</small></label>' +
       '<input type="radio" name="days" id="a1" value="0.5"' + (e.days === 0.5 ? ' checked' : '') + '><label for="a1"><b>½ day</b><small>About 4 hours</small></label>' +
     '</div></fieldset>' +
-    '<label class="check"><input type="checkbox" name="noTravelOrder" required' + (e.id ? ' checked' : '') + '><span><b>This work was not under a travel order.</b><br><span class="hint">Work covered by a travel order is already counted in the DTR and is not an offset.</span></span></label>';
+    '<label class="check" id="chkNoTO"' + (cat === 'Travel order' ? ' hidden' : '') + '><input type="checkbox" name="noTravelOrder"' + (cat === 'Travel order' ? '' : ' required') + (e.id ? ' checked' : '') + '><span><b>This work was not under a travel order.</b><br><span class="hint">For travel order days, choose the type \u201cTravel order\u201d instead.</span></span></label>' +
+    '<label class="check" id="chkPayroll"' + (cat === 'Travel order' ? '' : ' hidden') + '><input type="checkbox" name="notInPayroll"' + (cat === 'Travel order' ? ' required' : '') + (e.id ? ' checked' : '') + '><span><b>This travel order day is not charged to payroll.</b><br><span class="hint">I already reached the ' + S.settings.workdays + ' workdays this month, so this day becomes an offset.</span></span></label>';
 }
 /* Smart checks: match the date with the type of work, and show what an "After 5 PM" entry counts as. */
 function checkEarnForm(root, auto){
@@ -1073,8 +1076,17 @@ function checkEarnForm(root, auto){
   if (h) msg = '<div class="info-note">' + ic('flag') + '<span>' + fDate(d.value, { month:'long', day:'numeric' }) + ' is ' + esc(h.name) + ' (' + esc(h.kind) + ').</span></div>';
   if (cat === 'Weekend' && d.value && !wk) msg = '<div class="warn-note">' + ic('sun') + '<span>' + fDate(d.value, { weekday:'long' }) + ' is a weekday. Is this the right date?</span></div>';
   if (cat === 'Holiday' && d.value && !h) msg = '<div class="warn-note">' + ic('flag') + '<span>This date is not in the holiday list. If it is a local holiday, ask an admin to add it in Settings.</span></div>';
-  var who = (root.querySelector('#fu') || {}).value || S.me.username, tro = d.value && toOn(who, d.value);
-  if (tro) msg += '<div class="warn-note" style="background:var(--red-soft);color:var(--red)">' + ic('route') + '<span>' + (who === S.me.username ? 'You are' : esc(userName(who)) + ' is') + ' on a travel order this day (' + esc(tro.event) + '). Work under a travel order is counted in the DTR, so this offset will be flagged for the admin.</span></div>';
+  var who = (root.querySelector('#fu') || {}).value || S.me.username, tros = d.value ? activeTOs().filter(function(t){ return t.usernames.indexOf(who) >= 0 && t.dateFrom <= d.value && t.dateTo >= d.value; }) : [];
+  if (auto && tros.length && cat !== 'Travel order'){ root.querySelector('#c3').checked = true; cat = 'Travel order'; }
+  var isTO = cat === 'Travel order', sel = root.querySelector('#fto');
+  if (sel){ var cur = sel.value || sel.dataset.cur; sel.innerHTML = tros.map(function(t){ return '<option value="' + t.id + '"' + (t.id === cur ? ' selected' : '') + '>' + esc(t.event) + ' · ' + esc(fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric' })) + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') + '</option>'; }).join('');
+    var tSel = tros.filter(function(t){ return t.id === sel.value; })[0];
+    if (isTO && tSel){ var fe = root.querySelector('#fe'), fv = root.querySelector('#fv'); if (fe && !fe.value) fe.value = tSel.event; if (fv && !fv.value && tSel.destination) fv.value = tSel.destination; } }
+  if (isTO && !tros.length && d.value) msg += '<div class="warn-note">' + ic('route') + '<span>No travel order found for ' + (who === S.me.username ? 'you' : esc(userName(who))) + ' on this date. File the travel order first, then log the offset.</span></div>';
+  if (!isTO && tros.length) msg += '<div class="warn-note" style="background:var(--red-soft);color:var(--red)">' + ic('route') + '<span>' + (who === S.me.username ? 'You are' : esc(userName(who)) + ' is') + ' on a travel order this day (' + esc(tros[0].event) + '). If it went beyond the ' + S.settings.workdays + ' workdays, choose the type \u201cTravel order\u201d. Otherwise it will be flagged for the admin.</span></div>';
+  root.querySelector('#toWrap').hidden = !isTO;
+  root.querySelector('#chkNoTO').hidden = isTO; root.querySelector('#chkNoTO input').required = !isTO;
+  root.querySelector('#chkPayroll').hidden = !isTO; root.querySelector('#chkPayroll input').required = isTO;
   box.innerHTML = msg;
   var after = cat === 'After 5 PM';
   root.querySelector('#endWrap').hidden = !after; root.querySelector('#amtWrap').hidden = after;
@@ -1093,7 +1105,7 @@ function viewLog(){
          ['moon','After 5 PM: events that end 1:00 AM or later count as 1 day. Earlier counts as ½ day.'],
          ['clock','What you log in ' + fMonth(curMonth()) + ' becomes usable on ' + closesOn(curMonth()) + '.'],
          ['refresh', S.settings.carryCap ? 'Unused offsets carry over, up to ' + fD(S.settings.carryCap) + '. Anything above that is forfeited at the start of a month.' : 'Unused offsets carry over to the next months. They do not expire.'],
-         ['route','Work done under a travel order is not an offset. It is already counted in your DTR.']].map(function(x){ return '<div style="display:flex;gap:10px"><span style="color:var(--brand-strong)">' + ic(x[0]) + '</span><span>' + x[1] + '</span></div>'; }).join('') + '</div>', '', 'span-5') + '</div>' };
+         ['route','Travel order days count as offsets only when you already reached the ' + S.settings.workdays + ' workdays that month and the day was not charged to payroll. Choose the type \u201cTravel order\u201d.']].map(function(x){ return '<div style="display:flex;gap:10px"><span style="color:var(--brand-strong)">' + ic(x[0]) + '</span><span>' + x[1] + '</span></div>'; }).join('') + '</div>', '', 'span-5') + '</div>' };
 }
 
 /* ----- approvals ----- */
@@ -1285,7 +1297,8 @@ function entryModal(id){
   var use = e.type === 'USE', adm = isAdmin(), u = userOf(e.username), pend = e.status === 'Pending';
   function f(k, v){ return v ? '<div class="kv"><span>' + k + '</span><b>' + v + '</b></div>' : ''; }
   var body = '<div class="detail-top"><span class="mark ' + (pend ? 'pend' : (use ? 'use' : 'earn')) + '">' + ic(use ? 'plane' : (CAT_ICON[e.category] || 'plus')) + '</span><div><div class="big-amt ' + (use ? 'minus' : 'plus') + '">' + (use ? '−' : '+') + fD(e.days) + '</div><span class="pill ' + e.status + '">' + e.status + '</span></div></div>' +
-    (e.type === 'EARN' && toOn(e.username, e.date) ? '<div class="warn-note" style="background:var(--red-soft);color:var(--red)">' + ic('route') + '<span>On a travel order this day: ' + esc(toOn(e.username, e.date).event) + '. Check that this is not already counted in the DTR.</span></div>' : '') +
+    (e.type === 'EARN' && e.category === 'Travel order' ? '<div class="info-note">' + ic('route') + '<span>From a travel order beyond the ' + S.settings.workdays + ' workdays, not charged to payroll' + (toOn(e.username, e.date) ? ': ' + esc(toOn(e.username, e.date).event) : '') + '.</span></div>' : '') +
+    (e.type === 'EARN' && e.category !== 'Travel order' && toOn(e.username, e.date) ? '<div class="warn-note" style="background:var(--red-soft);color:var(--red)">' + ic('route') + '<span>On a travel order this day: ' + esc(toOn(e.username, e.date).event) + '. Check that this is not already counted in the DTR.</span></div>' : '') +
     (e.status === 'Rejected' && e.note ? '<div class="warn-note" style="background:var(--red-soft);color:var(--red)">' + ic('x') + '<span>Reason: ' + esc(e.note) + '</span></div>' : '') +
     '<div class="kvs">' + f('Employee', esc(userName(e.username)) + (u && u.division ? ' · ' + divChip(u.division) : '')) + f(use ? 'Day off' : 'Date', fDate(e.date, { weekday:'long', month:'long', day:'numeric', year:'numeric' }) + (holidayOn(e.date) ? ' · ' + esc(holidayOn(e.date).name) : '')) +
       (use ? '' : f('Type', esc(e.category) + (e.endTime ? ' · ended ' + fTime(e.endTime) : '')) + f('Event', esc(e.event)) + f('Venue', esc(e.venue)) +
@@ -1483,7 +1496,7 @@ document.addEventListener('change', function(ev){
   if (id === 'dashDiv'){ S.dashDiv = el.value; render(); }
   if (id === 'holYear'){ S.holYear = el.value; render(); }
   if (id === 'rfUser' || id === 'rfType' || id === 'rfStatus' || id === 'rfDiv'){ S.rf[{ rfUser:'user', rfType:'type', rfStatus:'status', rfDiv:'div' }[id]] = el.value; render(); }
-  if (el.name === 'category' || id === 'fd' || id === 'ft' || id === 'fu'){ checkEarnForm(el.closest('form') || document, id === 'fd'); }
+  if (el.name === 'category' || id === 'fd' || id === 'ft' || id === 'fu' || id === 'fto'){ checkEarnForm(el.closest('form') || document, id === 'fd'); }
   if (id === 'dcol'){ M.color = el.value.toUpperCase(); divPreview(); }
   if (id === 'dlogo' && el.files[0]){ readLogo(el.files[0]).then(function(u){ M.logo = u; divPreview(); }).catch(function(e){ document.getElementById('merr').textContent = e.message; }); }
   if (el.dataset.setdiv){ el.disabled = true; act('setDivision', { username: el.dataset.setdiv, division: el.value }, 'Division updated').catch(function(e){ toast(e.message); el.disabled = false; }); }
@@ -1513,9 +1526,9 @@ document.addEventListener('submit', function(ev){
     if (d.division) lSet('pio_div', d.division);
     p = call(kind, d).then(function(r){ S.token = r.token; saveSession(r.token, remember); S.view = 'dashboard'; if (!S.me) return refresh().then(function(){ window.scrollTo(0,0); }); if (remember) lSet('pio_cache', JSON.stringify({ me:S.me, users:S.users, entries:S.entries, divisions:S.divisions, holidays:S.holidays, settings:S.settings, activity:S.activity })); render(); window.scrollTo(0,0); });
   }
-  else if (kind === 'earn'){ d.noTravelOrder = !!d.noTravelOrder; var selfLog = !isAdmin() || !d.username || d.username === S.me.username;
+  else if (kind === 'earn'){ d.noTravelOrder = !!d.noTravelOrder; d.notInPayroll = !!d.notInPayroll; var selfLog = !isAdmin() || !d.username || d.username === S.me.username;
     p = act('logEarn', d, isAdmin() && !(selfLog && otherAdmins()) ? 'Offset saved and confirmed' : 'Sent for confirmation').then(function(){ S.view = 'dashboard'; render(); window.scrollTo(0,0); }); }
-  else if (kind === 'editEntry'){ d.id = M.id; d.noTravelOrder = d.noTravelOrder !== undefined || !f.querySelector('input[name=noTravelOrder]'); p = act('editEntry', d, 'Changes saved').then(closeModal); }
+  else if (kind === 'editEntry'){ d.id = M.id; d.noTravelOrder = d.noTravelOrder !== undefined || !f.querySelector('input[name=noTravelOrder]'); d.notInPayroll = d.notInPayroll !== undefined; p = act('editEntry', d, 'Changes saved').then(closeModal); }
   else if (kind === 'requestUse') p = act('requestUse', d, isAdmin() && !otherAdmins() ? 'Day off recorded' : 'Request sent').then(closeModal);
   else if (kind === 'recordUse') p = act('recordUse', d, 'Offset use recorded').then(closeModal);
   else if (kind === 'reject') p = act('review', { id: M.id, decision: 'Rejected', note: d.note }, 'Rejected').then(closeModal);
@@ -1612,7 +1625,8 @@ function viewAvailability(){
 }
 
 /* ----- travel orders ----- */
-function toText(t){ return [fRange(t.dateFrom, t.dateTo).toUpperCase(), t.event.toUpperCase()].concat(t.names).join('\n'); }
+/* Copy order: date, purpose (kept exactly as typed), then names in capital letters. */
+function toText(t){ return [fRange(t.dateFrom, t.dateTo).toUpperCase(), t.event].concat(t.names).join('\n'); }
 function toRow(t){
   var adm = isAdmin(), mine = t.createdBy === S.me.username, canEdit = adm || (mine && t.status === 'Filed');
   return '<li class="to-card"><div class="to-date"><b>' + fDate(t.dateFrom, { month:'short' }).toUpperCase() + '</b><span class="num">' + pd(t.dateFrom).getDate() + (t.dateTo !== t.dateFrom ? '–' + pd(t.dateTo).getDate() : '') + '</span></div>' +
@@ -1631,7 +1645,7 @@ function viewTravel(){
   }).sort(function(a,b){ return f === 'past' ? (a.dateFrom < b.dateFrom ? 1 : -1) : (a.dateFrom < b.dateFrom ? -1 : 1); });
   var toPrep = S.travelOrders.filter(function(t){ return t.status === 'Filed'; }).length;
   var tabs = [['upcoming','Upcoming'],['Filed','To prepare' + (isAdmin() && toPrep ? ' (' + toPrep + ')' : '')],['Prepared','Prepared'],['past','Past'],['Cancelled','Cancelled']];
-  return { eyebrow: 'Field work', title: 'Travel orders', sub: 'File the date, event and people here instead of on paper. Admins prepare the document and mark if a TEV is needed.',
+  return { eyebrow: 'Field work', title: 'Travel orders', sub: 'File the date, purpose and people here instead of on paper. Admins prepare the document and mark if a TEV is needed.',
     actions: '<button class="btn btn-sun" data-act="toNew">' + ic('plus') + 'New travel order</button>',
     body: '<section class="panel"><div class="panel-h"><div class="tabs" role="group" aria-label="Show">' + tabs.map(function(x){ return '<button data-act="toTab" data-t="' + x[0] + '" aria-pressed="' + (f === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
       '<label class="keep" style="font-size:13.5px"><input type="checkbox" id="toMine"' + (mine ? ' checked' : '') + '>Only mine</label></div>' +
@@ -1643,7 +1657,7 @@ function toModal(id){
   TO = { id: t.id || '', names: t.names.slice() };
   modal(t.id ? 'Edit travel order' : 'New travel order',
     '<div class="two"><div class="field"><label for="tf">Date</label><input class="input" id="tf" name="dateFrom" type="date" value="' + t.dateFrom + '" required></div><div class="field"><label for="tt">Until <span class="hint">(if more than one day)</span></label><input class="input" id="tt" name="dateTo" type="date" value="' + (t.dateTo !== t.dateFrom ? t.dateTo : '') + '"></div></div>' +
-    '<div class="field"><label for="te">Event</label><input class="input" id="te" name="event" maxlength="120" value="' + esc(t.event) + '" placeholder="e.g. Coverage of the Provincial Board session" required></div>' +
+    '<div class="field"><label for="te">Purpose</label><input class="input" id="te" name="event" maxlength="200" value="' + esc(t.event) + '" placeholder="e.g. To cover the Provincial Board regular session" required><span class="hint">Copied exactly as you type it.</span></div>' +
     '<div class="field"><label for="tdst">Destination <span class="hint">(optional)</span></label><input class="input" id="tdst" name="destination" maxlength="120" value="' + esc(t.destination) + '" placeholder="e.g. Labo, Camarines Norte"></div>' +
     '<div class="field"><label for="tp">People to be dispatched</label><div class="picker"><div class="chips" id="toChips"></div><input class="input" id="tp" autocomplete="off" placeholder="Type a name, then pick or press Enter" aria-autocomplete="list" aria-controls="toSug"><ul class="sug" id="toSug" role="listbox" hidden></ul></div>' +
       '<div class="row-btns"><button type="button" class="btn btn-sm btn-ghost" data-act="toAddMe">' + ic('plus') + 'Add me</button><span class="hint">Names are saved in capital letters, ready to paste into the document.</span></div></div><div id="toWarn"></div>',
@@ -1903,13 +1917,15 @@ var Mock = (function(){
   function ok(me, d){ return { ok:true, data:d === undefined ? true : d, fresh: data(me) }; }
   function earn(p){
     if (!String(p.event||'').trim()) throw 'Event name is required.';
+    var isTO = p.category === 'Travel order';
+    if (isTO){ var tt = tos.filter(function(t){ return t.id === p.toId && t.status !== 'Cancelled' && t.dateFrom <= p.date && t.dateTo >= p.date; })[0]; if (!tt) throw 'Pick the travel order you were on that day.'; if (!p.notInPayroll) throw 'Confirm that this travel order day is not charged to payroll.'; }
     if (!String(p.venue||'').trim()) throw 'Venue is required.';
     if (!p.date || p.date > today()) throw 'You cannot log an offset for a future date.';
-    if (!p.noTravelOrder) throw 'Confirm that this work was not under a travel order.';
+    if (!isTO && !p.noTravelOrder) throw 'Confirm that this work was not under a travel order.';
     var days = Number(p.days), end = '';
     if (p.category === 'After 5 PM'){ end = String(p.endTime||''); if (!/^\d\d:\d\d$/.test(end)) throw 'Enter the time the event ended.'; if (end >= '17:00' && end < '19:00') throw 'Events that end before 7:00 PM are not counted as offset.'; days = (end >= '01:00' && end < '12:00') ? 1 : 0.5; }
     else if (days !== 0.5 && days !== 1) throw 'Pick ½ day or 1 day.';
-    return { date:p.date, category:p.category, days:days, event:p.event.trim(), venue:p.venue.trim(), endTime:end };
+    return { date:p.date, category:p.category, days:days, event:p.event.trim(), venue:p.venue.trim(), endTime:end, toId: isTO ? p.toId : '' };
   }
   return { api: function(a, p, tok){
     try {
@@ -1935,7 +1951,7 @@ var Mock = (function(){
       log(me, 'Requested a day off', me.username, p.date + ' · ' + dd + ' day(s)'); return ok(me); }
     if (a === 'deleteEntry'){ var i = entries.findIndex(function(e){ return e.id === p.id; }); if (i < 0) return fail('Entry not found.'); var e = entries[i]; if (!adm && !(e.username === me.username && e.status === 'Pending')) return fail('You can only remove your own pending entries.'); entries.splice(i,1); log(me, 'Removed an entry', e.username, e.date + ' · ' + e.days + ' day(s)'); return ok(me); }
     if (a === 'changePin'){ if (p.oldPin !== me.pin) return fail('Current PIN is wrong.'); if (!/^\d{4,6}$/.test(p.newPin)) return fail('PIN must be 4 to 6 digits.'); me.pin = p.newPin; log(me, 'Changed own PIN', me.username); return ok(me); }
-    if (a === 'saveTO'){ var nm = String(p.names||'').split('\n').map(function(s){ return s.trim().toUpperCase(); }).filter(Boolean); if (!nm.length) return fail('Add at least one person.'); if (!String(p.event||'').trim()) return fail('Event name is required.'); if (!p.dateFrom) return fail('Pick a valid date.');
+    if (a === 'saveTO'){ var nm = String(p.names||'').split('\n').map(function(s){ return s.trim().toUpperCase(); }).filter(Boolean); if (!nm.length) return fail('Add at least one person.'); if (!String(p.event||'').trim()) return fail('Purpose is required.'); if (!p.dateFrom) return fail('Pick a valid date.');
       var tf = { dateFrom:p.dateFrom, dateTo:p.dateTo || p.dateFrom, event:p.event.trim(), destination:(p.destination||'').trim(), names:nm, updatedBy:me.username, updatedAt:now };
       if (tf.dateTo < tf.dateFrom) return fail('The end date is before the start date.');
       if (p.id){ var ex1 = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && (ex1.createdBy !== me.username || ex1.status !== 'Filed')) return fail('Only admins can edit a travel order after it is prepared.'); Object.assign(ex1, tf); log(me, 'Edited a travel order', tf.event); }
