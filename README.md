@@ -45,15 +45,14 @@ Then add staff in Staff. The three PIO divisions are created automatically.
 
 ## Good to know
 
-- Records are in the Google Sheet tabs `Users`, `Entries` and `Divisions`. Don't rename the column headers.
-- Offsets logged in a month are added to balances on the 1st of the next month.
-- PINs are stored only as salted hashes. 5 wrong PINs lock a username for 15 minutes.
-- "Keep me signed in" keeps a device signed in for 30 days, renewed with use. Unticked, the session ends when the browser closes.
-- Resetting a PIN or deactivating an account signs that person out on every device.
-- Each offset entry is ½ day (about 4 hours) or 1 day (8 hours or more, including events that end past midnight). Offset use is recorded in half-day steps.
-- Unused offsets carry over month to month and do not expire.
-- Staff can log offsets for past months they forgot. Once confirmed, they count right away.
-- Admins can log their own offsets. Another admin confirms them (if there is only one admin, they are confirmed automatically).
-- Removing an account deletes it from Users but keeps their past entries in Entries. You cannot remove yourself or the last admin.
+- Records are in the Google Sheet tabs `Users`, `Entries`, `Divisions`, `Holidays`, `Settings` and `Activity`. Don't rename the column headers.
+- **Activity** is the audit trail: every change made in the app is added there with who, what and when. The app never edits or deletes it. Admins see it under Records > Activity log.
+- Each offset entry is ½ day or 1 day. "After 5 PM" entries ask when the event ended: 1:00 AM or later = 1 day, earlier = ½ day, before 7:00 PM is not counted.
+- Offsets logged in a month become usable on the 1st of the next month. Unused offsets carry over; admins can set a carry-over cap in Settings (0 = no limit).
+- Staff request days off from their dashboard or the calendar; an admin approves them. Admins' own entries and requests need another admin (automatic if there is only one admin).
+- Rejections need a short reason, which the employee sees.
+- Staff can edit or remove their own entries while they are still waiting for review.
+- Holidays: the 2026 national list and Camarines Norte's Vinzons Day (Sept 28) are added automatically. Add Eid'l Fitr, Eid'l Adha, local holidays and next year's list in Settings.
+- Backups are on demand in Settings: save a copy of the Sheet to Google Drive, or download a JSON backup or CSV. Reports: Monthly page > Download CSV or Print report.
+- "Keep me signed in" keeps a device signed in for 30 days, renewed with use. Resetting a PIN or deactivating/removing an account signs that person out everywhere.
 - Install on a phone: open the site in Chrome (Android) or Safari (iPhone) > Add to Home Screen.
-- `WORKDAYS` (22) and `REMEMBER_DAYS` (30) are at the top of `Code.gs`.
