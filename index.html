@@ -99,6 +99,15 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .btn-block{width:100%}
 .btn[disabled]{opacity:.55;cursor:not-allowed}
 .is-busy{opacity:.8;cursor:progress!important}
+.sync-pill{position:fixed;right:max(16px,env(safe-area-inset-right,0px));top:calc(12px + env(safe-area-inset-top,0px));z-index:80;display:flex;align-items:center;gap:8px;background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600;box-shadow:var(--shadow)}
+.new-bar{position:fixed;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px));z-index:85;display:flex;align-items:center;gap:10px;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong);border-radius:999px;padding:6px 6px 6px 14px;box-shadow:0 10px 30px -8px rgba(14,30,51,.35);font-size:14px;font-weight:600;max-width:calc(100vw - 32px)}
+.new-bar>svg.i{color:var(--brand-strong)}
+.new-bar .icon-btn{width:32px;height:32px;border:0}
+.new-bar span{white-space:nowrap}
+@media (max-width:860px){.new-bar{top:calc(64px + env(safe-area-inset-top,0px));left:16px;right:16px;transform:none;justify-content:space-between}.new-bar span{flex:1;white-space:normal}}
+.sync-pill.off{background:var(--gold-soft);color:var(--gold);border:1px solid currentColor}
+.sync-pill svg.i{width:16px;height:16px}
+@media (max-width:860px){.sync-pill{top:auto;bottom:calc(96px + env(safe-area-inset-bottom,0px))}}
 .spin{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;display:inline-block;animation:spin .7s linear infinite;flex:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 .icon-btn{width:38px;height:38px;display:grid;place-items:center;border-radius:var(--r-sm);border:1px solid var(--line-strong);background:var(--surface);cursor:pointer;color:var(--ink)}
@@ -658,7 +667,7 @@ function apply(d){
   S.me = d.me; S.users = d.users; S.entries = d.entries; S.divisions = d.divisions;
   S.holidays = d.holidays || []; S.settings = d.settings || S.settings; S.activity = d.activity || [];
   S.travelOrders = d.travelOrders || []; S.leaves = d.leaves || []; S.credits = d.credits || []; S.board = d.board || [];
-  S.loadedAt = Date.now();
+  S.loadedAt = Date.now(); S.lastWrite = d.lastWrite || 0;
   if (remembered()) lSet('pio_cache', JSON.stringify(d));
 }
 function call(action, p){
@@ -672,11 +681,12 @@ function call(action, p){
       fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: action, p: p || {}, token: S.token }) })
         .then(function(r){ return r.text(); }, function(){ throw new Error('net'); })
         .then(function(t){ var j; try { j = JSON.parse(t); } catch(e){ throw new Error('html'); } done(j); })
-        .catch(function(e){ reject(new Error(e.message === 'html' ? 'The server sent a web page instead of data. In Apps Script, set the deployment’s access to Anyone and deploy a new version.' : 'Could not reach the server. Check your internet connection and try again.')); });
+        .catch(function(e){ var er = new Error(e.message === 'html' ? 'The server sent a web page instead of data. In Apps Script, set the deployment’s access to Anyone and deploy a new version.' : 'Could not reach the server. Check your internet connection and try again.'); er.net = e.message !== 'html'; reject(er); });
     } else setTimeout(function(){ done(Mock.api(action, p || {}, S.token)); }, 150);
   });
 }
-function refresh(){ return call('data').then(function(d){ apply(d); render(); }); }
+/* force: rebuild the server's snapshot from the Sheet (the Refresh button), e.g. after someone edited the Sheet by hand. */
+function refresh(force){ return call('data', force ? { force: true } : {}).then(function(d){ apply(d); render(); }); }
 function act(action, p, msg){ return call(action, p).then(function(r){ if (msg) toast(typeof msg === 'function' ? msg(r) : msg); render(); return r; }); }
 
 /* ---------- balances ----------
@@ -848,12 +858,13 @@ function entryRow(e, opts){
   var title = (opts.showName ? esc(userName(e.username)) + ' · ' : '') + (use ? (pend ? 'Day-off request' : 'Day off') : esc(e.event || e.category));
   var meta = fDate(e.date, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + (use ? '' : ' · ' + esc(e.category) + (e.endTime ? ' until ' + fTime(e.endTime) : '')) + (e.venue ? ' · ' + esc(e.venue) : '');
   var acts = '';
-  if (opts.review && !canReview(e)) acts = '<div class="acts"><span class="pill off">Needs another admin</span></div>';
+  if (e._saving) acts = '';
+  else if (opts.review && !canReview(e)) acts = '<div class="acts"><span class="pill off">Needs another admin</span></div>';
   else if (opts.review) acts = '<div class="acts"><button class="btn btn-sm btn-primary" data-act="review" data-id="' + e.id + '" data-d="Confirmed">' + (use ? 'Approve' : 'Confirm') + '</button><button class="btn btn-sm btn-danger" data-act="rejectModal" data-id="' + e.id + '">Reject</button></div>';
   return '<li class="row tap' + (opts.review ? ' rv' : '') + '" data-entry="' + e.id + '" tabindex="0"><span class="mark ' + cls + '">' + ic(use ? 'plane' : (CAT_ICON[e.category] || 'plus')) + '</span>' +
     '<div class="body"><div class="t">' + title + '</div><div class="m">' + meta + '</div></div>' +
     (e.type === 'EARN' && e.category !== 'Travel order' && typeof toOn === 'function' && toOn(e.username, e.date) ? '<span class="pill Rejected" title="This person is on a travel order on this date">On TO</span>' : '') +
-    (opts.review || e.status === 'Confirmed' ? '' : '<span class="pill ' + e.status + '">' + e.status + '</span>') +
+    (e._saving ? '<span class="pill off">Saving…</span>' : opts.review || e.status === 'Confirmed' ? '' : '<span class="pill ' + e.status + '">' + e.status + '</span>') +
     '<span class="amt ' + (use ? 'minus' : 'plus') + '">' + fDs(use ? -e.days : e.days, true) + '</span>' + acts + '</li>';
 }
 function tile(k, v, s, cls, icon, go){
@@ -1306,6 +1317,7 @@ function entryModal(id){
       f(use && e.createdBy === e.username ? 'Requested by' : 'Logged by', (e.createdBy === e.username ? 'Self' : esc(userName(e.createdBy))) + ' · ' + when(e.createdAt)) +
       (e.reviewedBy && e.createdBy !== e.reviewedBy ? f(e.status === 'Rejected' ? 'Rejected by' : 'Approved by', esc(userName(e.reviewedBy)) + ' · ' + when(e.reviewedAt)) : '') + '</div>';
   var foot = '', mine = e.username === S.me.username;
+  if (e._saving){ modal(esc(e.event || 'Saving'), body + '<div class="info-note">' + ic('clock') + '<span>Still saving. You can open it again in a moment.</span></div>', '<button type="button" class="btn btn-ghost" data-act="close">Close</button>'); return; }
   if (adm || (mine && pend)) foot += '<button type="button" class="btn btn-danger" data-act="del" data-id="' + e.id + '" style="margin-right:auto">' + ic('trash') + 'Remove</button>';
   if (pend && (adm || mine)) foot += '<button type="button" class="btn btn-ghost" data-act="editEntry" data-id="' + e.id + '">' + ic('edit') + 'Edit</button>';
   if (pend && canReview(e)) foot += '<button type="button" class="btn btn-ghost" data-act="rejectModal" data-id="' + e.id + '">Reject</button><button type="button" class="btn btn-primary" data-act="review" data-id="' + e.id + '" data-d="Confirmed">' + ic('check') + (use ? 'Approve' : 'Confirm') + '</button>';
@@ -1427,7 +1439,7 @@ document.addEventListener('click', function(ev){
   if (a === 'closeScrim'){ if (ev.target === t) closeModal(); return; }
   if (a === 'close') return closeModal();
   if (a === 'showPin'){ var pi = document.getElementById('lp'), on = pi.type === 'password'; pi.type = on ? 'text' : 'password'; t.setAttribute('aria-pressed', String(on)); t.setAttribute('aria-label', on ? 'Hide PIN' : 'Show PIN'); return; }
-  if (a === 'refresh'){ busy(t, refresh().then(function(){ toast('Up to date'); })); return; }
+  if (a === 'refresh'){ busy(t, refresh(true).then(function(){ toast('Up to date'); })); return; }
   if (a === 'logout'){ call('logout').catch(function(){}); clearSession(); S.token = null; S.me = null; S.view = 'dashboard'; render(); return; }
   if (a === 'drawer'){ var on3 = !document.body.classList.contains('drawer-open'); document.body.classList.toggle('drawer-open', on3); document.querySelectorAll('[data-act=drawer]').forEach(function(b){ b.setAttribute('aria-expanded', String(on3)); }); if (on3){ var f3 = document.querySelector('.side .nav button'); if (f3) f3.focus(); } return; }
   if (a === 'drawerClose'){ document.body.classList.remove('drawer-open'); return; }
@@ -1633,7 +1645,7 @@ function toRow(t){
     '<div class="to-body"><div class="t">' + esc(t.event) + '</div><div class="m">' + fRange(t.dateFrom, t.dateTo, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') + '</div>' +
       '<div class="to-names">' + t.names.map(function(n){ return '<span>' + esc(n) + '</span>'; }).join('') + '</div>' +
       '<div class="row-btns"><span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + t.status + '</span>' + (adm || t.tev ? '<span class="pill ' + (t.tev === 'Yes' ? 'hol' : 'off') + '">TEV: ' + (t.tev || 'not set') + '</span>' : '') + '<span class="hint">Filed by ' + esc(userName(t.createdBy)) + ' · ' + ago(t.createdAt) + '</span></div></div>' +
-    '<div class="to-acts"><button class="btn btn-sm btn-ghost" data-act="toCopy" data-id="' + t.id + '">' + ic('list') + 'Copy</button>' + (adm ? '<button class="btn btn-sm btn-primary" data-act="toManage" data-id="' + t.id + '">' + ic('shield') + 'Prepare</button>' : '') + (canEdit ? '<button class="btn btn-sm btn-ghost" data-act="toEdit" data-id="' + t.id + '">' + ic('edit') + 'Edit</button>' : '') + '</div></li>';
+    (t._saving ? '<div class="to-acts"><span class="pill off">Saving…</span></div>' : '<div class="to-acts"><button class="btn btn-sm btn-ghost" data-act="toCopy" data-id="' + t.id + '">' + ic('list') + 'Copy</button>' + (adm ? '<button class="btn btn-sm btn-primary" data-act="toManage" data-id="' + t.id + '">' + ic('shield') + 'Prepare</button>' : '') + (canEdit ? '<button class="btn btn-sm btn-ghost" data-act="toEdit" data-id="' + t.id + '">' + ic('edit') + 'Edit</button>' : '') + '</div>') + '</li>';
 }
 function viewTravel(){
   var f = S.toFilter || 'upcoming', td = today(), mine = S.toMine;
@@ -1844,6 +1856,213 @@ document.addEventListener('submit', function(ev){
   if (p) busy(btn, p, 'merr');
 });
 
+/* =====================================================================
+   Instant saving. Forms close and the new item shows right away, marked
+   "Saving…". The real save runs in the background, one at a time, in order.
+   If the server refuses, the change is undone and a sheet explains why,
+   with Try again. Checks run before sending, so refusals are rare.
+   ===================================================================== */
+var Q = { ops: [], n: 0, busy: false, wait: 0, timer: null, loaded: false, offline: false };
+function tmpId(){ return 'tmp' + (++Q.n) + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+/* What the screen shows while a save is on its way. Kept as plain data so it survives a closed tab. */
+function applySpec(sp){
+  var arr = S[sp.arr], key = sp.key || 'id';
+  if (!arr) return;
+  if (sp.item){ if (!arr.some(function(x){ return x[key] === sp.item[key]; })) arr.push(Object.assign({}, sp.item)); }
+  else arr.forEach(function(x){ if (x[key] === sp.id) Object.assign(x, sp.patch, { _saving: true }); });
+}
+function reapply(){ Q.ops.forEach(function(op){ try { applySpec(op.spec); } catch(e){} }); }
+function qKey(){ return S.me ? 'pio_q_' + S.me.username : null; }
+function persist(){ var k = qKey(); if (k) lSet(k, Q.ops.length ? JSON.stringify(Q.ops) : null); }
+function syncBadge(){
+  var b = document.getElementById('syncPill');
+  if (!b){ b = document.createElement('div'); b.id = 'syncPill'; b.className = 'sync-pill'; b.setAttribute('role', 'status'); document.body.appendChild(b); }
+  var n = Q.ops.length;
+  b.innerHTML = !n ? '' : Q.offline ? ic('clock') + 'No connection · ' + n + ' waiting, will send automatically' : '<span class="spin" aria-hidden="true"></span>Saving ' + n + '…';
+  b.className = 'sync-pill' + (Q.offline ? ' off' : '');
+  b.hidden = !n;
+}
+/* After fresh data arrives: pick up saves left from last time, and keep unsent changes on screen. */
+var _apply = apply;
+apply = function(d){
+  _apply(d);
+  if (!Q.loaded && S.me){ Q.loaded = true; try { Q.ops = JSON.parse(lGet(qKey()) || '[]'); } catch(e){ Q.ops = []; } if (Q.ops.length){ setTimeout(pump, 0); setTimeout(syncBadge, 0); } }
+  reapply();
+};
+window.addEventListener('beforeunload', function(e){ if (Q.ops.length && !Q.offline){ e.preventDefault(); e.returnValue = ''; } });
+window.addEventListener('online', function(){ Q.wait = 0; pump(); });
+
+function cleanup(op){
+  ['entries','travelOrders','leaves'].forEach(function(k){ S[k] = S[k].filter(function(x){ return x.id !== op.tmp; }); S[k].forEach(function(x){ delete x._saving; }); });
+  S.users.forEach(function(x){ delete x._saving; });
+}
+/* Problems worth retrying: no signal, or Google being busy. Anything else is a real refusal. */
+function transient(err){ return err.net || /lock|timed? ?out|too many|try again later|service (error|unavailable)|internal error|rate/i.test(err.message || ''); }
+
+function bg(action, payload, spec, done, label, tmp){
+  var op = { action: action, payload: payload, spec: spec, label: label, tmp: tmp || tmpId() };
+  Q.ops.push(op); persist(); applySpec(spec); closeModal(); render(); syncBadge();
+  toast(done + (navigator.onLine === false ? ' · will send when back online' : ' · saving in the background'));
+  pump();
+}
+function pump(){
+  if (Q.busy || !Q.ops.length || !S.me) return;
+  var op = Q.ops[0]; Q.busy = true;
+  call(op.action, Object.assign({}, op.payload, { _op: op.tmp })).then(function(){
+    Q.busy = false; Q.wait = 0; Q.offline = false;
+    Q.ops.shift(); persist(); cleanup(op); reapply(); render(); syncBadge();
+    if (!Q.ops.length) toast('All changes saved'); pump();
+  }, function(err){
+    Q.busy = false;
+    if (!S.me) return;                                     // signed out: the queue waits for the next sign-in
+    if (transient(err)){                                   // try again by itself: 2 s, 4 s, 8 s … up to 1 minute
+      Q.offline = true; Q.wait = Math.min(60, Q.wait ? Q.wait * 2 : 2); syncBadge();
+      clearTimeout(Q.timer); Q.timer = setTimeout(pump, Q.wait * 1000); return;
+    }
+    Q.ops.shift(); persist(); syncBadge();
+    refresh().catch(function(){}).then(function(){ failSheet(op, err); pump(); });
+  });
+}
+function failSheet(op, err){
+  M = { retry: op };
+  modal('Not saved', '<div class="warn-note" style="background:var(--red-soft);color:var(--red)">' + ic('x') + '<span>' + esc(op.label) + ' was not saved. ' + esc(err.message) + '</span></div><p class="hint" style="margin:0">Your other changes were saved. Fix the problem and try again, or discard this one.</p>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Discard</button><button type="button" class="btn btn-primary" data-act="retrySave">' + ic('refresh') + 'Try again</button>');
+}
+document.addEventListener('click', function(ev){
+  if (ev.target.closest('[data-act=retrySave]') && M.retry){ var op = M.retry; bg(op.action, op.payload, op.spec, 'Trying again', op.label); return; }
+  // Signing out with unsent changes would strand them, so wait.
+  if (ev.target.closest('[data-act=logout]') && Q.ops.length){ ev.stopImmediatePropagation(); toast('Wait a moment: ' + Q.ops.length + ' change(s) are still saving.'); }
+}, true);
+
+/* ---------- checks done before sending ---------- */
+function bad(errId, msg){ var el = document.getElementById(errId); if (el) el.textContent = msg; else toast(msg); return true; }
+function earnCheck(d, errId, ignoreId){
+  var who = d.username || S.me.username;
+  if (!d.event || !d.event.trim()) return bad(errId, 'Event name is required.');
+  if (!d.venue || !d.venue.trim()) return bad(errId, 'Venue is required.');
+  if (!d.date || d.date > today()) return bad(errId, 'You cannot log an offset for a future date.');
+  if (d.category === 'Travel order'){ if (!d.toId) return bad(errId, 'Pick the travel order you were on that day. File it first if it is missing.'); if (!d.notInPayroll) return bad(errId, 'Confirm that this travel order day is not charged to payroll.'); }
+  else if (!d.noTravelOrder) return bad(errId, 'Confirm that this work was not under a travel order.');
+  if (d.category === 'After 5 PM'){ var t = d.endTime || ''; if (!/^\d\d:\d\d$/.test(t)) return bad(errId, 'Enter the time the event ended.'); if (t >= '17:00' && t < '19:00') return bad(errId, 'Events that end before 7:00 PM are not counted as offset.'); }
+  if (S.entries.some(function(e){ return e.id !== ignoreId && e.username === who && e.type === 'EARN' && e.date === d.date && e.category === d.category && e.status !== 'Rejected'; })) return bad(errId, 'An offset for this date and type is already logged.');
+  return false;
+}
+function earnDays(d){ if (d.category === 'After 5 PM'){ var t = d.endTime; return (t >= '01:00' && t < '12:00') ? 1 : 0.5; } return Number(d.days) || 1; }
+
+/* ---------- forms that now save instantly ---------- */
+document.addEventListener('submit', function(ev){
+  var f = ev.target.closest('form[data-form]'); if (!f) return;
+  var kind = f.dataset.form, handled = { earn: 1, requestUse: 1, recordUse: 1, reject: 1, addUser: 1, saveTO: 1, toStatus: 1, recordLeave: 1 };
+  if (!handled[kind]) return;
+  ev.preventDefault(); ev.stopImmediatePropagation();
+  var d = {}; new FormData(f).forEach(function(v, k){ if (typeof v === 'string') d[k] = v; });
+  var errId = f.closest('#modal') ? 'merr' : 'err', err = document.getElementById(errId); if (err) err.textContent = '';
+  var now = new Date().toISOString(), me = S.me.username, adm = isAdmin(), id = tmpId();
+
+  if (kind === 'earn'){
+    d.noTravelOrder = !!d.noTravelOrder; d.notInPayroll = !!d.notInPayroll;
+    if (earnCheck(d, errId)) return;
+    var who = adm && d.username ? d.username : me, auto = adm && (who !== me || otherAdmins() === 0);
+    var e = { id: id, username: who, type: 'EARN', date: d.date, category: d.category, days: earnDays(d), event: d.event.trim(), venue: d.venue.trim(), endTime: d.category === 'After 5 PM' ? d.endTime : '', toId: d.category === 'Travel order' ? d.toId : '',
+              status: auto ? 'Confirmed' : 'Pending', note: '', createdBy: me, createdAt: now, reviewedBy: auto ? me : '', reviewedAt: auto ? now : '', _saving: true };
+    S.view = 'dashboard'; window.scrollTo(0, 0);
+    return bg('logEarn', d, { arr: 'entries', item: e }, auto ? 'Offset added' : 'Sent for confirmation', 'The offset “' + e.event + '”', id);
+  }
+  if (kind === 'requestUse'){
+    var st = stats(me), days = Number(d.days);
+    if (!(days >= 0.5) || days * 2 !== Math.round(days * 2)) return bad(errId, 'Days must be in half-day steps.');
+    if (days > st.free + 1e-9) return bad(errId, 'You have ' + fD(Math.max(st.free, 0)) + ' available to request.');
+    var au = adm && otherAdmins() === 0, r = { id: id, username: me, type: 'USE', date: d.date, category: 'Used', days: days, event: '', venue: '', endTime: '', status: au ? 'Confirmed' : 'Pending', note: '', createdBy: me, createdAt: now, reviewedBy: au ? me : '', reviewedAt: au ? now : '', _saving: true };
+    return bg('requestUse', d, { arr: 'entries', item: r }, au ? 'Day off recorded' : 'Request sent', 'Your day-off request for ' + fDate(d.date), id);
+  }
+  if (kind === 'recordUse'){
+    var days2 = Number(d.days), avail = stats(d.username).avail;
+    if (days2 > avail + 1e-9) return bad(errId, userName(d.username) + ' has only ' + fD(avail) + ' available.');
+    var u1 = { id: id, username: d.username, type: 'USE', date: d.date, category: 'Used', days: days2, event: '', venue: '', endTime: '', status: 'Confirmed', note: '', createdBy: me, createdAt: now, reviewedBy: me, reviewedAt: now, _saving: true };
+    return bg('recordUse', d, { arr: 'entries', item: u1 }, 'Offset use recorded', 'Offset use for ' + userName(d.username), id);
+  }
+  if (kind === 'reject'){
+    var rid = M.id, note = d.note;
+    return bg('review', { id: rid, decision: 'Rejected', note: note }, { arr: 'entries', id: rid, patch: { status: 'Rejected', note: note, reviewedBy: me, reviewedAt: now } }, 'Rejected', 'The rejection');
+  }
+  if (kind === 'addUser'){
+    var un = String(d.username || '').trim().toLowerCase();
+    if (!/^[a-z0-9._-]{3,30}$/.test(un)) return bad(errId, 'Usernames use 3–30 letters, numbers, dots or dashes.');
+    if (S.users.some(function(x){ return x.username === un; })) return bad(errId, 'That username is taken.');
+    if (!/^\d{4,6}$/.test(d.pin || '')) return bad(errId, 'PIN must be 4 to 6 digits.');
+    if (!String(d.name || '').trim()) return bad(errId, 'Full name is required.');
+    var nu = { username: un, name: d.name.trim(), role: d.role === 'admin' ? 'admin' : 'employee', division: d.division || '', active: true, empType: d.empType || 'JO/COS', _saving: true };
+    f.reset();
+    return bg('addUser', d, { arr: 'users', key: 'username', item: nu }, nu.name + ' added', 'The account for ' + nu.name);
+  }
+  if (kind === 'saveTO'){
+    var pend = document.getElementById('tp').value.trim(); if (pend) addName(pend);
+    d.names = TO.names.join('\n'); d.id = TO.id;
+    if (!d.dateFrom) return bad(errId, 'Pick a date.');
+    if (d.dateTo && d.dateTo < d.dateFrom) return bad(errId, 'The end date is before the start date.');
+    if (!String(d.event || '').trim()) return bad(errId, 'Purpose is required.');
+    if (!TO.names.length) return bad(errId, 'Add at least one person.');
+    var names = TO.names.slice(), usernames = names.map(function(n){ var x = S.users.filter(function(u){ return u.name.toUpperCase() === n; })[0]; return x ? x.username : null; }).filter(Boolean);
+    var fields = { dateFrom: d.dateFrom, dateTo: d.dateTo || d.dateFrom, event: d.event.trim(), destination: (d.destination || '').trim(), names: names, usernames: usernames, updatedBy: me, updatedAt: now, _saving: true };
+    if (TO.id){ return bg('saveTO', d, { arr: 'travelOrders', id: TO.id, patch: fields }, 'Travel order saved', 'The travel order “' + fields.event + '”'); }
+    var nt = Object.assign({ id: id, toNo: '', status: 'Filed', tev: '', createdBy: me, createdAt: now }, fields);
+    return bg('saveTO', d, { arr: 'travelOrders', item: nt }, 'Travel order filed', 'The travel order “' + fields.event + '”', id);
+  }
+  if (kind === 'toStatus'){
+    var tid = M.id; d.id = tid;
+    return bg('setTOStatus', d, { arr: 'travelOrders', id: tid, patch: { status: d.status, tev: d.tev || '', toNo: d.toNo || '' } }, 'Travel order updated', 'The travel order update');
+  }
+  if (kind === 'recordLeave'){
+    d.override = !!d.override;
+    var lt = LEAVE_TYPES[d.type], b = leaveBal(d.username, (d.dateFrom || '').slice(0, 4)), ld = Number(d.days), short = '';
+    if (!d.dateFrom || !d.dateTo || d.dateTo < d.dateFrom) return bad(errId, 'Check the dates.');
+    if (!(ld >= 0.5) || ld * 2 !== Math.round(ld * 2)) return bad(errId, 'Days must be in half-day steps.');
+    if (lt.pool === 'VL' && ld > b.vl + 1e-9) short = 'Only ' + fD(b.vl) + ' of vacation leave left.';
+    if (lt.pool === 'SL' && ld > b.sl + 1e-9) short = 'Only ' + fD(b.sl) + ' of sick leave left.';
+    var cap = d.type === 'WL' ? wellCap() : lt.year; if (cap && (b.used[d.type] || 0) + ld > cap + 1e-9) short = lt.name + ': only ' + fD(Math.max(cap - (b.used[d.type] || 0), 0)) + ' left this year.';
+    if (d.type === 'WL' && ld > 3) short = 'Wellness leave can be taken up to 3 days in a row.';
+    if (short && !d.override) return bad(errId, short + ' Record the rest as Leave Without Pay, or tick “Record anyway”.');
+    var nl = { id: id, username: d.username, type: d.type, dateFrom: d.dateFrom, dateTo: d.dateTo, days: ld, note: d.note || '', createdBy: me, createdAt: now, _saving: true };
+    return bg('recordLeave', d, { arr: 'leaves', item: nl }, 'Leave recorded', lt.name + ' for ' + userName(d.username), id);
+  }
+}, true);
+
+/* Approve buttons save instantly too. */
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act=review]'); if (!t) return;
+  ev.stopImmediatePropagation();
+  var id = t.dataset.id, dec = t.dataset.d, me = S.me.username, now = new Date().toISOString();
+  var e = S.entries.filter(function(x){ return x.id === id; })[0]; if (!e) return;
+  if (e.type === 'USE' && dec === 'Confirmed' && e.days > stats(e.username).avail + 1e-9) return toast(userName(e.username) + ' has only ' + fD(stats(e.username).avail) + ' available.');
+  bg('review', { id: id, decision: dec }, { arr: 'entries', id: id, patch: { status: dec, reviewedBy: me, reviewedAt: now } }, dec === 'Confirmed' ? 'Approved' : 'Rejected', 'The approval for ' + userName(e.username));
+}, true);
+
+/* ---------- "New updates" prompt ----------
+   Every minute (while the app is open and visible) it asks the server when anyone last saved.
+   If it is newer than what is on screen, a bar offers to refresh. The page never reloads by itself,
+   so nobody loses a form they are filling in. */
+var W = { timer: null, shown: false };
+function updateBar(on){
+  var b = document.getElementById('newBar');
+  if (!b){ b = document.createElement('div'); b.id = 'newBar'; b.className = 'new-bar'; b.setAttribute('role', 'status');
+    b.innerHTML = ic('refresh') + '<span>New entries from the office.</span><button type="button" class="btn btn-sm btn-sun" data-act="loadNew">Refresh</button><button type="button" class="icon-btn" data-act="hideNew" aria-label="Dismiss">' + ic('x') + '</button>';
+    document.body.appendChild(b); }
+  b.hidden = !on; W.shown = on;
+}
+function checkNew(){
+  if (!S.me || document.visibilityState !== 'visible' || Q.ops.length || W.shown) return;
+  call('ping').then(function(r){ if (r && r.lastWrite && S.lastWrite && r.lastWrite > S.lastWrite + 1000) updateBar(true); }, function(){});
+}
+setInterval(checkNew, 60000);
+document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible') setTimeout(checkNew, 1500); });
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act=loadNew],[data-act=hideNew]'); if (!t) return;
+  if (t.dataset.act === 'hideNew'){ updateBar(false); W.shown = true; setTimeout(function(){ W.shown = false; }, 5 * 60000); return; }
+  if (document.querySelector('#modal .scrim')) return toast('Finish or close the open form first, then refresh.');
+  busy(t, refresh().then(function(){ updateBar(false); toast('Up to date'); }));
+});
+
 /* ---------- preview backend (used only when config.js has no API URL) ---------- */
 var Mock = (function(){
   var divisions = [
@@ -1862,7 +2081,7 @@ var Mock = (function(){
   ];
   var holidays = [['2026-01-01',"New Year's Day",'Regular'],['2026-02-17','Chinese New Year','Special'],['2026-04-02','Maundy Thursday','Regular'],['2026-04-03','Good Friday','Regular'],['2026-04-04','Black Saturday','Special'],['2026-04-09','Araw ng Kagitingan','Regular'],['2026-05-01','Labor Day','Regular'],['2026-06-12','Independence Day','Regular'],['2026-08-21','Ninoy Aquino Day','Special'],['2026-08-31','National Heroes Day','Regular'],['2026-09-28','Wenceslao Vinzons Day (Camarines Norte)','Local'],['2026-11-01',"All Saints' Day",'Special'],['2026-11-02',"All Souls' Day",'Special'],['2026-11-30','Bonifacio Day','Regular'],['2026-12-08','Immaculate Conception','Special'],['2026-12-24','Christmas Eve','Special'],['2026-12-25','Christmas Day','Regular'],['2026-12-30','Rizal Day','Regular'],['2026-12-31','Last Day of the Year','Special']]
     .map(function(h){ return { date:h[0], name:h[1], kind:h[2] }; });
-  var settings = { workdays: 22, carryCap: 0, wellnessDays: 5 };
+  var settings = { workdays: 22, carryCap: 0, wellnessDays: 5 }, lastWrite = Date.now();
   var LT = { VL:'VL', FL:'VL', SL:'SL' }, tos = [], leaves = [], credits = [];
   function to(fromOff, toOff, event, dest, names, status, tev, by){ var f = addDays(today(), fromOff); tos.push({ id:'t' + (tos.length + 1), toNo: status === 'Prepared' ? 'PIO-2026-' + (100 + tos.length) : '', dateFrom:f, dateTo:addDays(today(), toOff), event:event, destination:dest, names:names.map(function(n){ return n.toUpperCase(); }), usernames:[], status:status, tev:tev, createdBy:by, createdAt:new Date(Date.now() - 3*864e5).toISOString(), updatedBy:'', updatedAt:'' }); }
   to(0, 0, 'Provincial Board regular session coverage', 'Sangguniang Panlalawigan Hall, Daet', ['Juan Dela Cruz','Mark Bautista'], 'Prepared', 'No', 'jdelacruz');
@@ -1913,8 +2132,8 @@ var Mock = (function(){
     var board = leaves.filter(function(l){ return !/^ADJ/.test(l.type); }).map(function(l){ return { username:l.username, from:l.dateFrom, to:l.dateTo, kind:'leave', label: adm || l.username === me.username ? l.type : '' }; });
     if (!adm) entries.forEach(function(e){ if (e.type === 'USE' && e.status === 'Confirmed' && e.username !== me.username) board.push({ username:e.username, from:e.date, to:e.date, kind:'off', label:'' }); });
     return { me:pub(me), users: users.map(pub), divisions:copy(divisions), holidays:copy(holidays), settings:copy(settings), activity: adm ? copy(activity) : [], entries: copy(entries.filter(function(e){ return adm || e.username === me.username; })),
-      travelOrders: copy(tos), leaves: copy(leaves.filter(function(l){ return adm || l.username === me.username; })), credits: copy(credits.filter(function(c){ return adm || c.username === me.username; })), board: board }; }
-  function ok(me, d){ return { ok:true, data:d === undefined ? true : d, fresh: data(me) }; }
+      lastWrite: lastWrite, travelOrders: copy(tos), leaves: copy(leaves.filter(function(l){ return adm || l.username === me.username; })), credits: copy(credits.filter(function(c){ return adm || c.username === me.username; })), board: board }; }
+  function ok(me, d){ lastWrite = Date.now(); return { ok:true, data:d === undefined ? true : d, fresh: data(me) }; }
   function earn(p){
     if (!String(p.event||'').trim()) throw 'Event name is required.';
     var isTO = p.category === 'Travel order';
@@ -1927,9 +2146,10 @@ var Mock = (function(){
     else if (days !== 0.5 && days !== 1) throw 'Pick ½ day or 1 day.';
     return { date:p.date, category:p.category, days:days, event:p.event.trim(), venue:p.venue.trim(), endTime:end, toId: isTO ? p.toId : '' };
   }
-  return { api: function(a, p, tok){
+  return { bump: function(){ lastWrite = Date.now(); }, api: function(a, p, tok){
     try {
     var me = sessions[tok] && find(sessions[tok]);
+    if (a === 'ping') return { ok:true, data:{ lastWrite: lastWrite } };
     if (a === 'status') return { ok:true, data:{ needsSetup:false, divisions:copy(divisions) } };
     if (a === 'login'){ var u = find(p.username); if (!u || !u.active || u.pin !== p.pin) return fail('Wrong username or PIN.'); if (p.division && divisions.some(function(d){ return d.id === p.division; })) u.division = p.division; var t = 't' + Math.random(); sessions[t] = u.username; return ok(u, { token:t }); }
     if (!me) return { ok:false, error:'Your session has ended. Please sign in again.', expired:true };
