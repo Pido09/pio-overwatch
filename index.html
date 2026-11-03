@@ -104,10 +104,10 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .new-bar>svg.i{color:var(--brand-strong)}
 .new-bar .icon-btn{width:32px;height:32px;border:0}
 .new-bar span{white-space:nowrap}
-@media (max-width:860px){.new-bar{top:calc(64px + env(safe-area-inset-top,0px));left:16px;right:16px;transform:none;justify-content:space-between}.new-bar span{flex:1;white-space:normal}}
+@media (max-width:1100px){.new-bar{top:calc(64px + env(safe-area-inset-top,0px));left:16px;right:16px;transform:none;justify-content:space-between}.new-bar span{flex:1;white-space:normal}}
 .sync-pill.off{background:var(--gold-soft);color:var(--gold);border:1px solid currentColor}
 .sync-pill svg.i{width:16px;height:16px}
-@media (max-width:860px){.sync-pill{top:auto;bottom:calc(96px + env(safe-area-inset-bottom,0px))}}
+@media (max-width:1100px){.sync-pill{top:auto;bottom:calc(96px + env(safe-area-inset-bottom,0px))}}
 .spin{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;display:inline-block;animation:spin .7s linear infinite;flex:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 .icon-btn{width:38px;height:38px;display:grid;place-items:center;border-radius:var(--r-sm);border:1px solid var(--line-strong);background:var(--surface);cursor:pointer;color:var(--ink)}
@@ -367,16 +367,6 @@ tr.total td{border-top:2px solid var(--line-strong);background:var(--surface-2);
 @media (max-width:1100px){
   .span-7,.span-5,.span-6,.span-8,.span-4{grid-column:span 12}
   .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-@media (max-width:860px){
-  .auth{grid-template-columns:minmax(0,1fr);min-height:0}
-  .auth-photo{order:0;min-height:230px;padding:20px max(16px,env(safe-area-inset-left,0px));background-position:center 30%}
-  .auth-photo::before{background:linear-gradient(to top,rgba(5,28,16,.92) 0%,rgba(5,28,16,.6) 45%,rgba(5,28,16,.1) 100%)}
-  .wordmark{width:120px}
-  .socials{font-size:14px}.socials span{width:26px;height:26px}
-  .auth-main{padding-block:24px 40px;align-items:flex-start}
-  .auth-title .seal{width:48px;height:48px}
-  .auth-card h1{font-size:26px}
   .shell{grid-template-columns:minmax(0,1fr)}
   .side{display:none}
   .topbar{display:flex;align-items:center;gap:6px;position:sticky;top:0;z-index:20;background:var(--weave),var(--band);color:#E8F3EC;padding:calc(10px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px))}
@@ -394,6 +384,16 @@ tr.total td{border-top:2px solid var(--line-strong);background:var(--surface-2);
   .tabbar button[aria-current="page"]{color:var(--brand-strong);background:var(--brand-soft)}
   .tabbar .badge{position:absolute;top:2px;left:56%;margin:0;padding:0 6px}
   .toast{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+}
+@media (max-width:860px){
+  .auth{grid-template-columns:minmax(0,1fr);min-height:0}
+  .auth-photo{order:0;min-height:230px;padding:20px max(16px,env(safe-area-inset-left,0px));background-position:center 30%}
+  .auth-photo::before{background:linear-gradient(to top,rgba(5,28,16,.92) 0%,rgba(5,28,16,.6) 45%,rgba(5,28,16,.1) 100%)}
+  .wordmark{width:120px}
+  .socials{font-size:14px}.socials span{width:26px;height:26px}
+  .auth-main{padding-block:24px 40px;align-items:flex-start}
+  .auth-title .seal{width:48px;height:48px}
+  .auth-card h1{font-size:26px}
   .scrim{align-items:end;padding:0}
   .modal{max-width:none;border-radius:24px 24px 0 0;max-height:92vh;padding-bottom:env(safe-area-inset-bottom,0px);animation:sheet .25s ease-out}
   @keyframes sheet{from{transform:translateY(40px);opacity:.001}to{transform:none;opacity:1}}
@@ -513,21 +513,24 @@ html,body{overflow-x:clip}
   .to-card{padding:14px}
   .to-date{width:52px}
   .to-acts{padding-left:0}
-  .to-acts .btn{flex:1 1 0}
   .panel-h{padding:14px}
   .filters select{min-width:0;flex:1 1 140px}
   .band{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 }
-/* ---------- phones: slide-in menu on the left, short header, four main tabs ---------- */
+@media (min-width:861px) and (max-width:1100px){.tabbar{left:50%;right:auto;transform:translateX(-50%);width:min(560px,calc(100% - 24px))}}
+/* ---------- phones & tablets: slide-in menu on the left, short header, four main tabs ---------- */
 .drawer-scrim{display:none}
 .show-sm{display:none!important}
-@media (max-width:860px){
+@media (max-width:1100px){
   .side{display:flex;position:fixed;left:0;top:0;bottom:0;height:100%;width:min(84vw,320px);z-index:70;transform:translateX(-104%);transition:transform .25s ease;
     padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));box-shadow:none}
   body.drawer-open{overflow:hidden}
+  body.drawer-drag .side{transition:none}
+  body.drawer-drag .drawer-scrim{transition:none}
   body.drawer-open .side{transform:none;box-shadow:12px 0 40px rgba(0,0,0,.35)}
-  body.drawer-open .drawer-scrim{display:block;position:fixed;inset:0;z-index:65;background:rgba(6,20,13,.45)}
+  body.drawer-open .drawer-scrim,body.drawer-drag .drawer-scrim{display:block;position:fixed;inset:0;z-index:65;background:rgba(6,20,13,.45)}
   .nav button[aria-current="page"]::before{left:-14px}
+  .side,.drawer-scrim{touch-action:pan-y}
   .topbar button[data-act=drawer]{margin-left:-6px}
   .topbar img{margin-left:2px}
   .show-sm{display:flex!important}
@@ -541,6 +544,51 @@ html,body{overflow-x:clip}
   .band .keep-sub{font-size:13.5px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* ---------- division groups, TEVs, quick picks ---------- */
+tr.grp td{background:var(--surface-2);padding:7px 14px;border-bottom:1px solid var(--line)}
+li.grp{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 18px;background:var(--surface-2);border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink-2)}
+li.grp .hint{display:block;font-size:12px}
+li.tev-grp b{font-size:13.5px;color:var(--ink)}
+li.ev-day{text-transform:uppercase;letter-spacing:.04em;font-size:11.5px}
+.mark.to{background:var(--violet-soft);color:var(--violet)}
+.amt.num,.row .amt{white-space:nowrap}
+button.link{background:none;border:0;padding:0;color:var(--brand-strong);font:inherit;font-weight:600;text-decoration:underline;cursor:pointer}
+.picks{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.pick{display:flex;gap:10px;align-items:flex-start;text-align:left;border:1px solid var(--line-strong);border-radius:var(--r-sm);background:var(--surface);padding:10px 12px;cursor:pointer;color:var(--ink);font:inherit;min-width:0}
+.pick svg{color:var(--brand-strong);flex:none;margin-top:2px}
+.pick span{min-width:0}.pick b{display:block;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pick small{display:block;color:var(--muted);font-size:12px}
+.pick.on{border-color:var(--brand);background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)}
+.cover{display:grid;gap:8px}
+.cov{display:grid;grid-template-columns:auto 1fr 150px;align-items:center;gap:10px;border:1px solid var(--line);border-radius:var(--r-sm);padding:6px 6px 6px 12px;background:var(--surface-2)}
+.cov input[type=checkbox]{width:18px;height:18px;accent-color:var(--brand)}
+.cov span{font-weight:600;font-size:14px}
+.cov .input{text-align:right}
+.cov .input:disabled{opacity:.45}
+.tev-total{display:flex;justify-content:space-between;align-items:baseline;padding:10px 12px 0;font-weight:600}
+.tev-total b{font-size:20px;font-family:var(--f-display)}
+@media (max-width:860px){.tabbar button span:not(.badge){max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px}}
+@media (max-width:560px){.cov{grid-template-columns:auto 1fr 120px}.picks{grid-template-columns:minmax(0,1fr)}}
+/* ---------- polish pass ---------- */
+.sec-label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:6px 2px -4px}
+.sec-label svg.i{width:16px;height:16px;color:var(--brand-strong)}
+.pin::placeholder{letter-spacing:normal}
+.to-acts{align-items:stretch;min-width:120px}
+.to-icons{display:flex;gap:6px;justify-content:flex-end}
+.to-icons .icon-btn{width:40px;height:40px;color:var(--ink-2)}
+.icon-btn:hover{border-color:var(--brand);color:var(--brand-strong)}
+.sumbox{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:var(--r-sm);background:var(--surface-2);border:1px solid var(--line)}
+.sumbox span{color:var(--muted);font-size:13.5px}
+.btn,.icon-btn,.pick,.tabbar button,.nav button{touch-action:manipulation}
+.btn:active,.icon-btn:active,.pick:active{transform:scale(.98)}
+@media (max-width:560px){
+  .to-acts{flex-direction:row;align-items:center;min-width:0}
+  .to-acts>.btn{flex:1 1 auto}
+  .to-icons{margin-left:auto}
+  .tiles.three .tile .k{font-size:10.5px;letter-spacing:.03em;line-height:1.25}
+  .tiles.three .tile .k .ib{display:none}
+  .tiles.three .tile .v{font-size:20px}
+  .tiles.three .tile .s{font-size:11.5px}
+}
 </style>
 </head>
 <body>
@@ -653,6 +701,10 @@ var SWATCHES = ['#0B2C6E','#1D4ED8','#C8202A','#16803A','#F2B233','#6D28D9','#0F
 var CAT_ICON = { 'Holiday':'flag', 'Weekend':'sun', 'After 5 PM':'moon', 'Travel order':'route' };
 function ic(n){ return '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || ICONS.star) + '</svg>'; }
 
+/* Staff lists are grouped by division, in the order the divisions are listed. */
+function divRank(id){ for (var i = 0; i < S.divisions.length; i++) if (S.divisions[i].id === id) return i; return 999; }
+function byDiv(a, b){ return divRank(a.division) - divRank(b.division) || a.name.localeCompare(b.name); }
+function sortNames(names){ return names.map(function(n, i){ var u = S.users.filter(function(x){ return x.name.toUpperCase() === n; })[0]; return { n: n, r: u ? divRank(u.division) : 1000, i: i }; }).sort(function(a, b){ return a.r - b.r || a.i - b.i; }).map(function(x){ return x.n; }); }
 function divOf(id){ return S.divisions.filter(function(d){ return d.id === id; })[0]; }
 function fgFor(hex){ var n = parseInt(String(hex).slice(1), 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255; return (0.299*r + 0.587*g + 0.114*b) / 255 > 0.62 ? '#0B2C6E' : '#FFFFFF'; }
 function divBadge(d, size){
@@ -666,7 +718,7 @@ function toast(msg){ var t = document.getElementById('toast'); t.textContent = m
 function apply(d){
   S.me = d.me; S.users = d.users; S.entries = d.entries; S.divisions = d.divisions;
   S.holidays = d.holidays || []; S.settings = d.settings || S.settings; S.activity = d.activity || [];
-  S.travelOrders = d.travelOrders || []; S.leaves = d.leaves || []; S.credits = d.credits || []; S.board = d.board || [];
+  S.travelOrders = d.travelOrders || []; S.tevs = d.tevs || []; S.leaves = d.leaves || []; S.credits = d.credits || []; S.board = d.board || [];
   S.loadedAt = Date.now(); S.lastWrite = d.lastWrite || 0;
   if (remembered()) lSet('pio_cache', JSON.stringify(d));
 }
@@ -774,29 +826,55 @@ function entriesCsv(list){
 /* ---------- render ---------- */
 /* [view, icon, label, sidebar group]. The first four also go in the phone tab bar; the rest sit under More. */
 function navItems(){
-  return isAdmin()
-    ? [['dashboard','grid','Dashboard','Overview'],['availability','users','Availability','Overview'],['travel','route','Travel orders','Field work'],['approvals','check','Approvals','Offsets'],
-       ['calendar','cal','Calendar','Overview'],['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets'],['leaves','plane','Leaves','Leaves'],['staff','users','Staff','Admin'],['settings','cog','Settings','Admin']]
-    : [['dashboard','grid','Dashboard','Overview'],['availability','users','Availability','Overview'],['travel','route','Travel orders','Field work'],['log','plus','Log offset','Offsets'],
-       ['calendar','cal','Calendar','Overview'],['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets']].concat(hasLeaves() ? [['leaves','plane','My leaves','Leaves']] : []);
+  // The first five are the phone tab bar. Regular and casual staff get leaves up front; JO and COS get offsets.
+  var tev = ['tev','peso','TEVs','Field work'];
+  if (isAdmin()) return [['dashboard','grid','Dashboard','Overview'],['availability','users','Availability','Overview'],['travel','route','Travel orders','Field work'],['approvals','check','Approvals','Offsets'],
+       ['calendar','cal','Calendar','Overview'],tev,['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets'],['leaves','plane','Leaves','Leaves'],['staff','users','Staff','Admin'],['settings','cog','Settings','Admin']];
+  if (hasLeaves()) return [['dashboard','grid','Dashboard','Overview'],['leaves','plane','My leaves','Leaves'],['travel','route','Travel orders','Field work'],['availability','users','Availability','Overview'],
+       ['calendar','cal','Calendar','Overview'],tev,['log','plus','Log offset','Offsets'],['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets']];
+  return [['dashboard','grid','Dashboard','Overview'],['log','plus','Log offset','Offsets'],['travel','route','Travel orders','Field work'],['availability','users','Availability','Overview'],
+       ['calendar','cal','Calendar','Overview'],tev,['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets']];
 }
+var SHORT = { travel: 'Travel', availability: 'Who’s in', log: 'Log', leaves: 'Leaves', approvals: 'Review' };
 function sideNav(nav, navBtn){
   var order = ['Overview','Field work','Offsets','Leaves','Admin'], html = '';
   order.forEach(function(g){ var items = nav.filter(function(n){ return n[3] === g; }); if (items.length) html += '<div class="nav-h">' + g + '</div>' + items.map(navBtn).join(''); });
   return html;
 }
+/* What someone is typing survives a screen refresh (a save finishing, new data arriving).
+   A form that was just sent is left out, so it clears as expected. */
+function keepForm(root){
+  var k = { f: {}, focus: null };
+  root.querySelectorAll('input[id],select[id],textarea[id]').forEach(function(el){
+    if (el.type === 'file') return;
+    var f = el.closest('form[data-form]'); if (f && f.dataset.form === S.sentForm) return;
+    k.f[el.id] = (el.type === 'checkbox' || el.type === 'radio') ? { c: el.checked } : { v: el.value };
+  });
+  var a = document.activeElement;
+  if (a && a.id && root.contains(a) && k.f[a.id]) k.focus = { id: a.id, s: a.selectionStart, e: a.selectionEnd };
+  return k;
+}
+function restoreForm(k){
+  Object.keys(k.f).forEach(function(id){
+    var el = document.getElementById(id), x = k.f[id]; if (!el) return;
+    if ('c' in x){ if (el.checked !== x.c) el.checked = x.c; } else if (el.value !== x.v){ el.value = x.v; }
+  });
+  if (k.focus){ var el = document.getElementById(k.focus.id); if (el){ el.focus({ preventScroll: true }); try { if (k.focus.s != null) el.setSelectionRange(k.focus.s, k.focus.e); } catch(e){} } }
+}
+document.addEventListener('submit', function(ev){ var f = ev.target.closest && ev.target.closest('form[data-form]'); if (f) S.sentForm = f.dataset.form; }, true);
+document.addEventListener('input', function(ev){ var f = ev.target.closest && ev.target.closest('form[data-form]'); if (f && f.dataset.form === S.sentForm) S.sentForm = null; }, true);
 function render(){
   var app = document.getElementById('app');
   var banner = LIVE ? '' : '<div class="preview">Preview mode with sample data. Nothing is saved. Sign in as <b>admin</b> or <b>jdelacruz</b>, PIN <b>1234</b>. To go live, put the Apps Script web app URL in config.js.</div>';
   if (!S.me){ app.innerHTML = banner + (S.needsSetup ? viewSetup() : viewLogin()); return; }
   var nav = navItems(), pc = isAdmin() ? pending().filter(canReview).length : 0;
   function navBtn(n){ return '<button data-go="' + n[0] + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ic(n[1]) + '<span>' + n[2] + '</span>' + (n[0] === 'approvals' && pc ? '<span class="badge">' + pc + '</span>' : '') + '</button>'; }
-  var tabs = nav.slice(0, 4);
-  var moreOn = !tabs.some(function(n){ return n[0] === S.view; });
-  var views = { dashboard: viewDashboard, log: viewLog, approvals: viewApprovals, calendar: viewCalendar, monthly: viewMonthly, records: viewRecords, staff: viewStaff, settings: viewSettings, availability: viewAvailability, travel: viewTravel, leaves: viewLeaves };
+  var tabs = nav.slice(0, 5);
+  var views = { dashboard: viewDashboard, log: viewLog, approvals: viewApprovals, calendar: viewCalendar, monthly: viewMonthly, records: viewRecords, staff: viewStaff, settings: viewSettings, availability: viewAvailability, travel: viewTravel, leaves: viewLeaves, tev: viewTEV };
   if (!views[S.view] || (['staff','approvals','settings'].indexOf(S.view) >= 0 && !isAdmin())) S.view = 'dashboard';
   var v = views[S.view]();
-  var myDiv = divOf(S.me.division), y = window.scrollY;
+  var myDiv = divOf(S.me.division), y = window.scrollY, kept = S.view === S.lastView ? keepForm(app) : null;
+  S.lastView = S.view;
   app.innerHTML = banner + '<a class="skip" href="#main">Skip to content</a>' +
     '<div class="shell">' +
       '<div class="drawer-scrim" data-act="drawerClose"></div><aside class="side" id="sidenav"><div class="brand"><img src="' + LOGO + '" alt="Provincial Information Office seal"><div><b>PIO Overwatch</b><small>Camarines Norte</small></div></div>' +
@@ -812,10 +890,12 @@ function render(){
           '<div class="wrap">' + v.body + '</div>' +
         '</main>' +
       '</div>' +
-      '<nav class="tabbar" aria-label="Main">' + tabs.map(navBtn).join('') + '<button data-act="drawer"' + (moreOn ? ' aria-current="page"' : '') + '>' + ic('menu') + '<span>Menu</span></button>' + '</nav>' +
+      '<nav class="tabbar" aria-label="Main">' + tabs.map(function(n){ return navBtn([n[0], n[1], SHORT[n[0]] || n[2]]); }).join('') + '</nav>' +
     '</div>';
   document.body.classList.remove('drawer-open');
+  if (kept) restoreForm(kept);
   window.scrollTo(0, y);
+  groupify(app);
   if (S.view === 'log') checkEarnForm(document, true);
 }
 
@@ -915,15 +995,17 @@ var WIDGETS = {
   ]
 };
 function widgetPrefs(){
-  var role = isAdmin() ? 'admin' : 'employee', all = WIDGETS[role].map(function(w){ return w[0]; }), saved = null;
+  var role = wRole(), all = WIDGETS[role].map(function(w){ return w[0]; }), saved = null;
   try { saved = JSON.parse(lGet('pio_w_' + role) || 'null'); } catch(e){}
   // Phones start with a shorter dashboard; everything can be turned back on in Customize.
-  if (!saved || !saved.order) return { order: all, hidden: window.innerWidth < 700 ? (role === 'admin' ? ['balances','trend','divisions','daysoff','holidays','activity'] : ['trend','holidays','recent']) : [] };
+  if (!saved || !saved.order) return { order: all, hidden: window.innerWidth < 700 ? (role === 'admin' ? ['balances','trend','divisions','daysoff','holidays','activity'] : role === 'regular' ? ['trend','recent','hero','holidays'] : ['trend','holidays','recent']) : [] };
   all.forEach(function(id){ if (saved.order.indexOf(id) < 0) saved.order.push(id); });
   saved.order = saved.order.filter(function(id){ return all.indexOf(id) >= 0; });
   return saved;
 }
-function widgetDef(id){ return WIDGETS[isAdmin() ? 'admin' : 'employee'].filter(function(w){ return w[0] === id; })[0]; }
+/* Dashboards: admins, regular/casual staff (leaves first) and JO/COS staff (offsets first). */
+function wRole(){ return isAdmin() ? 'admin' : hasLeaves() ? 'regular' : 'employee'; }
+function widgetDef(id){ return WIDGETS[wRole()].filter(function(w){ return w[0] === id; })[0]; }
 
 /* Greeting by time of day in the Philippines. */
 function greeting(){
@@ -985,16 +1067,16 @@ function viewDashboard(){
   P.order.forEach(function(id){ if (P.hidden.indexOf(id) < 0 && W[id]) html += W[id](widgetDef(id)[2]); });
   var actions = (adm
       ? '<button class="btn btn-glass hide-sm" data-act="customize">' + ic('sliders') + 'Customize</button><button class="btn btn-glass" data-go="log">' + ic('plus') + 'Add offset</button><button class="btn btn-sun" data-act="useModal">' + ic('minus') + 'Record use</button>'
-      : '<button class="btn btn-glass hide-sm" data-act="customize">' + ic('sliders') + 'Customize</button><button class="btn btn-sun" data-go="log">' + ic('plus') + 'Log offset</button>');
+      : '<button class="btn btn-glass hide-sm" data-act="customize">' + ic('sliders') + 'Customize</button>' + (hasLeaves() ? '<button class="btn btn-glass" data-go="leaves">' + ic('plane') + 'My leaves</button><button class="btn btn-sun" data-go="log">' + ic('plus') + 'Log offset</button>' : '<button class="btn btn-sun" data-go="log">' + ic('plus') + 'Log offset</button>'));
   return { eyebrow: fDate(today(), { weekday:'long', month:'long', day:'numeric', year:'numeric' }),
     title: greeting() + ', ' + esc(S.me.name.split(' ')[0]) + '!',
-    sub: (adm ? 'Offsets across the office' + (S.dashDiv === 'all' ? '' : ' · ' + esc(divOf(S.dashDiv).short)) + '.' : (S.me.division ? divChip(S.me.division) + ' · ' : '') + 'Unused offsets carry over every month.') + '<span class="quip">' + ic('star') + '<span>' + esc(quip()) + '</span></span>',
+    sub: (adm ? 'Offsets across the office' + (S.dashDiv === 'all' ? '' : ' · ' + esc(divOf(S.dashDiv).short)) + '.' : (S.me.division ? divChip(S.me.division) + ' · ' : '') + (hasLeaves() ? esc(S.me.empType) + ' · vacation and sick leave grow by 1.25 days a month.' : esc(S.me.empType || 'JO') + ' · unused offsets carry over every month.')) + '<span class="quip">' + ic('star') + '<span>' + esc(quip()) + '</span></span>',
     actions: actions, body: '<div class="grid">' + (html || '<div class="span-12 panel">' + empty('sliders', 'Your dashboard is empty', 'Turn widgets back on to see your numbers.', '<button class="btn btn-primary" data-act="customize">Customize</button>') + '</div>') + '</div>' };
 }
 function span(n){ return 'span-' + n; }
 function adminWidgets(staff){
   var all = sumStats(staff), pend = pending(), m = curMonth(), td = today(), mine = stats(S.me.username);
-  var rows = staff.map(function(u){ return { u: u, s: stats(u.username) }; }).sort(function(a,b){ return b.s.avail - a.s.avail || a.u.name.localeCompare(b.u.name); });
+  var rows = staff.map(function(u){ return { u: u, s: stats(u.username) }; }).sort(function(a,b){ return byDiv(a.u, b.u); });
   return {
     mine: function(n){ return '<button class="mine ' + span(n) + '" data-person="' + esc(S.me.username) + '"><span class="k">Your offset</span><b>' + fD(mine.avail) + ' available</b><span class="hint">' + (mine.month ? '+' + fD(mine.month) + ' this month · ' : '') + (mine.pendN + mine.reqN ? (mine.pendN + mine.reqN) + ' waiting for another admin' : 'Nothing waiting') + '</span><span class="go">' + ic('right') + '</span></button>'; },
     kpis: function(n){ return '<div class="tiles ' + span(n) + '">' +
@@ -1003,7 +1085,7 @@ function adminWidgets(staff){
       tile(mShort(m) + ' so far', '+' + fD(all.month), 'Usable on ' + closesOn(m), '', 'month', 'data-go="monthly"') +
       tile('Used this month', fD(all.usedM), 'Days off taken in ' + mShort(m), '', 'plane', 'data-rec="type:USE"') + '</div>'; },
     balances: function(n){ return panel('Staff balances', 'users', rows.length ? '<div class="table-wrap"><table><thead><tr><th>Employee</th><th class="r">Available</th><th class="r">This month</th><th></th></tr></thead><tbody>' +
-        rows.map(function(r){ return '<tr class="tap" data-person="' + esc(r.u.username) + '" tabindex="0"><td><b>' + esc(r.u.name) + '</b><div>' + divChip(r.u.division) + '</div></td><td class="r num"><b>' + fD(r.s.avail) + '</b>' + (r.s.reqDays ? '<div class="hint">' + fD(r.s.reqDays) + ' requested</div>' : '') + '</td><td class="r num">' + (r.s.month ? '+' + fD(r.s.month) : '—') + '</td>' +
+        rows.map(function(r){ return '<tr class="tap" data-grp="' + esc(r.u.division) + '" data-person="' + esc(r.u.username) + '" tabindex="0"><td><b>' + esc(r.u.name) + '</b><div class="hint">' + esc(r.u.empType) + '</div></td><td class="r num"><b>' + fD(r.s.avail) + '</b>' + (r.s.reqDays ? '<div class="hint">' + fD(r.s.reqDays) + ' requested</div>' : '') + '</td><td class="r num">' + (r.s.month ? '+' + fD(r.s.month) : '—') + '</td>' +
           '<td class="r"><button class="btn btn-sm btn-ghost" data-act="useModal" data-u="' + esc(r.u.username) + '"' + (r.s.avail > 0 && r.u.username !== S.me.username ? '' : ' disabled') + ' aria-label="Record offset use for ' + esc(r.u.name) + '">' + ic('minus') + 'Use</button></td></tr>'; }).join('') + '</tbody></table></div>'
         : empty('users', 'No staff here yet', 'Add employees in Staff, or pick another division.'), divSelect('dashDiv', S.dashDiv, 'Filter by division', true), span(n)); },
     queue: function(n){ return panel('Waiting for review', 'clock', pend.length ? '<ul class="list">' + pend.slice(0, 4).map(function(e){ return entryRow(e, { showName: true, review: true }); }).join('') + '</ul>' : empty('check', 'All caught up', 'New offsets and day-off requests appear here.'),
@@ -1140,7 +1222,7 @@ function viewCalendar(){
   var list = S.entries.filter(function(e){ return e.status !== 'Rejected' && (!adm || S.calUser === 'all' || e.username === S.calUser); });
   var byDay = {}; list.forEach(function(e){ (byDay[e.date] = byDay[e.date] || []).push(e); });
   var who = adm ? (S.calUser === 'all' ? null : S.calUser) : S.me.username, extra = {};
-  activeTOs().forEach(function(t){ if (who && t.usernames.indexOf(who) < 0) return; for (var x = t.dateFrom; x <= t.dateTo; x = addDays(x, 1)) (extra[x] = extra[x] || []).push({ c: 'to', t: 'TO · ' + t.event }); });
+  activeTOs().forEach(function(t){ if (who && t.usernames.indexOf(who) < 0) return; for (var x = t.dateFrom; x <= t.dateTo; x = addDays(x, 1)) (extra[x] = extra[x] || []).push({ c: 'to', t: 'TO · ' + t.event + (t.destination ? ' · ' + t.destination : '') }); });
   S.leaves.forEach(function(l){ if (/^ADJ/.test(l.type) || (who && l.username !== who)) return; for (var x = l.dateFrom; x <= l.dateTo; x = addDays(x, 1)) (extra[x] = extra[x] || []).push({ c: 'lv', t: (adm && !who ? firstName(l.username) + ' · ' : '') + leaveName(l.type) }); });
   var cells = '';
   for (var i = 0; i < 42; i++){
@@ -1161,23 +1243,24 @@ function viewCalendar(){
     var de = sorted(byDay[S.selDay] || []), hh = holidayOn(S.selDay), future = S.selDay >= td;
     sel = panel(fDate(S.selDay, { weekday:'long', month:'long', day:'numeric', year:'numeric' }), 'cal',
       (hh ? '<div class="panel-b" style="padding-bottom:0"><div class="info-note">' + ic('flag') + '<span>' + esc(hh.name) + ' · ' + esc(hh.kind) + ' holiday</span></div></div>' : '') +
+      (function(){ var tl = activeTOs().filter(function(t){ return t.dateFrom <= S.selDay && t.dateTo >= S.selDay && (!who || t.usernames.indexOf(who) >= 0); }); return tl.length ? '<ul class="list">' + tl.map(toRow).join('') + '</ul>' : ''; })() +
       (de.length ? '<ul class="list">' + de.map(function(e){ return entryRow(e, { showName: adm }); }).join('') + '</ul>' : '<div class="empty">No offsets on this day.</div>'),
       '<div class="row-btns">' + (adm ? '<button class="btn btn-sm btn-ghost" data-act="useModal" data-date="' + S.selDay + '"' + (S.calUser !== 'all' ? ' data-u="' + esc(S.calUser) + '"' : '') + '>' + ic('minus') + 'Record use</button>' : '') +
         (future ? '<button class="btn btn-sm btn-ghost" data-act="requestModal" data-date="' + S.selDay + '">' + ic('plane') + 'Request this day off</button>' : '<button class="btn btn-sm btn-ghost" data-act="logOn" data-date="' + S.selDay + '">' + ic('plus') + 'Log offset on this day</button>') + '</div>', 'span-12" id="daypanel');
   }
   var mh = S.holidays.filter(function(h){ return h.date.slice(0,7) === ym; });
-  return { eyebrow: 'Calendar', title: first.toLocaleDateString('en-PH', { month:'long', year:'numeric' }), sub: 'Holidays, offsets and days off. Tap a day for details.',
+  return { eyebrow: 'Calendar', title: first.toLocaleDateString('en-PH', { month:'long', year:'numeric' }), sub: 'Holidays, travel orders, leaves, offsets and days off. Tap a day for details.',
     actions: '<button class="btn btn-glass" data-act="calPrev" aria-label="Previous month">' + ic('left') + '</button><button class="btn btn-glass" data-act="calToday">Today</button><button class="btn btn-glass" data-act="calNext" aria-label="Next month">' + ic('right') + '</button>',
     body: '<div class="grid"><section class="panel span-12"><div class="panel-h"><div class="legend" style="padding:0"><span><i style="background:var(--navy-soft);box-shadow:inset 0 0 0 1px var(--navy)"></i>Holiday</span><span><i class="st-to"></i>Travel order</span><span><i class="st-lv"></i>Leave</span><span><i style="background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)"></i>Earned</span><span><i style="box-shadow:inset 0 0 0 1px var(--line-strong)"></i>Waiting for review</span><span><i style="background:var(--gold-soft);box-shadow:inset 0 0 0 1px var(--gold)"></i>Day off</span></div>' + filter + '</div>' +
       '<div class="cal">' + ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(d){ return '<div class="dow">' + d + '</div>'; }).join('') + cells + '</div></section>' + sel +
-      panel('Holidays in ' + mShort(ym), 'flag', mh.length ? '<ul class="list">' + mh.map(function(h){ return '<li class="row tap" data-day="' + h.date + '" tabindex="0"><span class="mark hol">' + ic('flag') + '</span><div class="body"><div class="t">' + esc(h.name) + '</div><div class="m">' + fDate(h.date, { weekday:'long', month:'long', day:'numeric' }) + '</div></div><span class="pill hol">' + esc(h.kind) + '</span></li>'; }).join('') + '</ul>' : '<div class="empty">No holidays this month.</div>', adm ? '<button class="btn btn-sm btn-ghost" data-go="settings">Edit holidays</button>' : '', 'span-12') + '</div>' };
+      panel('Events in ' + fMonth(ym), 'list', eventsOverview(ym, who), adm ? '<button class="btn btn-sm btn-ghost" data-go="settings">Edit holidays</button>' : '', 'span-12') + '</div>' };
 }
 
 /* ----- monthly summary & report ----- */
 function monthRows(m){
   var dv = S.dashDiv;
   return S.users.filter(function(u){ return dv === 'all' || u.division === dv; }).map(function(u){ return { u: u, s: ledgerMonth(u.username, m) }; })
-    .filter(function(r){ return r.u.active || r.s.earned || r.s.used || r.s.open; }).sort(function(a,b){ return a.u.name.localeCompare(b.u.name); });
+    .filter(function(r){ return r.u.active || r.s.earned || r.s.used || r.s.open; }).sort(function(a,b){ return byDiv(a.u, b.u); });
 }
 function viewMonthly(){
   var m = S.mon || curMonth(), adm = isAdmin(), open = m >= curMonth(), cap = S.settings.carryCap, nm = fDate(nextMonthStart(m), { month:'short', day:'numeric' });
@@ -1189,8 +1272,8 @@ function viewMonthly(){
     rows.forEach(function(r){ Object.keys(tot).forEach(function(k){ tot[k] += r.s[k]; }); });
     function cells(x){ return '<td class="r num">' + (x.open ? fD(x.open) : '—') + '</td>' + (cap ? '<td class="r num minus">' + (x.forfeit ? '−' + fD(x.forfeit) : '—') + '</td>' : '') + '<td class="r num plus">' + (x.earned ? '+' + fD(x.earned) : '—') + '</td><td class="r num minus">' + (x.used ? '−' + fD(x.used) : '—') + '</td><td class="r num"><b>' + fD(x.close) + '</b></td><td class="r num">' + (x.pending ? fD(x.pending) : '—') + '</td>'; }
     body = head + '<section class="panel"><div class="panel-h no-print">' + nav + '<div class="filters">' + divSelect('dashDiv', S.dashDiv, 'Filter by division', true) + status + '</div></div>' +
-      '<div class="table-wrap"><table><thead><tr><th>Employee</th><th>Division</th><th class="r">Carried over</th>' + (cap ? '<th class="r">Forfeited</th>' : '') + '<th class="r">Earned</th><th class="r">Used</th><th class="r">Balance ' + nm + '</th><th class="r">Pending</th></tr></thead><tbody>' +
-      rows.map(function(r){ return '<tr class="tap" data-person="' + esc(r.u.username) + '" tabindex="0"><td><b>' + esc(r.u.name) + '</b></td><td>' + divChip(r.u.division) + '</td>' + cells(r.s) + '</tr>'; }).join('') +
+      '<div class="table-wrap"><table><thead><tr><th>Employee</th><th>Employment</th><th class="r">Carried over</th>' + (cap ? '<th class="r">Forfeited</th>' : '') + '<th class="r">Earned</th><th class="r">Used</th><th class="r">Balance ' + nm + '</th><th class="r">Pending</th></tr></thead><tbody>' +
+      rows.map(function(r){ return '<tr class="tap" data-grp="' + esc(r.u.division) + '" data-person="' + esc(r.u.username) + '" tabindex="0"><td><b>' + esc(r.u.name) + '</b></td><td>' + esc(r.u.empType) + '</td>' + cells(r.s) + '</tr>'; }).join('') +
       '<tr class="total"><td>Total</td><td>' + rows.length + ' staff</td>' + cells(tot) + '</tr></tbody></table></div></section>';
   } else {
     var s = ledgerMonth(S.me.username, m), list = sorted(S.entries.filter(function(e){ return e.date.slice(0,7) === m; }));
@@ -1239,25 +1322,24 @@ function filteredRecords(){
 
 /* ----- staff & divisions ----- */
 function viewStaff(){
-  var rows = S.users.slice().sort(function(a,b){ return (b.active - a.active) || a.name.localeCompare(b.name); }).map(function(u){
+  var rows = S.users.slice().sort(function(a,b){ return byDiv(a, b) || (b.active - a.active); }).map(function(u){
     var st = stats(u.username), self = u.username === S.me.username;
-    return '<tr class="tap" data-person="' + esc(u.username) + '" tabindex="0"><td><b>' + esc(u.name) + '</b><div class="hint">@' + esc(u.username) + ' · <span class="cap">' + esc(u.role) + '</span></div></td>' +
-      '<td>' + divSelect('ud_' + u.username, u.division, 'Division of ' + u.name, false, true).replace('class="input"', 'class="input" data-setdiv="' + esc(u.username) + '" style="height:36px;min-width:160px"') + '</td>' +
-      '<td><select class="input" data-setemp="' + esc(u.username) + '" aria-label="Employment type of ' + esc(u.name) + '" style="height:36px;width:auto">' + ['Regular','Casual','JO/COS'].map(function(t){ return '<option' + (u.empType === t ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select></td>' +
+    return '<tr class="tap" data-grp="' + esc(u.division) + '" data-person="' + esc(u.username) + '" tabindex="0"><td><b>' + esc(u.name) + '</b><div class="hint">@' + esc(u.username) + ' · <span class="cap">' + esc(u.role) + '</span></div></td>' +
+      '<td>' + esc(u.empType || 'JO') + '</td>' +
       '<td>' + (u.active ? '<span class="pill Confirmed">Active</span>' : '<span class="pill off">Inactive</span>') + '</td><td class="r num">' + fD(st.avail) + '</td>' +
       '<td class="r"><button class="btn btn-sm btn-ghost" data-person="' + esc(u.username) + '">Manage' + (self ? ' (you)' : '') + '</button></td></tr>';
   }).join('');
   var divs = S.divisions.map(function(d){ var n = S.users.filter(function(u){ return u.division === d.id && u.active; }).length;
     return '<li class="row tap" data-act="divModal" data-id="' + esc(d.id) + '" tabindex="0">' + divBadge(d, 38) + '<div class="body"><div class="t">' + esc(d.name) + '</div><div class="m">' + n + ' active staff · shown as “' + esc(d.short) + '”</div></div><span class="hint">' + ic('edit') + '</span></li>'; }).join('');
-  return { eyebrow: 'People', title: 'Staff', sub: 'Tap a person to see their offsets, reset their PIN, change their role, deactivate or remove them.',
+  return { eyebrow: 'People', title: 'Staff', sub: 'Tap a person to change their division or employment type, reset their PIN, or manage their account.',
     actions: '<button class="btn btn-sun" data-act="focusAdd">' + ic('plus') + 'Add staff</button>',
-    body: '<div class="grid">' + panel('Accounts', 'users', '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Division</th><th>Employment</th><th>Status</th><th class="r">Offsets</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>', '<span class="hint num">' + S.users.length + ' total</span>', 'span-12') +
-      panel('Divisions', 'pie', (divs ? '<ul class="list">' + divs + '</ul>' : empty('pie', 'No divisions', 'Add the PIO divisions so staff can choose theirs at sign-in.')) + '<div class="panel-b hint" style="border-top:1px solid var(--line)">Staff pick their division on the sign-in page. You can also change it in the table above.</div>', '<button class="btn btn-sm btn-primary" data-act="divModal">' + ic('plus') + 'Add division</button>', 'span-6') +
+    body: '<div class="grid">' + panel('Accounts', 'users', '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Employment</th><th>Status</th><th class="r">Offsets</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>', '<span class="hint num">' + S.users.length + ' total</span>', 'span-12') +
+      panel('Divisions', 'pie', (divs ? '<ul class="list">' + divs + '</ul>' : empty('pie', 'No divisions', 'Add the PIO divisions so staff can choose theirs at sign-in.')) + '<div class="panel-b hint" style="border-top:1px solid var(--line)">Staff pick their division on the sign-in page. To change someone’s division or employment type, tap Manage.</div>', '<button class="btn btn-sm btn-primary" data-act="divModal">' + ic('plus') + 'Add division</button>', 'span-6') +
       '<form class="panel span-6" data-form="addUser" autocomplete="off" id="addUser"><div class="panel-h"><h2>' + ic('plus') + 'Add staff</h2></div><div class="panel-b stack">' +
         '<div class="field"><label for="an">Full name</label><input class="input" id="an" name="name" required></div>' +
         '<div class="two"><div class="field"><label for="au">Username</label><input class="input" id="au" name="username" autocapitalize="none" spellcheck="false" placeholder="e.g. jdelacruz" required></div><div class="field"><label for="ap">Starting PIN</label><input class="input pin" id="ap" name="pin" inputmode="numeric" maxlength="6" placeholder="4–6 digits" required></div></div>' +
         '<div class="two"><div class="field"><label for="ad">Division</label>' + divSelect('ad', '', 'Division', false, true) + '</div><div class="field"><label for="ar">Role</label><select class="input" id="ar" name="role"><option value="employee">Employee</option><option value="admin">Admin</option></select></div></div>' +
-        '<div class="field"><label for="aet">Employment</label><select class="input" id="aet" name="empType"><option>JO/COS</option><option>Casual</option><option>Regular</option></select><span class="hint">Regular and casual employees get CSC leave credits. Everyone can log offsets.</span></div>' +
+        '<div class="field"><label for="aet">Employment</label><select class="input" id="aet" name="empType"><option value="JO">JO (Job order)</option><option value="COS">COS (Contract of service)</option><option>Casual</option><option>Regular</option></select><span class="hint">Regular and casual employees get CSC leave credits. Everyone can log offsets.</span></div>' +
         '<span class="hint">Give the PIN to the employee in person. They can change it after signing in.</span><p class="error" id="err" role="alert"></p><div><button class="btn btn-primary" type="submit">' + ic('plus') + 'Add staff</button></div></div></form></div>' };
 }
 
@@ -1272,6 +1354,7 @@ function viewSettings(){
         '<div class="field"><label for="sw">Regular workdays a month</label><input class="input num" id="sw" name="workdays" type="number" min="15" max="26" step="1" value="' + S.settings.workdays + '" required><span class="hint">Shown to staff as the schedule. Days worked beyond it are offsets.</span></div>' +
         '<div class="field"><label for="sc">Carry-over cap (days)</label><input class="input num" id="sc" name="carryCap" type="number" min="0" max="365" step="0.5" value="' + S.settings.carryCap + '" required><span class="hint">0 means no limit. With a cap, anything above it is forfeited at the start of each month. This applies to everyone right away, so tell staff first.</span></div>' +
         '<div class="field"><label for="swl">Wellness leave days a year</label><input class="input num" id="swl" name="wellnessDays" type="number" min="0" max="5" step="1" value="' + (S.settings.wellnessDays == null ? 5 : S.settings.wellnessDays) + '" required><span class="hint">CSC Resolution No. 2501292 lets agencies grant up to 5 days a year (non-cumulative, up to 3 days in a row).</span></div>' +
+        '<div class="field"><label for="stb">TEV budget for the year (₱)</label><input class="input num" id="stb" name="tevBudget" type="number" min="0" step="0.01" value="' + (S.settings.tevBudget || 0) + '"><span class="hint">Used for “Left for spending” on the TEV page. 0 hides it.</span></div>' +
         '<p class="error" id="err" role="alert"></p><div><button class="btn btn-primary" type="submit">Save rules</button></div></div></form>' +
       panel('Backup and export', 'drive', '<div class="panel-b stack">' +
         '<div><b>Save a copy to Google Drive</b><p class="hint" style="margin:4px 0 8px">Makes a full copy of the Sheet in the admin’s Drive, PIN hashes included. Do this before big changes or at year-end.</p><button class="btn btn-ghost" data-act="backupDrive">' + ic('drive') + 'Save copy to Drive</button></div>' +
@@ -1282,8 +1365,8 @@ function viewSettings(){
         '</tbody></table></div><form class="panel-b" data-form="holiday" style="border-top:1px solid var(--line)"><div class="filters" style="align-items:flex-end">' +
           '<div class="field"><label for="hd">Date</label><input class="input" id="hd" name="date" type="date" required></div><div class="field" style="flex:1;min-width:180px"><label for="hn">Name</label><input class="input" id="hn" name="name" maxlength="80" placeholder="e.g. Eid’l Fitr, Bantayog Festival" required></div>' +
           '<div class="field"><label for="hk">Kind</label><select class="input" id="hk" name="kind"><option>Regular</option><option>Special</option><option>Local</option></select></div><button class="btn btn-primary" type="submit">' + ic('plus') + 'Add</button></div><p class="error" id="herr" role="alert"></p>' +
-          '<p class="hint" style="margin:0">Eid’l Fitr and Eid’l Adha are proclaimed separately each year. Add them when announced, plus any provincial holidays.</p></form>',
-        '<select class="input" id="holYear" aria-label="Year">' + Object.keys(years).sort().map(function(x){ return '<option' + (x === yr ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select>', 'span-12') + '</div>' };
+          '<p class="hint" style="margin:0">National holidays update by themselves every week from Google’s Philippine holiday calendar. Add provincial and local holidays here.</p></form>',
+        '<button class="btn btn-sm btn-ghost" data-act="syncHol">' + ic('refresh') + 'Update now</button><select class="input" id="holYear" aria-label="Year">' + Object.keys(years).sort().map(function(x){ return '<option' + (x === yr ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select>', 'span-12') + '</div>' };
 }
 
 /* ---------- sheets (modals) ---------- */
@@ -1366,7 +1449,9 @@ function personModal(username){
     '<div class="info-note">' + ic('users') + '<span>Today: ' + (statusOn(username, today()) ? esc(statusOn(username, today()).kind === 'to' ? 'In the field · ' + statusOn(username, today()).label : statusOn(username, today()).label) : 'Available') + '</span></div>' +
     (hasLeaves(u) ? (function(){ var b = leaveBal(username); return '<div class="mini-tiles"><div><span>Vacation leave</span><b>' + (b.set ? fD(b.vl) : '—') + '</b></div><div><span>Sick leave</span><b>' + (b.set ? fD(b.sl) : '—') + '</b></div></div>'; })() : '') +
     '<div class="mini-tiles"><div><span>Offsets available</span><b>' + fD(st.avail) + '</b></div><div><span>' + mShort(curMonth()) + ' so far</span><b>+' + fD(st.month) + '</b></div><div><span>Waiting for review</span><b>' + fD(st.pending + st.reqDays) + '</b></div><div><span>Used this year</span><b>' + fD(st.usedY) + '</b></div></div>' +
-    (isAdmin() ? '<div class="label">Account</div><div class="acct"><button type="button" class="btn btn-sm btn-ghost" data-act="pinModal" data-u="' + esc(username) + '">' + ic('key') + 'Reset PIN</button>' +
+    (isAdmin() ? '<div class="label">Details</div><div class="two"><div class="field"><label for="pdiv">Division</label>' + divSelect('pdiv', u.division, 'Division', false, true).replace('class="input"', 'class="input" data-setdiv="' + esc(username) + '"') + '</div>' +
+      '<div class="field"><label for="pemp">Employment</label><select class="input" id="pemp" data-setemp="' + esc(username) + '">' + [['JO','JO (Job order)'],['COS','COS (Contract of service)'],['Casual','Casual'],['Regular','Regular']].map(function(t){ return '<option value="' + t[0] + '"' + ((u.empType || 'JO') === t[0] ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('') + '</select><span class="hint">Regular and casual get CSC leave credits.</span></div></div>' +
+      '<div class="label">Account</div><div class="acct"><button type="button" class="btn btn-sm btn-ghost" data-act="pinModal" data-u="' + esc(username) + '">' + ic('key') + 'Reset PIN</button>' +
       (self ? '<span class="hint">Another admin manages your own role and status.</span>' :
         '<button type="button" class="btn btn-sm btn-ghost" data-act="setRole" data-u="' + esc(username) + '" data-r="' + (u.role === 'admin' ? 'employee' : 'admin') + '">' + ic('shield') + (u.role === 'admin' ? 'Make employee' : 'Make admin') + '</button>' +
         '<button type="button" class="btn btn-sm btn-ghost" data-act="toggleActive" data-u="' + esc(username) + '" data-a="' + (u.active ? '0' : '1') + '">' + (u.active ? 'Deactivate' : 'Activate') + '</button>' +
@@ -1378,7 +1463,7 @@ function personModal(username){
       (self ? '<button type="button" class="btn btn-primary" data-act="requestModal">' + ic('plane') + 'Request day off</button>' : '<button type="button" class="btn btn-primary" data-act="useModal" data-u="' + esc(username) + '"' + (st.avail > 0 ? '' : ' disabled') + '>' + ic('minus') + 'Record use</button>') : '');
 }
 function customizeModal(){
-  var role = isAdmin() ? 'admin' : 'employee', P = widgetPrefs();
+  var role = wRole(), P = widgetPrefs();
   M = { order: P.order.slice(), hidden: P.hidden.slice() };
   function draw(){
     document.getElementById('wl').innerHTML = M.order.map(function(id, i){ var w = widgetDef(id);
@@ -1511,7 +1596,7 @@ document.addEventListener('change', function(ev){
   if (el.name === 'category' || id === 'fd' || id === 'ft' || id === 'fu' || id === 'fto'){ checkEarnForm(el.closest('form') || document, id === 'fd'); }
   if (id === 'dcol'){ M.color = el.value.toUpperCase(); divPreview(); }
   if (id === 'dlogo' && el.files[0]){ readLogo(el.files[0]).then(function(u){ M.logo = u; divPreview(); }).catch(function(e){ document.getElementById('merr').textContent = e.message; }); }
-  if (el.dataset.setdiv){ el.disabled = true; act('setDivision', { username: el.dataset.setdiv, division: el.value }, 'Division updated').catch(function(e){ toast(e.message); el.disabled = false; }); }
+  if (el.dataset.setdiv){ el.disabled = true; act('setDivision', { username: el.dataset.setdiv, division: el.value }, 'Division updated').then(function(){ if (document.getElementById('pdiv')) personModal(el.dataset.setdiv); }).catch(function(e){ toast(e.message); el.disabled = false; }); }
 });
 document.addEventListener('input', function(ev){ if (ev.target.id === 'ft') checkEarnForm(ev.target.closest('form') || document); });
 document.addEventListener('click', function(ev){ if (ev.target.closest('[data-setdiv],[data-setemp],#calUser,#dashDiv')) ev.stopPropagation(); }, true);
@@ -1613,39 +1698,67 @@ function statusOn(u, d){
   return null;
 }
 var KIND = { to: ['Travel order', 'route', 'to'], leave: ['On leave', 'plane', 'lv'], off: ['Day off', 'sun', 'off'] };
-function statusPill(s){ return s ? '<span class="pill st-' + KIND[s.kind][2] + '" title="' + esc(s.kind === 'to' ? 'In the field · ' + s.label : s.label) + '">' + esc(s.kind === 'to' ? 'Field · ' + s.label : s.label) + '</span>' : '<span class="pill Confirmed">Available</span>'; }
+/* Puts a division heading above each group of rows marked with data-div (tables and lists). */
+function groupify(root){
+  var seen = [];
+  (root || document).querySelectorAll('[data-grp]').forEach(function(el){ if (seen.indexOf(el.parentElement) < 0) seen.push(el.parentElement); });
+  seen.forEach(function(box){
+    if (box.dataset.grouped) return; box.dataset.grouped = '1';
+    var last = null, rows = Array.prototype.slice.call(box.children).filter(function(c){ return c.hasAttribute('data-grp'); });
+    if (rows.length < 2 && S.dashDiv !== 'all') return;
+    rows.forEach(function(el){
+      var dv = el.getAttribute('data-grp'); if (dv === last) return; last = dv;
+      var d = divOf(dv), label = d ? '<span class="dchip" style="--dc:' + esc(d.color) + '"><i></i>' + esc(d.name) + '</span>' : '<span class="dchip hint">No division</span>', h;
+      if (el.tagName === 'TR'){ h = document.createElement('tr'); h.className = 'grp'; h.innerHTML = '<td colspan="' + el.children.length + '">' + label + '</td>'; }
+      else { h = document.createElement('li'); h.className = 'grp'; h.innerHTML = label; }
+      box.insertBefore(h, el);
+    });
+  });
+}
+function statusPill(s){ return s ? '<span class="pill st-' + KIND[s.kind][2] + '" title="' + esc(s.kind === 'to' ? 'In the field · ' + s.label : s.label) + '">' + esc(s.kind === 'to' ? 'In the field' : s.label) + '</span>' : '<span class="pill Confirmed">Available</span>'; }
 
 /* ----- availability ----- */
 function viewAvailability(){
   var d = S.availDate || today(), dv = S.dashDiv, h = holidayOn(d), wk = isWeekend(d);
-  var people = S.users.filter(function(u){ return u.active && (dv === 'all' || u.division === dv); }).sort(function(a,b){ return a.name.localeCompare(b.name); });
+  var people = S.users.filter(function(u){ return u.active && (dv === 'all' || u.division === dv); }).sort(byDiv);
   var rows = people.map(function(u){ return { u: u, s: statusOn(u.username, d) }; });
   var count = { avail: 0, to: 0, leave: 0, off: 0 };
   rows.forEach(function(r){ count[r.s ? r.s.kind : 'avail']++; });
   var start = addDays(d, -((pd(d).getDay() + 6) % 7)), days = []; for (var i = 0; i < 7; i++) days.push(addDays(start, i));
   var week = '<div class="table-wrap"><table class="week"><thead><tr><th>Staff</th>' + days.map(function(x){ var hh = holidayOn(x); return '<th class="c' + (x === d ? ' on' : '') + (isWeekend(x) || hh ? ' nw' : '') + '" title="' + esc(hh ? hh.name : '') + '">' + fDate(x, { weekday:'short' }) + '<br><span class="num">' + pd(x).getDate() + '</span></th>'; }).join('') + '</tr></thead><tbody>' +
-    people.map(function(u){ return '<tr><td><b>' + esc(u.name) + '</b></td>' + days.map(function(x){ var s = statusOn(u.username, x), nw = isWeekend(x) || holidayOn(x);
+    people.map(function(u){ return '<tr data-grp="' + esc(u.division) + '"><td><b>' + esc(u.name) + '</b></td>' + days.map(function(x){ var s = statusOn(u.username, x), nw = isWeekend(x) || holidayOn(x);
       return '<td class="c' + (x === d ? ' on' : '') + (nw ? ' nw' : '') + '">' + (s ? '<span class="dot st-' + KIND[s.kind][2] + '" title="' + esc(KIND[s.kind][0] + ': ' + s.label) + '">' + KIND[s.kind][0].charAt(0) + '</span>' : (nw ? '' : '<span class="dot ok" title="Available">✓</span>')) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>' +
     '<div class="legend" style="padding-top:12px"><span><i class="st-ok"></i>Available</span><span><i class="st-to"></i>T = Travel order</span><span><i class="st-lv"></i>O = On leave</span><span><i class="st-off"></i>D = Day off (offset)</span><span><i style="background:var(--surface-2)"></i>Weekend or holiday</span></div>';
   return { eyebrow: 'Availability', title: fDate(d, { weekday:'long', month:'long', day:'numeric' }), sub: (h ? esc(h.name) + ' (holiday). ' : wk ? 'Weekend. ' : '') + 'Who is in the office, in the field, on leave or on a day off.',
     actions: '<button class="btn btn-glass" data-act="avPrev" aria-label="Previous day">' + ic('left') + '</button><input class="input" type="date" id="avDate" value="' + d + '" aria-label="Pick a date" style="width:auto;height:42px;color:var(--ink)"><button class="btn btn-glass" data-act="avToday">Today</button><button class="btn btn-glass" data-act="avNext" aria-label="Next day">' + ic('right') + '</button>',
     body: '<div class="grid"><div class="tiles span-12">' + tile('Available', count.avail, 'In the office', '', 'check') + tile('In the field', count.to, 'On a travel order', '', 'route') + tile('On leave', count.leave, isAdmin() ? 'Any leave type' : 'Leave types are private', '', 'plane') + tile('Day off', count.off, 'Using offsets', '', 'sun') + '</div>' +
       panel('Staff today', 'users', rows.length ? '<ul class="list">' + rows.map(function(r){ var dd = divOf(r.u.division);
-        return '<li class="row avail' + (isAdmin() ? ' tap" data-person="' + esc(r.u.username) + '" tabindex="0' : '') + '">' + (dd ? divBadge(dd, 34) : '<span class="avatar">' + esc(initials(r.u.name)) + '</span>') + '<div class="body"><div class="t">' + esc(r.u.name) + '</div><div class="m">' + (dd ? esc(dd.short) : 'No division') + ' · ' + esc(r.u.empType) + (r.s && r.s.kind === 'to' && r.s.ref.destination ? ' · ' + esc(r.s.ref.destination) : '') + '</div></div>' + statusPill(r.s) + '</li>'; }).join('') + '</ul>' : empty('users', 'No staff', 'Pick another division.'),
+        return '<li data-grp="' + esc(r.u.division) + '" class="row avail' + (isAdmin() ? ' tap" data-person="' + esc(r.u.username) + '" tabindex="0' : '') + '">' + (dd ? divBadge(dd, 34) : '<span class="avatar">' + esc(initials(r.u.name)) + '</span>') + '<div class="body"><div class="t">' + esc(r.u.name) + '</div><div class="m">' + (r.s && r.s.kind === 'to' ? esc(r.s.ref.event) + (r.s.ref.destination ? ' · ' + esc(r.s.ref.destination) : '') : esc(r.u.empType)) + '</div></div>' + statusPill(r.s) + '</li>'; }).join('') + '</ul>' : empty('users', 'No staff', 'Pick another division.'),
         divSelect('dashDiv', dv, 'Filter by division', true), 'span-12') +
       panel('This week', 'cal', week, '', 'span-12') + '</div>' };
 }
 
 /* ----- travel orders ----- */
 /* Copy order: date, purpose (kept exactly as typed), then names in capital letters. */
-function toText(t){ return [fRange(t.dateFrom, t.dateTo).toUpperCase(), t.event].concat(t.names).join('\n'); }
+function toWhen(t){
+  var o = { month:'long', day:'numeric', year:'numeric' }, a = t.dateFrom, b = t.dateTo;
+  if (!b || b === a) return 'on ' + fDate(a, o);
+  if (a.slice(0, 7) === b.slice(0, 7)) return 'from ' + fDate(a, { month:'long', day:'numeric' }) + ' to ' + pd(b).getDate() + ', ' + a.slice(0, 4);
+  if (a.slice(0, 4) === b.slice(0, 4)) return 'from ' + fDate(a, { month:'long', day:'numeric' }) + ' to ' + fDate(b, o);
+  return 'from ' + fDate(a, o) + ' to ' + fDate(b, o);
+}
+function toText(t){
+  var p = String(t.event || '').trim().replace(/[.\s]+$/, '');
+  return [fDate(t.dateFrom, { month:'long', day:'numeric', year:'numeric' }), p + (t.destination ? ' in ' + t.destination : '') + ' ' + toWhen(t), ''].concat(sortNames(t.names)).join('\n');
+}
 function toRow(t){
   var adm = isAdmin(), mine = t.createdBy === S.me.username, canEdit = adm || (mine && t.status === 'Filed');
   return '<li class="to-card"><div class="to-date"><b>' + fDate(t.dateFrom, { month:'short' }).toUpperCase() + '</b><span class="num">' + pd(t.dateFrom).getDate() + (t.dateTo !== t.dateFrom ? '–' + pd(t.dateTo).getDate() : '') + '</span></div>' +
     '<div class="to-body"><div class="t">' + esc(t.event) + '</div><div class="m">' + fRange(t.dateFrom, t.dateTo, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') + '</div>' +
-      '<div class="to-names">' + t.names.map(function(n){ return '<span>' + esc(n) + '</span>'; }).join('') + '</div>' +
+      '<div class="to-names">' + sortNames(t.names).map(function(n){ return '<span>' + esc(n) + '</span>'; }).join('') + '</div>' +
       '<div class="row-btns"><span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + t.status + '</span>' + (adm || t.tev ? '<span class="pill ' + (t.tev === 'Yes' ? 'hol' : 'off') + '">TEV: ' + (t.tev || 'not set') + '</span>' : '') + '<span class="hint">Filed by ' + esc(userName(t.createdBy)) + ' · ' + ago(t.createdAt) + '</span></div></div>' +
-    (t._saving ? '<div class="to-acts"><span class="pill off">Saving…</span></div>' : '<div class="to-acts"><button class="btn btn-sm btn-ghost" data-act="toCopy" data-id="' + t.id + '">' + ic('list') + 'Copy</button>' + (adm ? '<button class="btn btn-sm btn-primary" data-act="toManage" data-id="' + t.id + '">' + ic('shield') + 'Prepare</button>' : '') + (canEdit ? '<button class="btn btn-sm btn-ghost" data-act="toEdit" data-id="' + t.id + '">' + ic('edit') + 'Edit</button>' : '') + '</div>') + '</li>';
+    (t._saving ? '<div class="to-acts"><span class="pill off">Saving…</span></div>' : '<div class="to-acts">' + (adm ? '<button class="btn btn-sm ' + (t.status === 'Filed' ? 'btn-primary' : 'btn-ghost') + '" data-act="toManage" data-id="' + t.id + '">' + ic('shield') + (t.status === 'Filed' ? 'Prepare' : 'Update') + '</button>' : '') +
+      '<div class="to-icons"><button class="icon-btn" data-act="toCopy" data-id="' + t.id + '" aria-label="Copy text" title="Copy text">' + ic('list') + '</button>' + (canEdit ? '<button class="icon-btn" data-act="toEdit" data-id="' + t.id + '" aria-label="Edit" title="Edit">' + ic('edit') + '</button>' : '') + '</div></div>') + '</li>';
 }
 function viewTravel(){
   var f = S.toFilter || 'upcoming', td = today(), mine = S.toMine;
@@ -1670,7 +1783,7 @@ function toModal(id){
   modal(t.id ? 'Edit travel order' : 'New travel order',
     '<div class="two"><div class="field"><label for="tf">Date</label><input class="input" id="tf" name="dateFrom" type="date" value="' + t.dateFrom + '" required></div><div class="field"><label for="tt">Until <span class="hint">(if more than one day)</span></label><input class="input" id="tt" name="dateTo" type="date" value="' + (t.dateTo !== t.dateFrom ? t.dateTo : '') + '"></div></div>' +
     '<div class="field"><label for="te">Purpose</label><input class="input" id="te" name="event" maxlength="200" value="' + esc(t.event) + '" placeholder="e.g. To cover the Provincial Board regular session" required><span class="hint">Copied exactly as you type it.</span></div>' +
-    '<div class="field"><label for="tdst">Destination <span class="hint">(optional)</span></label><input class="input" id="tdst" name="destination" maxlength="120" value="' + esc(t.destination) + '" placeholder="e.g. Labo, Camarines Norte"></div>' +
+    '<div class="field"><label for="tdst">Location</label><input class="input" id="tdst" name="destination" maxlength="120" value="' + esc(t.destination) + '" placeholder="e.g. Brgy. Gubat, Daet, Camarines Norte" required><span class="hint">Copied as: Purpose in Location on Date.</span></div>' +
     '<div class="field"><label for="tp">People to be dispatched</label><div class="picker"><div class="chips" id="toChips"></div><input class="input" id="tp" autocomplete="off" placeholder="Type a name, then pick or press Enter" aria-autocomplete="list" aria-controls="toSug"><ul class="sug" id="toSug" role="listbox" hidden></ul></div>' +
       '<div class="row-btns"><button type="button" class="btn btn-sm btn-ghost" data-act="toAddMe">' + ic('plus') + 'Add me</button><span class="hint">Names are saved in capital letters, ready to paste into the document.</span></div></div><div id="toWarn"></div>',
     (t.id ? '<button type="button" class="btn btn-danger" data-act="toDelete" data-id="' + t.id + '" style="margin-right:auto">' + ic('trash') + 'Delete</button>' : '') + '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">' + (t.id ? 'Save changes' : 'File travel order') + '</button>', 'saveTO');
@@ -1698,6 +1811,7 @@ function toManageModal(id){
   M = { id: id };
   modal('Prepare travel order', '<div class="copybox" id="toCopyText">' + esc(toText(t)).replace(/\n/g, '<br>') + '</div><button type="button" class="btn btn-sm btn-ghost" data-act="toCopy" data-id="' + id + '">' + ic('list') + 'Copy for the document</button>' +
     '<div class="field"><label for="tno">TO number <span class="hint">(optional)</span></label><input class="input" id="tno" name="toNo" value="' + esc(t.toNo) + '" maxlength="40" placeholder="e.g. PIO-2026-11-014"></div>' +
+    '<div class="field"><label for="tdp">Date prepared</label><input class="input" id="tdp" name="datePrepared" type="date" value="' + esc(t.datePrepared || today()) + '"><span class="hint">Printed at the top of the travel order.</span></div>' +
     '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">Will a TEV (Travel Expense Voucher) be made?</legend><div class="seg">' +
       [['Yes','Yes','Prepare a TEV'],['No','No','No TEV needed'],['','Not yet','Decide later']].map(function(o, i){ return '<input type="radio" name="tev" id="tv' + i + '" value="' + o[0] + '"' + (t.tev === o[0] ? ' checked' : '') + '><label for="tv' + i + '"><b>' + o[1] + '</b><small>' + o[2] + '</small></label>'; }).join('') + '</div></fieldset>' +
     '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">Status</legend><div class="seg">' +
@@ -1726,12 +1840,12 @@ function viewLeaves(){
         '<div class="span-12 info-note">' + ic('flag') + '<span>Mandatory/forced leave taken this year: ' + frac(b.used.FL || 0) + ' of 5 days. Leaves are filed on CS Form No. 6 as usual; the admin records them here.</span></div>' +
         panel('Leave history', 'history', mine.length ? '<ul class="list">' + mine.map(leaveRow).join('') + '</ul>' : empty('plane', 'No leaves recorded', 'Leaves the admin records will show here.'), '', 'span-12') + '</div>' };
   }
-  var staff = S.users.filter(function(u){ return u.active && hasLeaves(u) && (S.dashDiv === 'all' || u.division === S.dashDiv); }).sort(function(a,b){ return a.name.localeCompare(b.name); });
+  var staff = S.users.filter(function(u){ return u.active && hasLeaves(u) && (S.dashDiv === 'all' || u.division === S.dashDiv); }).sort(byDiv);
   var recent = S.leaves.slice().sort(function(x,y){ return x.createdAt < y.createdAt ? 1 : -1; }).slice(0, 30);
   return { eyebrow: 'Leaves', title: 'Leave credits', sub: 'Regular and casual employees. Vacation and sick leave grow by 1.25 days a month from each starting balance. Leaves are filed on paper; record them here.',
     actions: '<button class="btn btn-sun" data-act="leaveNew">' + ic('plus') + 'Record leave</button>',
     body: '<div class="grid">' + panel('Balances', 'shield', staff.length ? '<div class="table-wrap"><table><thead><tr><th>Employee</th><th class="r">Vacation</th><th class="r">Sick</th><th class="r">SPL left</th><th class="r">Wellness left</th><th class="r">Forced taken</th><th></th></tr></thead><tbody>' +
-        staff.map(function(u){ var c = creditCells(u); return '<tr><td><b>' + esc(u.name) + '</b><div class="hint">' + esc(u.empType) + (c.b.set ? ' · as of ' + mShort(c.b.asOf) + ' ' + c.b.asOf.slice(0,4) : ' · <b style="color:var(--gold)">balances not set</b>') + '</div></td>' + c.html +
+        staff.map(function(u){ var c = creditCells(u); return '<tr data-grp="' + esc(u.division) + '"><td><b>' + esc(u.name) + '</b><div class="hint">' + esc(u.empType) + (c.b.set ? ' · as of ' + mShort(c.b.asOf) + ' ' + c.b.asOf.slice(0,4) : ' · <b style="color:var(--gold)">balances not set</b>') + '</div></td>' + c.html +
           '<td class="r"><div class="row-btns" style="justify-content:flex-end"><button class="btn btn-sm btn-ghost" data-act="leaveNew" data-u="' + esc(u.username) + '">' + ic('plus') + 'Leave</button><button class="btn btn-sm btn-ghost" data-act="credits" data-u="' + esc(u.username) + '">' + ic('edit') + 'Balances</button></div></td></tr>'; }).join('') + '</tbody></table></div>'
         : empty('users', 'No regular or casual staff', 'Set each person’s employment type in Staff. Leave credits apply to regular and casual employees.'), divSelect('dashDiv', S.dashDiv, 'Filter by division', true), 'span-12') +
       panel('Recently recorded', 'history', recent.length ? '<ul class="list">' + recent.map(function(l){ return leaveRow(l, true); }).join('') + '</ul>' : empty('plane', 'No leaves recorded yet', 'Use Record leave after a leave is approved.'), '<button class="btn btn-sm btn-ghost" data-act="exportLeaves">' + ic('download') + 'CSV</button>', 'span-12') + '</div>' };
@@ -1784,8 +1898,8 @@ WIDGETS.admin.splice(2, 0, ['out', 'Who’s out today', 6], ['tos', 'Upcoming tr
 WIDGETS.employee.splice(2, 0, ['out', 'Who’s out today', 6], ['mytos', 'My travel orders', 6]);
 WIDGETS.employee.push(['leave', 'My leave credits', 12]);
 function outWidget(n){
-  var td = today(), rows = S.users.filter(function(u){ return u.active; }).map(function(u){ return { u: u, s: statusOn(u.username, td) }; }).filter(function(r){ return r.s; });
-  return panel('Who’s out today', 'users', rows.length ? '<ul class="list">' + rows.slice(0, 6).map(function(r){ return '<li class="row avail"><span class="avatar">' + esc(initials(r.u.name)) + '</span><div class="body"><div class="t">' + esc(r.u.name) + '</div><div class="m">' + esc((divOf(r.u.division) || {}).short || '') + '</div></div>' + statusPill(r.s) + '</li>'; }).join('') + '</ul>'
+  var td = today(), rows = S.users.filter(function(u){ return u.active; }).sort(byDiv).map(function(u){ return { u: u, s: statusOn(u.username, td) }; }).filter(function(r){ return r.s; });
+  return panel('Who’s out today', 'users', rows.length ? '<ul class="list">' + rows.slice(0, 6).map(function(r){ return '<li data-grp="' + esc(r.u.division) + '" class="row avail"><span class="avatar">' + esc(initials(r.u.name)) + '</span><div class="body"><div class="t">' + esc(r.u.name) + '</div><div class="m">' + (r.s.kind === 'to' ? esc(r.s.ref.event) + (r.s.ref.destination ? ' · ' + esc(r.s.ref.destination) : '') : esc(r.u.empType)) + '</div></div>' + statusPill(r.s) + '</li>'; }).join('') + '</ul>'
     : empty('check', 'Everyone is in today', isWeekend(td) || holidayOn(td) ? 'It’s a non-working day anyway.' : 'No travel orders, leaves or days off today.'), '<button class="btn btn-sm btn-ghost" data-go="availability">Availability</button>', span(n));
 }
 function tosWidget(n, mine){
@@ -1842,7 +1956,7 @@ document.addEventListener('change', function(ev){
   if (id === 'toMine'){ S.toMine = ev.target.checked; render(); }
   if (id === 'tf' || id === 'tt') drawChips();
   if (id === 'lu2' || id === 'lt' || id === 'lf' || id === 'lto') leaveCheck(id !== 'lu2');
-  if (ev.target.dataset.setemp){ var el = ev.target; el.disabled = true; act('setEmpType', { username: el.dataset.setemp, empType: el.value }, 'Employment type updated').catch(function(e){ toast(e.message); el.disabled = false; }); }
+  if (ev.target.dataset.setemp){ var el = ev.target; el.disabled = true; act('setEmpType', { username: el.dataset.setemp, empType: el.value }, 'Employment type updated').then(function(){ if (document.getElementById('pemp')) personModal(el.dataset.setemp); }).catch(function(e){ toast(e.message); el.disabled = false; }); }
 });
 document.addEventListener('submit', function(ev){
   var f = ev.target.closest('form[data-form]'); if (!f) return;
@@ -1855,6 +1969,270 @@ document.addEventListener('submit', function(ev){
   else if (kind === 'credits'){ d.username = M.u; p = act('setCredits', d, 'Balances saved').then(closeModal); }
   if (p) busy(btn, p, 'merr');
 });
+
+/* =====================================================================
+   PIO Overwatch: TEVs, leave-first dashboards, printing travel orders,
+   calendar events overview and quick picks for logging offsets
+   ===================================================================== */
+ICONS.peso = '<path d="M7 21V3h5.5a5 5 0 0 1 0 10H7"/><path d="M4 7h16M4 10h16"/>';
+function peso(n){ return '₱' + (Number(n) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function toOf(id){ return S.travelOrders.filter(function(t){ return t.id === id; })[0]; }
+
+/* ---------- TEVs ---------- */
+var TEV_ST = { 'To prepare': ['To prepare', 'off', 'Being prepared'], 'Pending': ['Pending', 'Pending', 'Waiting for the cheque'], 'Claimed': ['Claimed', 'Confirmed', 'Cheque released'] };
+var COVER = [['transpo', 'Transportation'], ['food', 'Food'], ['lodging', 'Accommodation'], ['other', 'Other']];
+function tevSums(list){
+  var o = { released: 0, pending: 0, prep: 0, prepN: 0, pendN: 0, relN: 0 };
+  list.forEach(function(v){ if (v.status === 'Claimed'){ o.released += v.total; o.relN++; } else if (v.status === 'Pending'){ o.pending += v.total; o.pendN++; } else { o.prep += v.total; o.prepN++; } });
+  return o;
+}
+function tevYear(v){ var t = toOf(v.toId); return (v.releasedOn || (t && t.dateFrom) || v.submittedOn || '').slice(0, 4); }
+function tevTiles(list, budget, cls){
+  var s = tevSums(list), left = budget ? budget - s.released - s.pending : null;
+  return '<div class="tiles' + (budget == null ? ' three ' : ' ') + (cls || '') + '">' +
+    tile('Released', peso(s.released), s.relN + ' claimed', '', 'check', 'data-act="tevTab" data-t="Claimed"') +
+    tile('Pending', peso(s.pending), s.pendN + ' waiting for the cheque', s.pendN ? 'warn' : '', 'clock', 'data-act="tevTab" data-t="Pending"') +
+    tile('To prepare', String(s.prepN), s.prep ? peso(s.prep) + ' drafted' : 'Not yet submitted', '', 'edit', 'data-act="tevTab" data-t="To prepare"') +
+    (budget != null ? tile('Left for spending', budget ? peso(left) : '—', budget ? 'Of ' + peso(budget) + ' this year' : (isAdmin() ? 'Set the TEV budget in Settings' : 'No budget set'), left != null && left < 0 ? 'warn' : '', 'peso', isAdmin() && !budget ? 'data-go="settings"' : '') : '') + '</div>';
+}
+function tevRow(v){
+  var adm = isAdmin(), st = TEV_ST[v.status] || TEV_ST['To prepare'], cov = COVER.filter(function(c){ return v[c[0]] > 0; });
+  return '<li class="row' + (adm && !v._saving ? ' tap" data-act="tevEdit" data-id="' + v.id + '" tabindex="0' : '') + '"><span class="avatar">' + esc(initials(v.name)) + '</span><div class="body"><div class="t">' + esc(v.name) + '</div>' +
+    '<div class="m">' + (cov.length ? cov.map(function(c){ return c[1] + ' ' + peso(v[c[0]]); }).join(' · ') : 'No amounts yet') +
+      (v.chequeNo ? ' · Cheque ' + esc(v.chequeNo) : '') + (v.releasedOn ? ' · Released ' + fDate(v.releasedOn) : v.submittedOn ? ' · Submitted ' + fDate(v.submittedOn) : '') + '</div></div>' +
+    '<span class="amt">' + peso(v.total) + '</span><span class="pill ' + st[1] + '">' + (v._saving ? 'Saving…' : st[0]) + '</span></li>';
+}
+function viewTEV(){
+  var adm = isAdmin(), tab = S.tevTab || 'To prepare', yr = today().slice(0, 4), budget = Number(S.settings.tevBudget) || 0;
+  var all = S.tevs || [], yearList = all.filter(function(v){ return tevYear(v) === yr; });
+  var list = all.filter(function(v){ return (tab === 'All' || v.status === tab) && (!S.tevTO || v.toId === S.tevTO); });
+  var groups = {}, order = [];
+  list.forEach(function(v){ if (!groups[v.toId]){ groups[v.toId] = []; order.push(v.toId); } groups[v.toId].push(v); });
+  order.sort(function(a, b){ var x = toOf(a), y = toOf(b); return ((y && y.dateFrom) || '') < ((x && x.dateFrom) || '') ? -1 : 1; });
+  var body = order.map(function(id){
+    var t = toOf(id), vs = groups[id], sum = vs.reduce(function(n, v){ return n + v.total; }, 0);
+    return '<li class="grp tev-grp"><div><b>' + esc(t ? t.event : 'Travel order') + '</b><span class="hint">' + (t ? fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') : 'Removed') + '</span></div><b class="num">' + peso(sum) + '</b></li>' +
+      vs.sort(function(a, b){ return a.name < b.name ? -1 : 1; }).map(tevRow).join('');
+  }).join('');
+  var tabs = '<div class="tabs" role="group" aria-label="Show">' + ['To prepare', 'Pending', 'Claimed', 'All'].map(function(x){ var n = all.filter(function(v){ return (x === 'All' || v.status === x) && (!S.tevTO || v.toId === S.tevTO); }).length; return '<button data-act="tevTab" data-t="' + x + '" aria-pressed="' + (tab === x) + '">' + x + (n ? ' · ' + n : '') + '</button>'; }).join('') + '</div>';
+  var ft = S.tevTO && toOf(S.tevTO);
+  return { eyebrow: 'Field work', title: adm ? 'Travel expense vouchers' : 'My TEVs',
+    sub: adm ? 'From preparing the TEV to the release of the cheque. Totals are for ' + yr + '.' : 'Your travel expense vouchers and where each one is.',
+    actions: adm ? '<button class="btn btn-sun" data-act="tevNew">' + ic('plus') + 'Add TEV</button>' : '',
+    body: '<div class="grid">' + tevTiles(yearList, adm ? budget : null, 'span-12') +
+      (ft ? '<div class="span-12 info-note">' + ic('route') + '<span>Showing TEVs for <b>' + esc(ft.event) + '</b> in ' + esc(ft.destination || '—') + '. <button class="link" data-act="tevAll">Show all</button></span></div>' : '') +
+      panel('TEVs', 'peso', list.length ? '<ul class="list">' + body + '</ul>' : empty('peso', tab === 'All' ? 'No TEVs yet' : 'Nothing ' + tab.toLowerCase(), adm ? 'When a travel order is marked “TEV: Yes”, a TEV is started for each person on it.' : 'TEVs for your travel orders show here.', adm ? '<button class="btn btn-ghost" data-go="travel">' + ic('route') + 'Travel orders</button>' : ''), tabs, 'span-12') + '</div>' };
+}
+function tevModal(id, toId){
+  var v = id ? (S.tevs || []).filter(function(x){ return x.id === id; })[0] : null;
+  if (id && !v) return;
+  M = { id: id };
+  var tos = activeTOs().slice().sort(function(a, b){ return a.dateFrom < b.dateFrom ? 1 : -1; }).slice(0, 60), t0 = v ? toOf(v.toId) : toOf(toId) || tos[0];
+  var head = v ? '<div class="sumbox"><b>' + esc(v.name) + '</b><span>' + (t0 ? esc(t0.event) + ' · ' + esc(t0.destination || '') + ' · ' + fRange(t0.dateFrom, t0.dateTo, { month:'short', day:'numeric', year:'numeric' }) : '') + '</span></div>'
+    : (tos.length ? '<div class="field"><label for="vto">Travel order</label><select class="input" id="vto" name="toId">' + tos.map(function(t){ return '<option value="' + t.id + '"' + (t0 && t.id === t0.id ? ' selected' : '') + '>' + esc(t.event) + ' · ' + esc(fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric' })) + '</option>'; }).join('') + '</select></div>' +
+        '<div class="field"><label for="vn">Employee</label><select class="input" id="vn" name="name"></select></div>' : '<p class="hint">File a travel order first.</p>');
+  v = v || { status: 'To prepare', transpo: 0, food: 0, lodging: 0, other: 0 };
+  modal(id ? 'TEV' : 'Add a TEV', head +
+    '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">What the TEV covers</legend><div class="cover">' +
+      COVER.map(function(c){ var on = v[c[0]] > 0; return '<label class="cov"><input type="checkbox" data-cov="' + c[0] + '"' + (on ? ' checked' : '') + '><span>' + c[1] + '</span><input class="input num" type="number" min="0" step="0.01" inputmode="decimal" name="' + c[0] + '" value="' + (on ? v[c[0]] : '') + '" placeholder="0.00" aria-label="' + c[1] + ' amount"' + (on ? '' : ' disabled') + '></label>'; }).join('') +
+      '</div><div class="tev-total"><span>Total</span><b class="num" id="vtot">' + peso(v.total || 0) + '</b></div></fieldset>' +
+    '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">Status</legend><div class="seg">' +
+      Object.keys(TEV_ST).map(function(k, i){ return '<input type="radio" name="status" id="vs' + i + '" value="' + k + '"' + (v.status === k ? ' checked' : '') + '><label for="vs' + i + '"><b>' + k + '</b><small>' + TEV_ST[k][2] + '</small></label>'; }).join('') + '</div></fieldset>' +
+    '<div class="two"><div class="field"><label for="vsub">Submitted on</label><input class="input" id="vsub" name="submittedOn" type="date" value="' + esc(v.submittedOn || '') + '"></div><div class="field"><label for="vrel">Cheque released on</label><input class="input" id="vrel" name="releasedOn" type="date" value="' + esc(v.releasedOn || '') + '"></div></div>' +
+    '<div class="two"><div class="field"><label for="vchq">Cheque no. <span class="hint">(optional)</span></label><input class="input" id="vchq" name="chequeNo" maxlength="40" value="' + esc(v.chequeNo || '') + '"></div><div class="field"><label for="vnote">Note <span class="hint">(optional)</span></label><input class="input" id="vnote" name="note" maxlength="200" value="' + esc(v.note || '') + '"></div></div>',
+    (id ? '<button type="button" class="btn btn-ghost" data-act="tevDel" data-id="' + id + '" style="margin-right:auto;color:var(--red)">' + ic('trash') + 'Delete</button>' : '') +
+    '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Save TEV</button>', 'tev');
+  tevNames(); tevTotal();
+}
+function tevNames(){
+  var s = document.getElementById('vto'), n = document.getElementById('vn'); if (!s || !n) return;
+  var t = toOf(s.value), have = (S.tevs || []).filter(function(v){ return v.toId === s.value; }).map(function(v){ return v.name; });
+  var names = t ? sortNames(t.names).filter(function(x){ return have.indexOf(x) < 0; }) : [];
+  n.innerHTML = names.length ? names.map(function(x){ return '<option>' + esc(x) + '</option>'; }).join('') : '<option value="">Everyone on this TO has a TEV</option>';
+}
+function tevTotal(){
+  var sum = 0; COVER.forEach(function(c){ var i = document.querySelector('#modal input[name=' + c[0] + ']'); if (i && !i.disabled) sum += Number(i.value) || 0; });
+  var o = document.getElementById('vtot'); if (o) o.textContent = peso(sum);
+}
+/* Asked after a travel order is marked "TEV: Yes". */
+function tevPrompt(t){
+  modal('Make the TEVs now?', '<p style="margin:0">A TEV was started for each of the ' + t.names.length + ' ' + (t.names.length === 1 ? 'person' : 'people') + ' on <b>' + esc(t.event) + '</b> in ' + esc(t.destination || '—') + '. You can fill in the amounts now or later from <b>TEVs</b> under Field work.</p>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Later</button><button type="button" class="btn btn-primary" data-act="tevGo" data-id="' + t.id + '">' + ic('peso') + 'Make them now</button>');
+}
+
+/* ---------- dashboards ---------- */
+WIDGETS.admin.splice(WIDGETS.admin.map(function(w){ return w[0]; }).indexOf('tos') + 1, 0, ['tevsum', 'TEV totals', 12]);
+WIDGETS.employee.push(['mytev', 'My TEVs', 6]);
+WIDGETS.regular = [['leave', 'My leave credits', 12], ['myleaves', 'My leave history', 6], ['mytos', 'My travel orders', 6], ['out', 'Who’s out today', 6], ['holidays', 'Upcoming holidays', 6],
+  ['hero', 'Offset balance', 12], ['mytev', 'My TEVs', 6], ['recent', 'Recent offsets', 6], ['trend', 'My monthly offsets chart', 12]];
+function myTevWidget(n){
+  var mine = (S.tevs || []).filter(function(v){ return v.username === S.me.username; }), open = mine.filter(function(v){ return v.status !== 'Claimed'; }).slice(0, 4);
+  return panel('My TEVs', 'peso', mine.length ? '<ul class="list">' + (open.length ? open : mine.slice(0, 3)).map(function(v){ var t = toOf(v.toId), st = TEV_ST[v.status] || TEV_ST['To prepare'];
+      return '<li class="row"><span class="mark to">' + ic('peso') + '</span><div class="body"><div class="t">' + esc(t ? t.event : 'Travel order') + '</div><div class="m">' + st[0] + (t ? ' · ' + fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric' }) : '') + '</div></div><span class="amt">' + peso(v.total) + '</span></li>'; }).join('') + '</ul>'
+    : empty('peso', 'No TEVs', 'When a travel order you are on gets a TEV, it shows here.'), '<button class="btn btn-sm btn-ghost" data-go="tev">All</button>', span(n));
+}
+function myLeavesWidget(n){
+  var list = S.leaves.filter(function(l){ return l.username === S.me.username && !/^ADJ/.test(l.type); }).sort(function(a, b){ return a.dateFrom < b.dateFrom ? 1 : -1; }).slice(0, 5);
+  return panel('My leave history', 'plane', list.length ? '<ul class="list">' + list.map(function(l){ return leaveRow(l); }).join('') + '</ul>' : empty('plane', 'No leaves recorded', 'Leaves the admin records from your Form 6 show here.'), '<button class="btn btn-sm btn-ghost" data-go="leaves">All</button>', span(n));
+}
+(function(){
+  var A = adminWidgets, E = empWidgets;
+  adminWidgets = function(staff){ var w = A(staff); w.tevsum = function(n){ var yr = today().slice(0, 4); return '<h2 class="sec-label span-12">' + ic('peso') + 'TEVs in ' + yr + '</h2>' + tevTiles((S.tevs || []).filter(function(v){ return tevYear(v) === yr; }), Number(S.settings.tevBudget) || 0, span(n)).replace(/data-act="tevTab"/g, 'data-act="tevOpen"'); }; return w; };
+  empWidgets = function(){ var w = E(); w.mytev = myTevWidget; w.myleaves = myLeavesWidget; return w; };
+  // Regular and casual staff: lines about leaves instead of offsets.
+  var Q0 = quip;
+  quip = function(){
+    if (isAdmin() || !hasLeaves()) return Q0();
+    var lw = nextLongWeekend(); if (lw) return Q0();
+    var b = leaveBal(S.me.username), fl = 5 - (b.used.FL || 0), mo = +today().slice(5, 7);
+    if (b.set && mo >= 9 && fl > 0) return pick([fl + ' forced leave day' + (fl === 1 ? '' : 's') + ' left this year. Use them or lose them.', 'Reminder: ' + fl + ' of your 5 mandatory leave days are still unused.']);
+    if (b.set && b.vl >= 15) return pick([fD(b.vl) + ' of vacation leave saved. The beach misses you.', 'Vacation leave: ' + fD(b.vl) + '. That is a lot of unused sunsets.']);
+    if (b.left('WL') > 0 && mo >= 10) return 'Wellness leave left this year: ' + fD(b.left('WL')) + '. Rest is part of the job.';
+    if (pd(today()).getDay() === 5) return 'It’s Friday. Even the printer is tired.';
+    return pick(['Coverage today, rest tomorrow.', 'Another day, another press release.', 'Stay hydrated. Deadlines are not.']);
+  };
+})();
+
+/* ---------- travel order document (fills the office's Word template) ---------- */
+/* to-template.docx sits beside index.html. It is the PIO template with {DATE}, {NAME}, {DEST}, {DEP}, {ARR}, {PURPOSE}, {X1}, {X2}, {REC1}-{REC3} in place of the sample text. */
+var JSZIP_URL = 'jszip.min.js';   // kept in the repo so it works without outside sites
+function loadZip(){
+  if (window.JSZip) return Promise.resolve(window.JSZip);
+  return new Promise(function(ok, no){ var sc = document.createElement('script'); sc.src = JSZIP_URL; sc.onload = function(){ ok(window.JSZip); }; sc.onerror = function(){ no(new Error('Could not load the document tool. Check your internet connection.')); }; document.head.appendChild(sc); });
+}
+function xmlEsc(v){ return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+/* The Provincial Information Officer does not recommend her own travel. */
+function selfRecommend(t){ return t.names.some(function(n){ return /SARAH MARIE|AVIADO/i.test(n); }); }
+function toDocXml(x, t){
+  var o = { month:'long', day:'numeric', year:'numeric' }, names = sortNames(t.names);
+  // one line per extra person: copy the second name line
+  var p2 = x.indexOf('{NAME}', x.indexOf('{NAME}') + 1);
+  if (p2 > 0){
+    var s = Math.max(x.lastIndexOf('<w:p ', p2), x.lastIndexOf('<w:p>', p2)), e = x.indexOf('</w:p>', p2) + 6, line = x.slice(s, e);
+    x = x.slice(0, s) + names.slice(1).map(function(n){ return line.replace('{NAME}', xmlEsc(n)); }).join('') + x.slice(e);
+  }
+  var rec = !selfRecommend(t), map = {
+    DATE: fDate(t.datePrepared || today(), o), NAME: names[0] || '', DEST: t.destination || '',
+    DEP: fDate(t.dateFrom, o), ARR: fDate(t.dateTo || t.dateFrom, o),
+    PURPOSE: String(t.event || '').replace(/[.\s]+$/, '') + (t.destination ? ' at ' + t.destination : ''),
+    X1: t.tev === 'No' ? 'X' : '', X2: t.tev === 'Yes' ? 'X' : '',
+    REC1: rec ? 'RECOMMENDING APPROVAL:' : '', REC2: rec ? '       SARAH MARIE P. AVIADO, DPA' : '', REC3: rec ? '         Provincial Information Officer' : ''
+  };
+  return x.replace(/\{(DATE|NAME|DEST|DEP|ARR|PURPOSE|X1|X2|REC1|REC2|REC3)\}/g, function(m, k){ return xmlEsc(map[k]); });
+}
+function printTO(t, btn){
+  if (btn) btn.disabled = true;
+  var name = ('Travel Order ' + (t.toNo || t.dateFrom) + ' ' + t.event).replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim().slice(0, 90) + '.docx';
+  return Promise.all([loadZip(), fetch('to-template.docx', { cache: 'no-cache' }).then(function(r){ if (!r.ok) throw new Error('to-template.docx is missing from the site. Upload it to GitHub next to index.html.'); return r.arrayBuffer(); })])
+    .then(function(a){ return a[0].loadAsync(a[1]); })
+    .then(function(z){ return z.file('word/document.xml').async('string').then(function(x){ z.file('word/document.xml', toDocXml(x, t)); return z.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }); }); })
+    .then(function(blob){ var u = URL.createObjectURL(blob), l = document.createElement('a'); l.href = u; l.download = name; document.body.appendChild(l); l.click(); l.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 30000); toast('Travel order downloaded. Open it in Word to print.'); })
+    .catch(function(e){ toast(e.message || 'Could not make the document.'); })
+    .then(function(){ if (btn) btn.disabled = false; });
+}
+(function(){
+  var R = toRow;
+  toRow = function(t){
+    var h = R(t);
+    if (t.status === 'Prepared' && isAdmin() && !t._saving) h = h.replace('<div class="to-icons">', '<div class="to-icons"><button class="icon-btn" data-act="toPrint" data-id="' + t.id + '" aria-label="Download the travel order for printing" title="Travel order (Word)">' + ic('print') + '</button>');
+    if (t.tev === 'Yes' && !t._saving){ var n = (S.tevs || []).filter(function(v){ return v.toId === t.id; }); if (n.length) h = h.replace(/(<span class="pill hol">TEV: Yes<\/span>)/, '<button class="pill hol" data-act="tevGo" data-id="' + t.id + '" style="border:0;cursor:pointer">TEV: Yes · ' + n.filter(function(v){ return v.status === 'Claimed'; }).length + '/' + n.length + ' claimed</button>'); }
+    return h;
+  };
+})();
+
+/* ---------- calendar: events overview ---------- */
+function eventsOverview(ym, who){
+  var adm = isAdmin(), days = {};
+  function add(d, html){ (days[d] = days[d] || []).push(html); }
+  S.holidays.forEach(function(h){ if (h.date.slice(0, 7) === ym) add(h.date, '<span class="mark hol">' + ic('flag') + '</span><div class="body"><div class="t">' + esc(h.name) + '</div><div class="m">' + esc(h.kind) + ' holiday</div></div>'); });
+  activeTOs().forEach(function(t){
+    if (who && t.usernames.indexOf(who) < 0) return;
+    if (t.dateFrom.slice(0, 7) > ym || t.dateTo.slice(0, 7) < ym) return;
+    var d = t.dateFrom.slice(0, 7) === ym ? t.dateFrom : ym + '-01';
+    add(d, '<span class="mark to">' + ic('route') + '</span><div class="body"><div class="t">' + esc(t.event) + '</div><div class="m">' + esc(t.destination || 'No location') + ' · ' + fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric' }) + ' · ' + t.names.length + ' ' + (t.names.length === 1 ? 'person' : 'people') + '</div></div><span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : 'Pending') + '">TO</span>');
+  });
+  var ev = {};
+  S.entries.forEach(function(e){
+    if (e.type !== 'EARN' || e.status === 'Rejected' || e.date.slice(0, 7) !== ym || e.toId) return;
+    if (who && e.username !== who) return;
+    var k = e.date + '|' + e.event.toLowerCase(); (ev[k] = ev[k] || { e: e, n: [] }).n.push(e.username);
+  });
+  Object.keys(ev).forEach(function(k){ var x = ev[k];
+    add(x.e.date, '<span class="mark earn">' + ic('star') + '</span><div class="body"><div class="t">' + esc(x.e.event) + '</div><div class="m">' + esc(x.e.venue || '') + ' · ' + esc(x.e.category) + (adm && !who ? ' · ' + x.n.map(firstName).join(', ') : '') + '</div></div>');
+  });
+  var keys = Object.keys(days).sort();
+  return keys.length ? '<ul class="list">' + keys.map(function(d){ return '<li class="grp ev-day"><b>' + fDate(d, { weekday:'short', month:'short', day:'numeric' }) + '</b></li>' + days[d].map(function(h){ return '<li class="row tap" data-day="' + d + '" tabindex="0">' + h + '</li>'; }).join(''); }).join('') + '</ul>'
+    : '<div class="empty">No events this month.</div>';
+}
+
+/* ---------- log offset: pick from your travel orders, or the Capitol grounds ---------- */
+var CAPITOL = 'PGCN Capitol Grounds, Daet';
+function toPicks(who){
+  var td = today(), from = addDays(td, -60);
+  var list = activeTOs().filter(function(t){ return t.usernames.indexOf(who) >= 0 && t.dateFrom <= td && t.dateTo >= from; }).sort(function(a, b){ return a.dateFrom < b.dateFrom ? 1 : -1; }).slice(0, 6);
+  return '<div class="field"><span class="label">Quick fill</span><div class="picks">' +
+    list.map(function(t){ return '<button type="button" class="pick" data-act="pickTO" data-id="' + t.id + '">' + ic('route') + '<span><b>' + esc(t.event) + '</b><small>' + esc(t.destination || '') + ' · ' + esc(fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric' })) + '</small></span></button>'; }).join('') +
+    '<button type="button" class="pick" data-act="pickCapitol">' + ic('monument') + '<span><b>Within the Capitol grounds</b><small>No travel order needed</small></span></button></div>' +
+    (list.length ? '<span class="hint">Your travel orders from the last 60 days. Tap one to fill in the form.</span>' : '<span class="hint">No travel orders under your name in the last 60 days.</span>') + '</div>';
+}
+(function(){
+  var F = earnFields;
+  earnFields = function(e, adm){ var h = F(e, adm); return h.replace('<div class="field"><label for="fe">', '<div id="pickWrap">' + toPicks((e && e.username) || S.me.username) + '</div><div class="field"><label for="fe">'); };
+})();
+
+/* ---------- events ---------- */
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act]'); if (!t) return;
+  var a = t.dataset.act;
+  if (a === 'tevTab'){ S.tevTab = t.dataset.t; if (S.view !== 'tev'){ S.view = 'tev'; window.scrollTo(0, 0); } render(); }
+  else if (a === 'tevOpen'){ S.tevTab = t.dataset.t; S.tevTO = null; S.view = 'tev'; render(); window.scrollTo(0, 0); }
+  else if (a === 'tevAll'){ S.tevTO = null; render(); }
+  else if (a === 'tevGo'){ closeModal(); S.tevTO = t.dataset.id; S.tevTab = 'All'; S.view = 'tev'; render(); window.scrollTo(0, 0); }
+  else if (a === 'tevEdit') tevModal(t.dataset.id);
+  else if (a === 'tevNew') tevModal(null, S.tevTO);
+  else if (a === 'tevDel'){ if (!sure(t, 'Tap again to delete')) return; busy(t, act('deleteTEV', { id: t.dataset.id }, 'TEV deleted').then(closeModal), 'merr'); }
+  else if (a === 'syncHol') busy(t, act('syncHolidays', {}, function(r){ return r && r.added ? r.added + ' holiday' + (r.added === 1 ? '' : 's') + ' added' : 'Holidays are up to date'; }));
+  else if (a === 'toPrint'){ var to = toOf(t.dataset.id); if (to) printTO(to, t); }
+  else if (a === 'pickTO' || a === 'pickCapitol'){
+    var form = t.closest('form'), fe = form.querySelector('#fe'), fv = form.querySelector('#fv'), fd = form.querySelector('#fd');
+    if (a === 'pickTO'){
+      var x = toOf(t.dataset.id); if (!x) return;
+      fd.value = x.dateFrom > today() ? today() : x.dateFrom; form.querySelector('#c3').checked = true;
+      fe.value = x.event; fv.value = x.destination || '';
+      var sel = form.querySelector('#fto'); sel.dataset.cur = x.id; sel.value = '';
+      checkEarnForm(form, false); sel.value = x.id;
+    } else {
+      fv.value = CAPITOL; var cat = form.querySelector('input[name=category]:checked');
+      if (cat && cat.value === 'Travel order') form.querySelector('#c1').checked = true;
+      checkEarnForm(form, false); var nt = form.querySelector('#chkNoTO input'); if (nt) nt.checked = true;
+      fe.focus();
+    }
+    form.querySelectorAll('.pick').forEach(function(b){ b.classList.toggle('on', b === t); });
+  }
+});
+document.addEventListener('change', function(ev){
+  var c = ev.target;
+  if (c.dataset && c.dataset.cov){ var i = c.parentElement.querySelector('input[type=number]'); i.disabled = !c.checked; if (c.checked) i.focus(); else i.value = ''; tevTotal(); }
+  else if (c.id === 'vto') tevNames();
+  else if (c.id === 'fu' && document.getElementById('pickWrap')) document.getElementById('pickWrap').innerHTML = toPicks(c.value);
+});
+document.addEventListener('input', function(ev){ if (ev.target.closest && ev.target.closest('.cover')) tevTotal(); });
+document.addEventListener('submit', function(ev){
+  var f = ev.target.closest('form[data-form="tev"]'); if (!f) return;
+  ev.preventDefault(); ev.stopImmediatePropagation();
+  var d = {}; new FormData(f).forEach(function(v, k){ if (typeof v === 'string') d[k] = v; });
+  COVER.forEach(function(c){ d[c[0]] = Number(d[c[0]]) || 0; });
+  var err = document.getElementById('merr'); if (err) err.textContent = '';
+  if (!M.id && !d.name) return bad('merr', 'Everyone on this travel order already has a TEV.');
+  if (d.status === 'Claimed' && !COVER.some(function(c){ return d[c[0]] > 0; })) return bad('merr', 'Enter at least one amount before marking it claimed.');
+  if (d.releasedOn && d.submittedOn && d.releasedOn < d.submittedOn) return bad('merr', 'The release date is before the submission date.');
+  var total = Math.round(COVER.reduce(function(n, c){ return n + d[c[0]]; }, 0) * 100) / 100, td = today();
+  var fields = { status: d.status, transpo: d.transpo, food: d.food, lodging: d.lodging, other: d.other, total: total, chequeNo: d.chequeNo || '', note: d.note || '',
+                 submittedOn: d.submittedOn || (d.status !== 'To prepare' ? td : ''), releasedOn: d.releasedOn || (d.status === 'Claimed' ? td : ''), _saving: true };
+  if (M.id){ d.id = M.id; return bg('saveTEV', d, { arr: 'tevs', id: M.id, patch: fields }, 'TEV saved', 'The TEV for ' + ((S.tevs || []).filter(function(v){ return v.id === M.id; })[0] || {}).name); }
+  var u = S.users.filter(function(x){ return x.name.toUpperCase() === d.name; })[0], id = tmpId();
+  return bg('saveTEV', d, { arr: 'tevs', item: Object.assign({ id: id, toId: d.toId, name: d.name, username: u ? u.username : '' }, fields) }, 'TEV added', 'The TEV for ' + d.name, id);
+}, true);
 
 /* =====================================================================
    Instant saving. Forms close and the new item shows right away, marked
@@ -1992,7 +2370,7 @@ document.addEventListener('submit', function(ev){
     if (S.users.some(function(x){ return x.username === un; })) return bad(errId, 'That username is taken.');
     if (!/^\d{4,6}$/.test(d.pin || '')) return bad(errId, 'PIN must be 4 to 6 digits.');
     if (!String(d.name || '').trim()) return bad(errId, 'Full name is required.');
-    var nu = { username: un, name: d.name.trim(), role: d.role === 'admin' ? 'admin' : 'employee', division: d.division || '', active: true, empType: d.empType || 'JO/COS', _saving: true };
+    var nu = { username: un, name: d.name.trim(), role: d.role === 'admin' ? 'admin' : 'employee', division: d.division || '', active: true, empType: d.empType || 'JO', _saving: true };
     f.reset();
     return bg('addUser', d, { arr: 'users', key: 'username', item: nu }, nu.name + ' added', 'The account for ' + nu.name);
   }
@@ -2002,6 +2380,7 @@ document.addEventListener('submit', function(ev){
     if (!d.dateFrom) return bad(errId, 'Pick a date.');
     if (d.dateTo && d.dateTo < d.dateFrom) return bad(errId, 'The end date is before the start date.');
     if (!String(d.event || '').trim()) return bad(errId, 'Purpose is required.');
+    if (!String(d.destination || '').trim()) return bad(errId, 'Location is required.');
     if (!TO.names.length) return bad(errId, 'Add at least one person.');
     var names = TO.names.slice(), usernames = names.map(function(n){ var x = S.users.filter(function(u){ return u.name.toUpperCase() === n; })[0]; return x ? x.username : null; }).filter(Boolean);
     var fields = { dateFrom: d.dateFrom, dateTo: d.dateTo || d.dateFrom, event: d.event.trim(), destination: (d.destination || '').trim(), names: names, usernames: usernames, updatedBy: me, updatedAt: now, _saving: true };
@@ -2011,7 +2390,16 @@ document.addEventListener('submit', function(ev){
   }
   if (kind === 'toStatus'){
     var tid = M.id; d.id = tid;
-    return bg('setTOStatus', d, { arr: 'travelOrders', id: tid, patch: { status: d.status, tev: d.tev || '', toNo: d.toNo || '' } }, 'Travel order updated', 'The travel order update');
+    var tOld = S.travelOrders.filter(function(x){ return x.id === tid; })[0] || {}, startTev = d.tev === 'Yes' && d.status !== 'Cancelled';
+    bg('setTOStatus', d, { arr: 'travelOrders', id: tid, patch: { status: d.status, tev: d.tev || '', toNo: d.toNo || '', datePrepared: d.datePrepared || tOld.datePrepared || '' } }, 'Travel order updated', 'The travel order update');
+    if (startTev){
+      // Show the new TEVs right away; the server makes the real ones.
+      var have = (S.tevs || []).filter(function(v){ return v.toId === tid; }).map(function(v){ return v.name; }), made = 0;
+      (tOld.names || []).forEach(function(n){ if (have.indexOf(n) >= 0) return; var u = S.users.filter(function(x){ return x.name.toUpperCase() === n; })[0];
+        S.tevs.push({ id: tmpId(), toId: tid, name: n, username: u ? u.username : '', status: 'To prepare', transpo: 0, food: 0, lodging: 0, other: 0, total: 0, _saving: true }); made++; });
+      if (made || tOld.tev !== 'Yes') tevPrompt(tOld);
+    }
+    return;
   }
   if (kind === 'recordLeave'){
     d.override = !!d.override;
@@ -2063,6 +2451,47 @@ document.addEventListener('click', function(ev){
   busy(t, refresh().then(function(){ updateBar(false); toast('Up to date'); }));
 });
 
+/* Swipe the menu in from the left edge, or swipe it away (phones and tablets). */
+(function(){
+  var mq = window.matchMedia('(max-width:1100px)'), t = null;
+  function side(){ return document.querySelector('.side'); }
+  function scrim(){ return document.querySelector('.drawer-scrim'); }
+  function setOpen(on){
+    document.body.classList.toggle('drawer-open', on);
+    document.querySelectorAll('[data-act=drawer]').forEach(function(b){ b.setAttribute('aria-expanded', String(on)); });
+  }
+  function clear(){ var s = side(), c = scrim(); if (s) s.style.transform = ''; if (c) c.style.opacity = ''; document.body.classList.remove('drawer-drag'); }
+  document.addEventListener('touchstart', function(e){
+    if (!mq.matches || e.touches.length !== 1 || !side() || document.getElementById('modal') && document.getElementById('modal').childElementCount) return;
+    var x = e.touches[0].clientX, y = e.touches[0].clientY, open = document.body.classList.contains('drawer-open');
+    if (!open && x > 28) return;
+    if (open && !(e.target.closest && e.target.closest('.side,.drawer-scrim'))) return;
+    t = { x0: x, y0: y, open: open, w: side().offsetWidth, dx: 0, t0: Date.now(), live: false };
+  }, { passive: true });
+  document.addEventListener('touchmove', function(e){
+    if (!t) return;
+    var dx = e.touches[0].clientX - t.x0, dy = e.touches[0].clientY - t.y0;
+    if (!t.live){
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if (Math.abs(dy) > Math.abs(dx)) { t = null; return; }   // vertical scroll wins
+      t.live = true; document.body.classList.add('drawer-drag');
+    }
+    t.dx = dx;
+    var pos = Math.max(0, Math.min(t.w, (t.open ? t.w : 0) + dx));
+    side().style.transform = 'translateX(' + (pos - t.w) + 'px)';
+    var c = scrim(); if (c) c.style.opacity = String(pos / t.w);
+  }, { passive: true });
+  document.addEventListener('touchend', function(){
+    if (!t) return;
+    var g = t; t = null;
+    if (!g.live) return;
+    var fast = Math.abs(g.dx) / Math.max(1, Date.now() - g.t0) > 0.45;
+    var on = g.open ? !(g.dx < -g.w * 0.3 || (fast && g.dx < 0)) : (g.dx > g.w * 0.3 || (fast && g.dx > 0));
+    clear(); setOpen(on);
+  });
+  document.addEventListener('touchcancel', function(){ if (t){ t = null; clear(); } });
+})();
+
 /* ---------- preview backend (used only when config.js has no API URL) ---------- */
 var Mock = (function(){
   var divisions = [
@@ -2073,21 +2502,24 @@ var Mock = (function(){
   var users = [
     { username:'admin', name:'Maria Santos', role:'admin', division:'asd', pin:'1234', active:true, empType:'Regular' },
     { username:'rmendoza', name:'Ramon Mendoza', role:'admin', division:'bantayog', pin:'1234', active:true, empType:'Regular' },
-    { username:'jdelacruz', name:'Juan Dela Cruz', role:'employee', division:'smpd', pin:'1234', active:true, empType:'JO/COS' },
+    { username:'jdelacruz', name:'Juan Dela Cruz', role:'employee', division:'smpd', pin:'1234', active:true, empType:'JO' },
     { username:'areyes', name:'Ana Reyes', role:'employee', division:'bantayog', pin:'1234', active:true, empType:'Casual' },
-    { username:'mbautista', name:'Mark Bautista', role:'employee', division:'smpd', pin:'1234', active:true, empType:'JO/COS' },
+    { username:'mbautista', name:'Mark Bautista', role:'employee', division:'smpd', pin:'1234', active:true, empType:'COS' },
     { username:'cvillanueva', name:'Carlo Villanueva', role:'employee', division:'asd', pin:'1234', active:true, empType:'Regular' },
     { username:'lgarcia', name:'Liza Garcia', role:'employee', division:'bantayog', pin:'1234', active:false, empType:'Casual' }
   ];
   var holidays = [['2026-01-01',"New Year's Day",'Regular'],['2026-02-17','Chinese New Year','Special'],['2026-04-02','Maundy Thursday','Regular'],['2026-04-03','Good Friday','Regular'],['2026-04-04','Black Saturday','Special'],['2026-04-09','Araw ng Kagitingan','Regular'],['2026-05-01','Labor Day','Regular'],['2026-06-12','Independence Day','Regular'],['2026-08-21','Ninoy Aquino Day','Special'],['2026-08-31','National Heroes Day','Regular'],['2026-09-28','Wenceslao Vinzons Day (Camarines Norte)','Local'],['2026-11-01',"All Saints' Day",'Special'],['2026-11-02',"All Souls' Day",'Special'],['2026-11-30','Bonifacio Day','Regular'],['2026-12-08','Immaculate Conception','Special'],['2026-12-24','Christmas Eve','Special'],['2026-12-25','Christmas Day','Regular'],['2026-12-30','Rizal Day','Regular'],['2026-12-31','Last Day of the Year','Special']]
     .map(function(h){ return { date:h[0], name:h[1], kind:h[2] }; });
-  var settings = { workdays: 22, carryCap: 0, wellnessDays: 5 }, lastWrite = Date.now();
+  var settings = { workdays: 22, carryCap: 0, wellnessDays: 5, tevBudget: 250000 }, lastWrite = Date.now(), tevs = [];
   var LT = { VL:'VL', FL:'VL', SL:'SL' }, tos = [], leaves = [], credits = [];
   function to(fromOff, toOff, event, dest, names, status, tev, by){ var f = addDays(today(), fromOff); tos.push({ id:'t' + (tos.length + 1), toNo: status === 'Prepared' ? 'PIO-2026-' + (100 + tos.length) : '', dateFrom:f, dateTo:addDays(today(), toOff), event:event, destination:dest, names:names.map(function(n){ return n.toUpperCase(); }), usernames:[], status:status, tev:tev, createdBy:by, createdAt:new Date(Date.now() - 3*864e5).toISOString(), updatedBy:'', updatedAt:'' }); }
   to(0, 0, 'Provincial Board regular session coverage', 'Sangguniang Panlalawigan Hall, Daet', ['Juan Dela Cruz','Mark Bautista'], 'Prepared', 'No', 'jdelacruz');
   to(3, 4, 'Livelihood caravan', 'Labo, Camarines Norte', ['Ana Reyes','Juan Dela Cruz','Pedro Ramos'], 'Filed', '', 'areyes');
   to(9, 9, 'Mining governance forum', 'Jose Panganiban', ['Mark Bautista'], 'Prepared', 'Yes', 'mbautista');
   to(-12, -12, 'Bantayog Festival documentation', 'Daet Town Plaza', ['Juan Dela Cruz','Ana Reyes'], 'Prepared', 'Yes', 'jdelacruz');
+  tevs.push({ id:'v1', toId:'t4', name:'JUAN DELA CRUZ', username:'jdelacruz', status:'Claimed', transpo:600, food:450, lodging:0, other:0, total:1050, submittedOn:addDays(today(), -10), releasedOn:addDays(today(), -2), chequeNo:'0012345', note:'' },
+            { id:'v2', toId:'t4', name:'ANA REYES', username:'areyes', status:'Pending', transpo:600, food:450, lodging:0, other:0, total:1050, submittedOn:addDays(today(), -10), releasedOn:'', chequeNo:'', note:'' },
+            { id:'v3', toId:'t3', name:'MARK BAUTISTA', username:'mbautista', status:'To prepare', transpo:0, food:0, lodging:0, other:0, total:0, submittedOn:'', releasedOn:'', chequeNo:'', note:'' });
   credits.push({ username:'admin', vl:12.5, sl:20.25, asOf:shiftMonth(curMonth(), -3) }, { username:'rmendoza', vl:30, sl:41.5, asOf:shiftMonth(curMonth(), -1) }, { username:'areyes', vl:4.25, sl:6, asOf:shiftMonth(curMonth(), -2) }, { username:'cvillanueva', vl:18, sl:22.75, asOf:shiftMonth(curMonth(), -1) });
   leaves.push({ id:'l1', username:'cvillanueva', type:'SL', dateFrom:today(), dateTo:today(), days:1, note:'', createdBy:'admin', createdAt:new Date().toISOString() },
               { id:'l2', username:'areyes', type:'WL', dateFrom:addDays(today(), 6), dateTo:addDays(today(), 6), days:1, note:'', createdBy:'admin', createdAt:new Date().toISOString() },
@@ -2121,7 +2553,7 @@ var Mock = (function(){
   add('mbautista','USE',-9,'Used',0.5,'','','Confirmed');
   entries.forEach(function(e){ activity.unshift({ at: e.createdAt, actor: e.createdBy, action: e.type === 'USE' ? (e.status === 'Pending' ? 'Requested a day off' : 'Recorded offset use') : 'Logged an offset', target: e.username, details: (e.event ? e.event + ' · ' : '') + e.date + ' · ' + e.days + ' day(s)' }); });
   activity.sort(function(a,b){ return a.at < b.at ? 1 : -1; });
-  function pub(u){ return { username:u.username, name:u.name, role:u.role, division:u.division, active:u.active, empType:u.empType || 'JO/COS' }; }
+  function pub(u){ return { username:u.username, name:u.name, role:u.role, division:u.division, active:u.active, empType:u.empType || 'JO' }; }
   function find(u){ return users.filter(function(x){ return x.username === String(u||'').toLowerCase(); })[0]; }
   function bal(u){ return ledgerFor(entries, u, settings.carryCap).avail; }
   function fail(m){ return { ok:false, error:m }; }
@@ -2132,7 +2564,7 @@ var Mock = (function(){
     var board = leaves.filter(function(l){ return !/^ADJ/.test(l.type); }).map(function(l){ return { username:l.username, from:l.dateFrom, to:l.dateTo, kind:'leave', label: adm || l.username === me.username ? l.type : '' }; });
     if (!adm) entries.forEach(function(e){ if (e.type === 'USE' && e.status === 'Confirmed' && e.username !== me.username) board.push({ username:e.username, from:e.date, to:e.date, kind:'off', label:'' }); });
     return { me:pub(me), users: users.map(pub), divisions:copy(divisions), holidays:copy(holidays), settings:copy(settings), activity: adm ? copy(activity) : [], entries: copy(entries.filter(function(e){ return adm || e.username === me.username; })),
-      lastWrite: lastWrite, travelOrders: copy(tos), leaves: copy(leaves.filter(function(l){ return adm || l.username === me.username; })), credits: copy(credits.filter(function(c){ return adm || c.username === me.username; })), board: board }; }
+      lastWrite: lastWrite, travelOrders: copy(tos), tevs: copy(tevs.filter(function(v){ return adm || v.username === me.username; })), leaves: copy(leaves.filter(function(l){ return adm || l.username === me.username; })), credits: copy(credits.filter(function(c){ return adm || c.username === me.username; })), board: board }; }
   function ok(me, d){ lastWrite = Date.now(); return { ok:true, data:d === undefined ? true : d, fresh: data(me) }; }
   function earn(p){
     if (!String(p.event||'').trim()) throw 'Event name is required.';
@@ -2171,7 +2603,7 @@ var Mock = (function(){
       log(me, 'Requested a day off', me.username, p.date + ' · ' + dd + ' day(s)'); return ok(me); }
     if (a === 'deleteEntry'){ var i = entries.findIndex(function(e){ return e.id === p.id; }); if (i < 0) return fail('Entry not found.'); var e = entries[i]; if (!adm && !(e.username === me.username && e.status === 'Pending')) return fail('You can only remove your own pending entries.'); entries.splice(i,1); log(me, 'Removed an entry', e.username, e.date + ' · ' + e.days + ' day(s)'); return ok(me); }
     if (a === 'changePin'){ if (p.oldPin !== me.pin) return fail('Current PIN is wrong.'); if (!/^\d{4,6}$/.test(p.newPin)) return fail('PIN must be 4 to 6 digits.'); me.pin = p.newPin; log(me, 'Changed own PIN', me.username); return ok(me); }
-    if (a === 'saveTO'){ var nm = String(p.names||'').split('\n').map(function(s){ return s.trim().toUpperCase(); }).filter(Boolean); if (!nm.length) return fail('Add at least one person.'); if (!String(p.event||'').trim()) return fail('Purpose is required.'); if (!p.dateFrom) return fail('Pick a valid date.');
+    if (a === 'saveTO'){ var nm = String(p.names||'').split('\n').map(function(s){ return s.trim().toUpperCase(); }).filter(Boolean); if (!nm.length) return fail('Add at least one person.'); if (!String(p.event||'').trim()) return fail('Purpose is required.'); if (!String(p.destination||'').trim()) return fail('Location is required.'); if (!p.dateFrom) return fail('Pick a valid date.');
       var tf = { dateFrom:p.dateFrom, dateTo:p.dateTo || p.dateFrom, event:p.event.trim(), destination:(p.destination||'').trim(), names:nm, updatedBy:me.username, updatedAt:now };
       if (tf.dateTo < tf.dateFrom) return fail('The end date is before the start date.');
       if (p.id){ var ex1 = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && (ex1.createdBy !== me.username || ex1.status !== 'Filed')) return fail('Only admins can edit a travel order after it is prepared.'); Object.assign(ex1, tf); log(me, 'Edited a travel order', tf.event); }
@@ -2179,7 +2611,17 @@ var Mock = (function(){
       return ok(me); }
     if (a === 'deleteTO'){ var dt = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && (dt.createdBy !== me.username || dt.status !== 'Filed')) return fail('You can only delete your own travel orders that are not yet prepared.'); tos = tos.filter(function(t){ return t !== dt; }); log(me, 'Deleted a travel order', dt.event); return ok(me); }
     if (!adm) return fail('Only admins can do that.');
-    if (a === 'setTOStatus'){ var st2 = tos.filter(function(t){ return t.id === p.id; })[0]; st2.status = p.status; st2.tev = p.tev; st2.toNo = p.toNo || ''; log(me, 'Updated a travel order', st2.event, 'Status: ' + p.status + ' · TEV: ' + (p.tev || 'not set')); return ok(me); }
+    if (a === 'setTOStatus'){ var st2 = tos.filter(function(t){ return t.id === p.id; })[0]; st2.status = p.status; st2.tev = p.tev; st2.toNo = p.toNo || ''; st2.datePrepared = p.datePrepared || st2.datePrepared || (p.status === 'Prepared' ? today() : ''); log(me, 'Updated a travel order', st2.event, 'Status: ' + p.status + ' · TEV: ' + (p.tev || 'not set'));
+      var made = 0; if (p.tev === 'Yes' && p.status !== 'Cancelled') st2.names.forEach(function(nm2){ if (tevs.some(function(v){ return v.toId === st2.id && v.name === nm2; })) return; var u2 = users.filter(function(x){ return x.name.toUpperCase() === nm2; })[0]; tevs.push({ id:'v' + (++n), toId:st2.id, name:nm2, username:u2 ? u2.username : '', status:'To prepare', transpo:0, food:0, lodging:0, other:0, total:0, submittedOn:'', releasedOn:'', chequeNo:'', note:'' }); made++; });
+      return ok(me, { tevsMade: made }); }
+    if (a === 'saveTEV'){ var am = function(k){ return Math.round((Number(p[k]) || 0) * 100) / 100; }, td3 = new Date().toISOString().slice(0,10);
+      var vf = { status: p.status, transpo: am('transpo'), food: am('food'), lodging: am('lodging'), other: am('other'), chequeNo: p.chequeNo || '', note: p.note || '', submittedOn: p.submittedOn || (p.status !== 'To prepare' ? td3 : ''), releasedOn: p.releasedOn || (p.status === 'Claimed' ? td3 : '') };
+      vf.total = Math.round((vf.transpo + vf.food + vf.lodging + vf.other) * 100) / 100;
+      if (p.id){ var ev2 = tevs.filter(function(v){ return v.id === p.id; })[0]; if (!ev2) return fail('TEV not found.'); Object.assign(ev2, vf); }
+      else { var tt = tos.filter(function(t){ return t.id === p.toId; })[0]; if (!tt) return fail('Pick a travel order.'); var u3 = users.filter(function(x){ return x.name.toUpperCase() === String(p.name).toUpperCase(); })[0]; tevs.push(Object.assign({ id:'v' + (++n), toId:tt.id, name:String(p.name).toUpperCase(), username:u3 ? u3.username : '' }, vf)); }
+      log(me, p.id ? 'Updated a TEV' : 'Added a TEV', p.name || '', vf.status + ' · ₱' + vf.total); return ok(me); }
+    if (a === 'deleteTEV'){ tevs = tevs.filter(function(v){ return v.id !== p.id; }); log(me, 'Deleted a TEV', ''); return ok(me); }
+    if (a === 'syncHolidays') return ok(me, { added: 0 });
     if (a === 'setEmpType'){ find(p.username).empType = p.empType; log(me, 'Changed employment type', p.username, p.empType); return ok(me); }
     if (a === 'recordLeave'){ var lu = find(p.username), b = (function(){ var L0 = S.leaves, C0 = S.credits; S.leaves = leaves; S.credits = credits; var r0 = leaveBal(lu.username, p.dateFrom.slice(0,4)); S.leaves = L0; S.credits = C0; return r0; })(), r = LEAVE_TYPES[p.type], dd2 = Number(p.days), sh = '';
       if (r.pool === 'VL' && dd2 > b.vl) sh = 'Only ' + fD(b.vl) + ' of vacation leave left.'; if (r.pool === 'SL' && dd2 > b.sl) sh = 'Only ' + fD(b.sl) + ' of sick leave left.';
@@ -2196,7 +2638,7 @@ var Mock = (function(){
       return c ? ok(me, c) : fail('Nothing was reviewed.'); }
     if (a === 'recordUse'){ var dy = Number(p.days), b = bal(p.username); if (!(dy >= 0.5) || dy > 30 || dy * 2 !== Math.round(dy * 2)) return fail('Days must be in half-day steps, from ½ to 30.'); if (dy > b) return fail(find(p.username).name + ' has only ' + fD(b) + ' available.');
       entries.push({ id:'e' + (++n), username:p.username, type:'USE', date:p.date, category:'Used', days:dy, event:'', venue:'', endTime:'', status:'Confirmed', note:'', createdBy:me.username, createdAt:now, reviewedBy:me.username, reviewedAt:now }); log(me, 'Recorded offset use', p.username, p.date + ' · ' + dy + ' day(s)'); return ok(me); }
-    if (a === 'addUser'){ var nu = String(p.username||'').trim().toLowerCase(); if (!/^[a-z0-9._-]{3,30}$/.test(nu)) return fail('Usernames use 3–30 letters, numbers, dots or dashes.'); if (find(nu)) return fail('That username is taken.'); if (!/^\d{4,6}$/.test(p.pin)) return fail('PIN must be 4 to 6 digits.'); users.push({ username:nu, name:p.name, role:p.role, division:p.division||'', pin:p.pin, active:true, empType:p.empType || 'JO/COS' }); log(me, 'Added an account', nu, p.role); return ok(me); }
+    if (a === 'addUser'){ var nu = String(p.username||'').trim().toLowerCase(); if (!/^[a-z0-9._-]{3,30}$/.test(nu)) return fail('Usernames use 3–30 letters, numbers, dots or dashes.'); if (find(nu)) return fail('That username is taken.'); if (!/^\d{4,6}$/.test(p.pin)) return fail('PIN must be 4 to 6 digits.'); users.push({ username:nu, name:p.name, role:p.role, division:p.division||'', pin:p.pin, active:true, empType:p.empType || 'JO' }); log(me, 'Added an account', nu, p.role); return ok(me); }
     if (a === 'resetPin'){ if (!/^\d{4,6}$/.test(p.pin)) return fail('PIN must be 4 to 6 digits.'); find(p.username).pin = p.pin; log(me, 'Reset a PIN', p.username); return ok(me); }
     if (a === 'setActive'){ find(p.username).active = p.active; log(me, p.active ? 'Activated an account' : 'Deactivated an account', p.username); return ok(me); }
     if (a === 'setRole'){ find(p.username).role = p.role; log(me, 'Changed a role', p.username, 'Now ' + p.role); return ok(me); }
@@ -2208,7 +2650,7 @@ var Mock = (function(){
     if (a === 'deleteDivision'){ var cc = users.filter(function(u){ return u.division === p.id; }).length; if (cc) return fail('Move the ' + cc + ' staff in this division to another division first.'); divisions = divisions.filter(function(d){ return d.id !== p.id; }); log(me, 'Deleted a division', p.id); return ok(me); }
     if (a === 'saveHoliday'){ if (!p.date || !String(p.name||'').trim()) return fail('Enter a date and a name.'); holidays = holidays.filter(function(h){ return h.date !== p.date; }); holidays.push({ date:p.date, name:p.name.trim(), kind:p.kind }); holidays.sort(function(x,y){ return x.date < y.date ? -1 : 1; }); log(me, 'Added a holiday', p.date, p.name); return ok(me); }
     if (a === 'deleteHoliday'){ holidays = holidays.filter(function(h){ return h.date !== p.date; }); log(me, 'Deleted a holiday', p.date); return ok(me); }
-    if (a === 'saveSettings'){ var cap = Number(p.carryCap), wd = Number(p.workdays); if (!(cap >= 0)) return fail('Carry-over cap must be 0 (no limit) or a number of days.'); if (!(wd >= 15 && wd <= 26)) return fail('Workdays must be a whole number from 15 to 26.'); settings = { workdays: wd, carryCap: cap, wellnessDays: p.wellnessDays == null ? settings.wellnessDays : Number(p.wellnessDays) }; log(me, 'Changed settings', '', 'Carry-over cap: ' + (cap || 'no limit') + ' · Workdays: ' + wd); return ok(me); }
+    if (a === 'saveSettings'){ var cap = Number(p.carryCap), wd = Number(p.workdays); if (!(cap >= 0)) return fail('Carry-over cap must be 0 (no limit) or a number of days.'); if (!(wd >= 15 && wd <= 26)) return fail('Workdays must be a whole number from 15 to 26.'); settings = { workdays: wd, carryCap: cap, wellnessDays: p.wellnessDays == null ? settings.wellnessDays : Number(p.wellnessDays), tevBudget: p.tevBudget == null ? settings.tevBudget : Number(p.tevBudget) || 0 }; log(me, 'Changed settings', '', 'Carry-over cap: ' + (cap || 'no limit') + ' · Workdays: ' + wd); return ok(me); }
     if (a === 'backupToDrive'){ log(me, 'Saved a backup to Google Drive', 'Preview'); return ok(me, { url: 'https://drive.google.com/', name: 'PIO Overwatch — backup (preview)' }); }
     if (a === 'exportAll') return { ok:true, data: { exportedAt: now, users: users.map(pub), entries: copy(entries), divisions: copy(divisions), holidays: copy(holidays), settings: copy(settings), activity: copy(activity) } };
     return fail('Unknown action.');
