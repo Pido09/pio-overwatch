@@ -13,7 +13,8 @@ Current version: **6.0** (Firebase).
 | `config.js` | Your Firebase settings (or the old Apps Script link). Set once. |
 | `firebase.js` | The Firebase tools, bundled so the app needs no outside sites. Don't edit. |
 | `firestore.rules` | Who may read and change what. Paste into Firebase console > Firestore > Rules. |
-| `sw.js` | Lets the app install and open fast. Change the version line (`pio-offsets-v11`) whenever `index.html` changes, so phones pick up the update. |
+| `sw.js` | Lets the app install and open fast. Change the version line (`pio-offsets-v13`) whenever `index.html` changes, so phones pick up the update. |
+| `to-header.png`, `to-footer.png`, `to-watermark.jpg` | Letterhead for printing travel orders from the browser (taken from the template). |
 | `to-template.docx` | The office travel order template, with fill-in spots: `{DATE}` `{NAME}` `{DEST}` `{DEP}` `{ARR}` `{PURPOSE}` `{X1}` `{X2}` `{REC1}`–`{REC3}`. |
 | `jszip.min.js` | Builds the travel order Word file inside the app. Don't edit. |
 | `manifest.webmanifest`, `icon-*.png` | Make it installable (Add to Home Screen). |
@@ -81,7 +82,7 @@ In the current app (still on the Google Sheet): Settings > **Backup (.json)**. K
 ### Travel orders
 1. Any staff member files it: date(s), purpose, **location** (required) and the people (saved in capital letters).
 2. An admin opens **Prepare**: TO number, **date prepared**, TEV Yes/No/Not yet, status.
-3. Prepared travel orders get a **print button**. It downloads a Word file made from `to-template.docx`:
+3. Prepared travel orders get a **print button**. It opens a print dialog: check the date prepared, tick other prepared travel orders to print together, then **Print** (straight from the browser, or Save as PDF). **Word file** downloads the same thing as a .docx made from `to-template.docx`. The letterhead is `to-header.png`, `to-footer.png` and `to-watermark.jpg`:
    - Date prepared at the top, one name per line, destination, purpose "… at [location]".
    - Departure and arrival are the travel order's start and end dates.
    - TEV No = X in the first box. TEV Yes = X in the second box. Not yet = both empty.
@@ -100,6 +101,17 @@ In the current app (still on the Google Sheet): Settings > **Backup (.json)**. K
 - Statuses: **To prepare** > **Pending** (waiting for the cheque) > **Claimed**. Each row has a one-tap button for the next step (Submit, Claim), and a travel order with several pending TEVs has **Claim all**.
 - Each TEV lists what it covers (transportation, food, accommodation, other) with amounts. A category counts only if it has an amount.
 - Totals for the year: released, pending, to prepare, and left for spending (budget − released − pending).
+
+### TEV amounts (worksheet)
+- Open a TEV to see it day by day. Pick **where**: within the province, within Bicol, or outside Bicol (applies to everyone on the travel order).
+- Within Bicol: ₱1,500 a day (50% lodging, 30% meals, 20% incidental); transportation up to ₱1,000.
+- Outside Bicol: ₱2,200 a day, same split; transportation up to ₱2,000.
+- Within the province: no lodging; 3 meals = ₱450; incidental (₱300, so ₱750 in all) only 50 km or more from the Capitol.
+- **Noon rule:** leaving 12:00 NN or later, the first day is not claimed. The return day has meals and incidental, no lodging.
+- Untick meals the host provided. **Government vehicle** = no transportation claim. JO: no incidental. COS: no TEV (none is created for them).
+- Rates, signatories and codes can be changed in Settings > TEV rates and signatories.
+- **Print** (printer icon on each travel order in TEVs, or in the TEV): Itinerary of Travel (per person), Payroll, Disbursement Voucher (amount in words filled in), Obligation Request, Certificate of Travel Completed (per person). Pick forms and people, then print or Save as PDF.
+- Positions printed on the forms: Staff > Manage > Position.
 
 ### Leaves (Regular and Casual)
 - Admins enter starting VL/SL balances from the leave card. The app adds 1.25 days of each per month.

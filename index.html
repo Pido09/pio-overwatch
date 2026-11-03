@@ -591,6 +591,10 @@ button.link{background:none;border:0;padding:0;color:var(--brand-strong);font:in
   .tiles.three .tile .v{font-size:20px}
   .tiles.three .tile .s{font-size:11.5px}
 }
+table.tev-days th,table.tev-days td{padding:7px 5px}table.tev-days th{font-size:11px}table.tev-days{min-width:0}table.tev-days td.c,table.tev-days th.c{text-align:center}
+table.tev-days input{width:18px;height:18px;accent-color:var(--brand)}
+.wlist .w .drag{cursor:grab;color:var(--muted);display:grid;place-items:center;width:28px;touch-action:none}
+.wlist .w.dragging{box-shadow:0 8px 24px -8px rgba(14,30,51,.35);background:var(--surface);position:relative;z-index:2}
 </style>
 </head>
 <body>
@@ -2034,7 +2038,7 @@ function viewTEV(){
     var t = toOf(id), vs = groups[id], sum = vs.reduce(function(n, v){ return n + v.total; }, 0);
     return '<li class="grp tev-grp"><div><b>' + esc(t ? t.event : 'Travel order') + '</b><span class="hint">' + (t ? fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') : 'Removed') + '</span></div>' +
       (function(){ var pend = vs.filter(function(v){ return v.status === 'Pending' && !v._saving; }); return adm && pend.length > 1 ? '<button class="btn btn-sm btn-primary" data-act="tevClaimAll" data-ids="' + pend.map(function(v){ return v.id; }).join(',') + '">' + ic('check') + 'Claim all ' + pend.length + '</button>' : ''; })() +
-      '<b class="num">' + peso(sum) + '</b></li>' +
+      '<b class="num">' + peso(sum) + '</b>' + (adm ? '<button class="icon-btn" data-act="tevPrint" data-to="' + id + '" aria-label="Print TEV forms" title="Print TEV forms">' + ic('print') + '</button>' : '') + '</li>' +
       vs.sort(function(a, b){ return a.name < b.name ? -1 : 1; }).map(tevRow).join('');
   }).join('');
   var tabs = '<div class="tabs" role="group" aria-label="Show">' + ['To prepare', 'Pending', 'Claimed', 'All'].map(function(x){ var n = all.filter(function(v){ return (x === 'All' || v.status === x) && (!S.tevTO || v.toId === S.tevTO); }).length; return '<button data-act="tevTab" data-t="' + x + '" aria-pressed="' + (tab === x) + '">' + x + (n ? ' · ' + n : '') + '</button>'; }).join('') + '</div>';
@@ -2157,7 +2161,7 @@ function printTO(t, btn){
   var R = toRow;
   toRow = function(t){
     var h = R(t);
-    if (t.status === 'Prepared' && isAdmin() && !t._saving) h = h.replace('<div class="to-icons">', '<div class="to-icons"><button class="icon-btn" data-act="toPrint" data-id="' + t.id + '" aria-label="Download the travel order for printing" title="Travel order (Word)">' + ic('print') + '</button>');
+    if (t.status === 'Prepared' && isAdmin() && !t._saving) h = h.replace('<div class="to-icons">', '<div class="to-icons"><button class="icon-btn" data-act="toPrint" data-id="' + t.id + '" aria-label="Print travel order" title="Print travel order">' + ic('print') + '</button>');
     if (t.tev === 'Yes' && !t._saving){ var n = (S.tevs || []).filter(function(v){ return v.toId === t.id; }); if (n.length) h = h.replace(/(<span class="pill hol">TEV: Yes<\/span>)/, '<button class="pill hol" data-act="tevGo" data-id="' + t.id + '" style="border:0;cursor:pointer">TEV: Yes · ' + n.filter(function(v){ return v.status === 'Claimed'; }).length + '/' + n.length + ' claimed</button>'); }
     return h;
   };
@@ -2259,6 +2263,425 @@ document.addEventListener('submit', function(ev){
   var u = S.users.filter(function(x){ return x.name.toUpperCase() === d.name; })[0], id = tmpId();
   return bg('saveTEV', d, { arr: 'tevs', item: Object.assign({ id: id, toId: d.toId, name: d.name, username: u ? u.username : '' }, fields) }, 'TEV added', 'The TEV for ' + d.name, id);
 }, true);
+
+/* =====================================================================
+   PIO Overwatch: TEV worksheet (rates, day by day), printable TEV forms,
+   and drag-to-reorder for the dashboard
+   ===================================================================== */
+var TEV_DEF = {
+  bicol: { daily: 1500, transpo: 1000 },                // within Bicol Region
+  outside: { daily: 2200, transpo: 2000 },              // outside Bicol Region
+  province: { meals: 450, inc: 300 },                   // within Camarines Norte: no lodging; incidental only 50 km or more from the Capitol
+  split: { lodging: 50, meals: 30, inc: 20 },           // share of the daily rate
+  sign: {
+    pio: ['SARAH MARIE P. AVIADO, DPA', 'Provincial Information Officer'], gov: ['HON. RICARTE R. PADILLA', 'Governor'],
+    payroll: ['HON. RICARTE R. PADILLA', 'Governor'], acct: ['IMELDA M. FLORES, CPA', 'Provincial Accountant'],
+    treas: ['DANTE E. MANLAPAZ', 'Provincial Treasurer'], budget: ['MERCEDES M. ALFUERTE, CPA', 'Provincial Budget Officer']
+  },
+  codes: { rc: '1121', fpp: '1120-004-1-02-004-001-001', acct: '5 02 01 010', agency: 'PROVINCIAL GOVERNORS OFFICE/ PIO', office: 'Provincial Information Office (PIO)',
+           address: 'PIO, Daet, Camarines Norte', station: 'Provincial Information Office, PGCN, Daet, Camarines Norte' }
+};
+var SCOPES = [['province', 'Within the province', 'No lodging'], ['bicol', 'Within Bicol', '₱1,500 a day'], ['outside', 'Outside Bicol', '₱2,200 a day']];
+COVER[2][1] = 'Accommodation'; COVER[3][1] = 'Incidental';
+function deepMerge(a, b){ var o = JSON.parse(JSON.stringify(a)); Object.keys(b || {}).forEach(function(k){ o[k] = b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && o[k] && typeof o[k] === 'object' ? deepMerge(o[k], b[k]) : b[k]; }); return o; }
+function tevCfg(){ return deepMerge(TEV_DEF, (S.settings && S.settings.tev) || {}); }
+function tripOf(t){ return Object.assign({ scope: '', far: false, gov: false, dep: '', arr: '' }, (t && t.trip) || {}); }
+function r2(n){ return Math.round(n * 100) / 100; }
+function tevRates(scope){
+  var c = tevCfg(), sp = c.split;
+  if (scope === 'province') return { lodge: 0, meal: r2(c.province.meals / 3), inc: c.province.inc, transMax: c.bicol.transpo, daily: c.province.meals + c.province.inc };
+  var d = scope === 'outside' ? c.outside.daily : c.bicol.daily;
+  return { lodge: r2(d * sp.lodging / 100), meal: r2(d * sp.meals / 100 / 3), inc: r2(d * sp.inc / 100), transMax: scope === 'outside' ? c.outside.transpo : c.bicol.transpo, daily: d };
+}
+function tevUser(v){ return S.users.filter(function(u){ return u.username === v.username || u.name.toUpperCase() === v.name; })[0] || null; }
+/* COS cannot claim a TEV; JO cannot claim incidental. */
+function tevRule(v){ var u = tevUser(v), et = u ? u.empType : ''; return { et: et, none: et === 'COS', noInc: et === 'JO', pos: (u && u.position) || '' }; }
+function tripDates(t){ var a = []; for (var d = t.dateFrom; d <= (t.dateTo || t.dateFrom); d = addDays(d, 1)){ a.push(d); if (a.length > 60) break; } return a; }
+/* Noon rule: leaving before 12:00 NN counts the departure day. The return day has meals and incidental, no lodging. */
+function defaultDays(t, v){
+  var tr = tripOf(t), ru = tevRule(v), ds = tripDates(t), multi = ds.length > 1, prov = tr.scope === 'province';
+  return ds.map(function(d, i){
+    var first = i === 0, last = i === ds.length - 1, on = !(multi && first && tr.dep && tr.dep >= '12:00');
+    return { date: d, b: on, l: on, d: on, lodge: on && !last && !prov, inc: on && !ru.noInc && (!prov || tr.far) };
+  });
+}
+function tevCalc(t, v, days, trip, transpo){
+  var tr = trip || tripOf(t), ru = tevRule(v), rt = tevRates(tr.scope || 'bicol'), ds = tripDates(t), prov = tr.scope === 'province';
+  var saved = days || v.days, use = saved && saved.length === ds.length && saved.every(function(x, i){ return x.date === ds[i]; }) ? saved : defaultDays(Object.assign({}, t, { trip: tr }), v);
+  var out = { rt: rt, trip: tr, rule: ru, rows: [], lodging: 0, food: 0, other: 0, meals: 0, nights: 0, incDays: 0 };
+  use.forEach(function(x){
+    var meals = (x.b ? 1 : 0) + (x.l ? 1 : 0) + (x.d ? 1 : 0), lodge = x.lodge && !prov, inc = x.inc && !ru.noInc && (!prov || tr.far);
+    var row = { date: x.date, b: x.b, l: x.l, d: x.d, lodge: lodge, inc: inc, meals: meals, amt: r2(meals * rt.meal + (lodge ? rt.lodge : 0) + (inc ? rt.inc : 0)) };
+    out.rows.push(row); out.meals += meals; out.nights += lodge ? 1 : 0; out.incDays += inc ? 1 : 0;
+    out.food += meals * rt.meal; out.lodging += lodge ? rt.lodge : 0; out.other += inc ? rt.inc : 0;
+  });
+  var tp = transpo != null ? transpo : (v.transpo || 0);
+  out.transpo = tr.gov ? 0 : Math.min(Number(tp) || 0, rt.transMax);
+  out.food = r2(out.food); out.lodging = r2(out.lodging); out.other = r2(out.other);
+  if (ru.none){ out.food = out.lodging = out.other = out.transpo = 0; out.rows.forEach(function(x){ x.amt = 0; }); }
+  out.total = r2(out.food + out.lodging + out.other + out.transpo);
+  return out;
+}
+
+/* ---------- the worksheet ---------- */
+var TV = null;
+var oldTevModal = tevModal;
+tevModal = function(id, toId){ if (!id) return oldTevModal(null, toId); return tevSheet(id); };
+function tevSheet(id){
+  var v = (S.tevs || []).filter(function(x){ return x.id === id; })[0]; if (!v) return;
+  var t = toOf(v.toId); if (!t) return oldTevModal(id);
+  var c = tevCalc(t, v);
+  TV = { id: id, toId: t.id, trip: c.trip, days: c.rows.map(function(x){ return { date: x.date, b: x.b, l: x.l, d: x.d, lodge: x.lodge, inc: x.inc }; }), transpo: v.transpo || 0 };
+  M = { id: id };
+  var ru = c.rule;
+  modal('TEV · ' + esc(v.name),
+    '<div class="sumbox"><b>' + esc(t.event) + '</b><span>' + esc(t.destination || '') + ' · ' + fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric', year:'numeric' }) + (ru.et ? ' · ' + esc(ru.et) : '') + '</span></div>' +
+    (ru.none ? '<div class="warn-note" style="background:var(--red-soft);color:var(--red)">' + ic('x') + '<span>COS workers cannot claim a TEV. Delete this one, or change the employment type in Staff if it is wrong.</span></div>' : '') +
+    (ru.noInc ? '<div class="info-note">' + ic('shield') + '<span>Job order: incidental expenses are not claimable.</span></div>' : '') +
+    '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">Where <span class="hint">(applies to everyone on this travel order)</span></legend><div class="seg">' +
+      SCOPES.map(function(s, i){ var cf = tevCfg(); if (s[0] === 'bicol') s = [s[0], s[1], peso(cf.bicol.daily).replace('.00', '') + ' a day']; if (s[0] === 'outside') s = [s[0], s[1], peso(cf.outside.daily).replace('.00', '') + ' a day']; return '<input type="radio" name="scope" id="sc' + i + '" value="' + s[0] + '"' + (c.trip.scope === s[0] ? ' checked' : '') + '><label for="sc' + i + '"><b>' + s[1] + '</b><small>' + s[2] + '</small></label>'; }).join('') + '</div></fieldset>' +
+    '<div class="two"><label class="keep" id="farWrap"><input type="checkbox" id="tFar"' + (c.trip.far ? ' checked' : '') + '> 50 km or more from the Capitol</label><label class="keep"><input type="checkbox" id="tGov"' + (c.trip.gov ? ' checked' : '') + '> Government vehicle (no transportation claim)</label></div>' +
+    '<div class="two"><div class="field"><label for="tDep">Departure time</label><input class="input" type="time" id="tDep" value="' + esc(c.trip.dep) + '"><span class="hint">Leaving 12:00 NN or later: the first day is not claimed.</span></div><div class="field"><label for="tArr">Arrival back at the station</label><input class="input" type="time" id="tArr" value="' + esc(c.trip.arr) + '"></div></div>' +
+    '<div class="label" style="display:flex;justify-content:space-between;align-items:center">Day by day <button type="button" class="btn btn-sm btn-ghost" data-act="tevRules">' + ic('refresh') + 'Reset to the rules</button></div>' +
+    '<div class="table-wrap"><table class="tev-days"><thead><tr><th>Date</th><th class="c">B</th><th class="c">L</th><th class="c">D</th><th class="c">Lodging</th><th class="c">Incid.</th><th class="r">Amount</th></tr></thead><tbody id="tvDays"></tbody></table></div>' +
+    '<p class="hint" style="margin:0">Untick meals the host provided. B, L, D = breakfast, lunch, dinner.</p>' +
+    '<div class="field"><label for="tTr">Transportation (private or public vehicle)</label><input class="input num" type="number" min="0" step="0.01" id="tTr" value="' + (v.transpo || '') + '" placeholder="0.00"><span class="hint" id="tTrHint"></span></div>' +
+    '<div class="tev-sum" id="tvSum"></div>' +
+    '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">Status</legend><div class="seg">' +
+      Object.keys(TEV_ST).map(function(k, i){ return '<input type="radio" name="status" id="vs' + i + '" value="' + k + '"' + (v.status === k ? ' checked' : '') + '><label for="vs' + i + '"><b>' + k + '</b><small>' + TEV_ST[k][2] + '</small></label>'; }).join('') + '</div></fieldset>' +
+    '<div class="two"><div class="field"><label for="vsub">Submitted on</label><input class="input" id="vsub" name="submittedOn" type="date" value="' + esc(v.submittedOn || '') + '"></div><div class="field"><label for="vrel">Cheque released on</label><input class="input" id="vrel" name="releasedOn" type="date" value="' + esc(v.releasedOn || '') + '"></div></div>' +
+    '<div class="two"><div class="field"><label for="vchq">Cheque no. <span class="hint">(optional)</span></label><input class="input" id="vchq" name="chequeNo" maxlength="40" value="' + esc(v.chequeNo || '') + '"></div><div class="field"><label for="vnote">Note <span class="hint">(optional)</span></label><input class="input" id="vnote" name="note" maxlength="200" value="' + esc(v.note || '') + '"></div></div>',
+    '<button type="button" class="btn btn-ghost" data-act="tevDel" data-id="' + id + '" style="margin-right:auto;color:var(--red)">' + ic('trash') + 'Delete</button>' +
+    '<button type="button" class="btn btn-ghost" data-act="tevPrint" data-to="' + t.id + '">' + ic('print') + 'Print</button><button class="btn btn-primary" type="submit">Save TEV</button>', 'tev2');
+  drawSheet();
+}
+function readTrip(){
+  var sc = document.querySelector('#modal input[name=scope]:checked');
+  TV.trip = { scope: sc ? sc.value : '', far: document.getElementById('tFar').checked, gov: document.getElementById('tGov').checked, dep: document.getElementById('tDep').value, arr: document.getElementById('tArr').value };
+}
+function drawSheet(){
+  var v = (S.tevs || []).filter(function(x){ return x.id === TV.id; })[0], t = toOf(TV.toId);
+  TV.transpo = Number(document.getElementById('tTr').value) || 0;
+  var c = tevCalc(t, v, TV.days, TV.trip, TV.transpo), prov = TV.trip.scope === 'province';
+  document.getElementById('farWrap').hidden = !prov;
+  var tr = document.getElementById('tTr'); tr.disabled = TV.trip.gov;
+  document.getElementById('tTrHint').textContent = TV.trip.gov ? 'Transportation provided by the government: no claim.' : 'Up to ' + peso(c.rt.transMax) + (TV.transpo > c.rt.transMax ? '. Only ' + peso(c.rt.transMax) + ' will be claimed.' : '.');
+  function box(i, k, dis){ return '<td class="c"><input type="checkbox" data-day="' + i + '" data-k="' + k + '"' + (TV.days[i][k] && !dis ? ' checked' : '') + (dis ? ' disabled' : '') + ' aria-label="' + k + ' ' + TV.days[i].date + '"></td>'; }
+  document.getElementById('tvDays').innerHTML = c.rows.map(function(x, i){
+    return '<tr><td class="num">' + fDate(x.date, { month:'short', day:'numeric' }) + '<span class="hint" style="display:block">' + fDate(x.date, { weekday:'short' }) + '</span></td>' + box(i, 'b') + box(i, 'l') + box(i, 'd') + box(i, 'lodge', prov) + box(i, 'inc', c.rule.noInc || (prov && !TV.trip.far)) + '<td class="r num">' + (x.amt ? x.amt.toLocaleString('en-PH', { minimumFractionDigits: 2 }) : '—') + '</td></tr>';
+  }).join('');
+  document.getElementById('tvSum').innerHTML = (!TV.trip.scope ? '<div class="warn-note">' + ic('flag') + '<span>Pick where the travel is to compute the rates.</span></div>' : '') +
+    '<div class="mini-tiles"><div><span>Accommodation · ' + c.nights + ' night' + (c.nights === 1 ? '' : 's') + '</span><b>' + peso(c.lodging) + '</b></div><div><span>Meals · ' + c.meals + ' × ' + peso(c.rt.meal) + '</span><b>' + peso(c.food) + '</b></div>' +
+    '<div><span>Incidental · ' + c.incDays + ' day' + (c.incDays === 1 ? '' : 's') + '</span><b>' + peso(c.other) + '</b></div><div><span>Transportation</span><b>' + peso(c.transpo) + '</b></div></div>' +
+    '<div class="tev-total"><span>Total</span><b class="num">' + peso(c.total) + '</b></div>';
+  TV.calc = c;
+}
+document.addEventListener('change', function(ev){
+  if (!TV || !document.getElementById('tvDays')) return;
+  var el = ev.target;
+  if (el.dataset && el.dataset.day != null && el.dataset.k){ TV.days[+el.dataset.day][el.dataset.k] = el.checked; drawSheet(); return; }
+  if (el.name === 'scope' || el.id === 'tFar' || el.id === 'tGov' || el.id === 'tDep' || el.id === 'tArr'){
+    var oldScope = TV.trip.scope, oldDep = TV.trip.dep; readTrip();
+    if (el.name === 'scope' || el.id === 'tDep' || el.id === 'tFar' && oldScope === 'province'){ var t = toOf(TV.toId), v = (S.tevs || []).filter(function(x){ return x.id === TV.id; })[0]; TV.days = defaultDays(Object.assign({}, t, { trip: TV.trip }), v); }
+    drawSheet();
+  }
+});
+document.addEventListener('input', function(ev){ if (TV && ev.target.id === 'tTr') drawSheet(); });
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act]'); if (!t) return;
+  if (t.dataset.act === 'tevRules' && TV){ var to = toOf(TV.toId), v = (S.tevs || []).filter(function(x){ return x.id === TV.id; })[0]; readTrip(); TV.days = defaultDays(Object.assign({}, to, { trip: TV.trip }), v); drawSheet(); }
+});
+document.addEventListener('submit', function(ev){
+  var f = ev.target.closest('form[data-form="tev2"]'); if (!f) return;
+  ev.preventDefault(); ev.stopImmediatePropagation();
+  readTrip(); drawSheet();
+  var c = TV.calc, st = (f.querySelector('input[name=status]:checked') || {}).value || 'To prepare', td = today();
+  var sub = f.querySelector('#vsub').value, rel = f.querySelector('#vrel').value;
+  if (!TV.trip.scope) return bad('merr', 'Pick where the travel is (within the province, within Bicol or outside Bicol).');
+  if (c.rule.none) return bad('merr', 'COS workers cannot claim a TEV.');
+  if (st === 'Claimed' && !c.total) return bad('merr', 'Nothing to claim yet. Check the days and transportation.');
+  if (rel && sub && rel < sub) return bad('merr', 'The release date is before the submission date.');
+  var p = { id: TV.id, toId0: TV.toId, status: st, transpo: c.transpo, food: c.food, lodging: c.lodging, other: c.other, chequeNo: f.querySelector('#vchq').value, note: f.querySelector('#vnote').value,
+            submittedOn: sub, releasedOn: rel, days: TV.days, trip: TV.trip };
+  var to = toOf(TV.toId); if (to) to.trip = TV.trip;
+  bg('saveTEV', p, { arr: 'tevs', id: TV.id, patch: { status: st, transpo: c.transpo, food: c.food, lodging: c.lodging, other: c.other, total: c.total, days: TV.days, submittedOn: sub || (st !== 'To prepare' ? td : ''), releasedOn: rel || (st === 'Claimed' ? td : '') } },
+     'TEV saved', 'The TEV for ' + (((S.tevs || []).filter(function(x){ return x.id === TV.id; })[0]) || {}).name);
+}, true);
+
+/* ---------- amount in words ---------- */
+function pesoWords(n){
+  var ones = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN'],
+      tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY'];
+  function h(x){ var s = []; if (x >= 100){ s.push(ones[Math.floor(x / 100)] + ' HUNDRED'); x %= 100; } if (x >= 20){ s.push(tens[Math.floor(x / 10)] + (x % 10 ? '-' + ones[x % 10] : '')); } else if (x) s.push(ones[x]); return s.join(' '); }
+  var whole = Math.floor(n + 1e-9), cents = Math.round((n - whole) * 100), parts = [];
+  [[1e9, 'BILLION'], [1e6, 'MILLION'], [1e3, 'THOUSAND'], [1, '']].forEach(function(u){ var q = Math.floor(whole / u[0]); if (q){ parts.push(h(q) + (u[1] ? ' ' + u[1] : '')); whole -= q * u[0]; } });
+  return (parts.join(' ') || 'ZERO') + ' PESOS' + (cents ? ' AND ' + (cents < 10 ? '0' : '') + cents + '/100' : '');
+}
+
+/* ---------- printable TEV forms ---------- */
+var TEV_FORMS = [['itin', 'Itinerary of Travel', 'One page per person'], ['payroll', 'Payroll', 'Everyone on the travel order'], ['dv', 'Disbursement Voucher', 'Amount in words filled in'],
+                 ['or', 'Obligation Request', ''], ['cert', 'Certificate of Travel Completed', 'One page per person']];
+function tevPrintDialog(toId){
+  var t = toOf(toId); if (!t) return;
+  var list = (S.tevs || []).filter(function(v){ return v.toId === toId && !tevRule(v).none; });
+  if (!list.length) return toast('No TEVs to print for this travel order.');
+  M = { printTo: toId };
+  modal('Print TEV forms', '<div class="sumbox"><b>' + esc(t.event) + '</b><span>' + esc(t.destination || '') + ' · ' + fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric', year:'numeric' }) + '</span></div>' +
+    (tripOf(t).scope ? '' : '<div class="warn-note">' + ic('flag') + '<span>Open a TEV and pick where the travel is first, so the amounts are right.</span></div>') +
+    '<div class="label">Forms (printed in this order)</div><div class="wlist">' + TEV_FORMS.map(function(f){ return '<label class="check" style="padding:10px 12px"><input type="checkbox" data-form-pick="' + f[0] + '" checked><span><b>' + f[1] + '</b>' + (f[2] ? '<br><span class="hint">' + f[2] + '</span>' : '') + '</span></label>'; }).join('') + '</div>' +
+    '<div class="label">People</div><div class="wlist">' + list.map(function(v){ return '<label class="check" style="padding:10px 12px"><input type="checkbox" data-person-pick="' + v.id + '" checked><span><b>' + esc(v.name) + '</b><br><span class="hint">' + peso(tevCalc(t, v).total) + '</span></span></label>'; }).join('') + '</div>' +
+    '<div class="two"><div class="field"><label for="pDate">Date on the itinerary</label><input class="input" type="date" id="pDate" value="' + esc(t.datePrepared || today()) + '"></div><div class="field"><label for="pCert">Date of the certificate</label><input class="input" type="date" id="pCert" value="' + esc(addDays(t.dateTo || t.dateFrom, 3)) + '"></div></div>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button type="button" class="btn btn-primary" data-act="tevPrintGo">' + ic('print') + 'Print</button>');
+}
+function tevDocHtml(t, people, forms, dPrep, dCert){
+  var cfg = tevCfg(), sg = cfg.sign, cd = cfg.codes, o = { month:'long', day:'numeric', year:'numeric' }, tr = tripOf(t), dest = t.destination || '';
+  function E(x){ return esc(x == null ? '' : x); }
+  function money(n){ return n ? (Number(n) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'; }
+  function range(a, b){ return a === b ? fDate(a, o) : fRange(a, b, o); }
+  function head(title){ return '<div class="hd"><div>Republic of the Philippines</div><div>PROVINCE OF CAMARINES NORTE</div><div>D a e t</div><div class="off">PROVINCIAL INFORMATION OFFICE</div></div>' + (title ? '<h1>' + title + '</h1>' : ''); }
+  function sig(s, lab){ return '<div class="sig">' + (lab ? '<div class="lab">' + lab + '</div>' : '') + '<b>' + E(s[0]) + '</b><span>' + E(s[1]) + '</span></div>'; }
+  var calcs = people.map(function(v){ return { v: v, c: tevCalc(t, v), r: tevRule(v) }; });
+  var sum = { transpo: 0, lodging: 0, food: 0, other: 0, total: 0, meals: 0, nights: 0, inc: 0 };
+  calcs.forEach(function(x){ ['transpo','lodging','food','other','total'].forEach(function(k){ sum[k] += x.c[k]; }); sum.meals += x.c.meals; sum.nights += x.c.nights; sum.inc += x.c.incDays; });
+  var period = range(t.dateFrom, t.dateTo || t.dateFrom), purpose = String(t.event || '').replace(/[.\s]+$/, '') + (dest ? ' at ' + dest : '');
+  var html = '';
+  if (forms.itin) calcs.forEach(function(x){
+    var c = x.c, rows = c.rows, n = rows.length, lines = [];
+    // departure day, days in between (grouped), return day, like the office form
+    if (n === 1) lines.push({ d: range(rows[0].date, rows[0].date), p: 'Station to ' + dest + ' and back', dep: tr.dep, arr: tr.arr, amt: rows[0].amt });
+    else {
+      lines.push({ d: fDate(rows[0].date, o), p: 'Station to ' + dest, dep: tr.dep, amt: rows[0].amt });
+      if (n > 2){ var mid = rows.slice(1, n - 1); lines.push({ d: range(mid[0].date, mid[mid.length - 1].date), p: dest, amt: mid.reduce(function(s, r){ return s + r.amt; }, 0) }); }
+      lines.push({ d: fDate(rows[n - 1].date, o), p: dest + ' to Station', arr: tr.arr, amt: rows[n - 1].amt });
+    }
+    var per = lines.reduce(function(s, l){ return s + l.amt; }, 0);
+    function tm(x){ if (!x) return ''; var h = +x.slice(0, 2), m = x.slice(3); return (h % 12 || 12) + ':' + m + (h < 12 ? ' AM' : ' PM'); }
+    html += '<section class="page">' + head('') + '<div class="no">No. ________<br>Date: ' + E(fDate(dPrep, o)) + '</div><h1>ITINERARY OF TRAVEL</h1>' +
+      '<table class="kv"><tr><td>Name</td><td>:</td><td><b>' + E(x.v.name) + '</b></td><td class="r">Monthly Salary: Php ________</td></tr><tr><td>Position</td><td>:</td><td colspan="2">' + E(x.r.pos || x.r.et) + '</td></tr>' +
+      '<tr><td>Official Station</td><td>:</td><td colspan="2">' + E(cd.station) + '</td></tr></table><p>Purpose: ' + E(purpose) + '</p>' +
+      '<table class="grid"><thead><tr><th rowspan="2">Date</th><th rowspan="2">Places to be visited</th><th colspan="2">Time</th><th rowspan="2">Means of Transportation</th><th colspan="2">Allowable Expenses</th><th rowspan="2">Total</th></tr><tr><th>Departure</th><th>Arrival</th><th>Trans. Allow.</th><th>Per Diems</th></tr></thead><tbody>' +
+      lines.map(function(l, i){ var trn = i === 0 ? c.transpo : 0; return '<tr><td>' + E(l.d) + '</td><td>' + E(l.p) + '</td><td class="c">' + E(tm(l.dep)) + '</td><td class="c">' + E(tm(l.arr)) + '</td><td class="c">' + (i === 0 ? E(tr.gov ? 'Government Vehicle' : 'Private/Public Vehicle') : '') + '</td><td class="r">' + money(trn) + '</td><td class="r">' + money(l.amt) + '</td><td class="r">' + money(trn + l.amt) + '</td></tr>'; }).join('') +
+      '<tr class="tot"><td></td><td><b>TOTALS</b></td><td></td><td></td><td></td><td class="r">' + money(c.transpo) + '</td><td class="r">' + money(per) + '</td><td class="r"><b>' + money(c.total) + '</b></td></tr></tbody></table>' +
+      '<div class="cols"><div><p class="small">I certify that 1) I have reviewed the foregoing itinerary. 2) the travel is necessary to the service. 3) the period covered is reasonable and 4) the expenses are proper.</p>' + sig(sg.pio) + '</div>' +
+      '<div>' + sig([x.v.name, 'Employee'], 'Prepared by:') + sig(sg.gov, 'Approved by:') + '</div></div></section>';
+  });
+  if (forms.payroll) html += '<section class="page land"><h1>PAYROLL</h1><table class="kv"><tr><td><b>Agency:</b> ' + E(cd.agency) + '</td><td class="r"><b>Period:</b> ' + E(period.toUpperCase()) + '</td></tr></table><p><i>Purpose: ' + E(purpose) + '</i></p>' +
+    '<table class="grid small"><thead><tr><th rowspan="2">No.</th><th rowspan="2">NAME</th><th rowspan="2">OCCUPATION</th><th rowspan="2">No. of Days</th><th colspan="4">Allowable Expenses</th><th colspan="2">Philhealth</th><th colspan="2">PAG-IBIG</th><th rowspan="2">NET PAY</th><th rowspan="2">No.</th><th rowspan="2">Signature / thumbmark</th><th rowspan="2">CTC NUMBER</th><th rowspan="2">Issued At</th><th rowspan="2">Issued on</th></tr>' +
+    '<tr><th>Trans</th><th>Lodging</th><th>Meal</th><th>Incidental</th><th>Gov’t Share</th><th>Personal Share</th><th>Gov’t Share</th><th>Personal Share</th></tr></thead><tbody>' +
+    calcs.map(function(x, i){ return '<tr><td class="c">' + (i + 1) + '</td><td>' + E(x.v.name) + '</td><td class="c">' + E(x.r.pos || x.r.et) + '</td><td class="c">' + x.c.rows.length + '</td><td class="r">' + money(x.c.transpo) + '</td><td class="r">' + money(x.c.lodging) + '</td><td class="r">' + money(x.c.food) + '</td><td class="r">' + money(x.c.other) + '</td><td></td><td></td><td></td><td></td><td class="r"><b>' + money(x.c.total) + '</b></td><td class="c">' + (i + 1) + '</td><td></td><td></td><td></td><td></td></tr>'; }).join('') +
+    '<tr class="tot"><td></td><td><b>TOTAL</b></td><td></td><td></td><td class="r">' + money(sum.transpo) + '</td><td class="r">' + money(sum.lodging) + '</td><td class="r">' + money(sum.food) + '</td><td class="r">' + money(sum.other) + '</td><td></td><td></td><td></td><td></td><td class="r"><b>' + money(sum.total) + '</b></td><td colspan="6"></td></tr></tbody></table>' +
+    '<div class="cols three"><div><p class="small">CERTIFIED: Each person whose name appears on this roll rendered service for the time stated.</p>' + sig(sg.pio) + '</div><div><p class="small">CERTIFIED CORRECT AS PER APPROVED PLANTILLA</p>' + sig(sg.payroll) + '</div><div><p class="small">CERTIFIED: Each person whose name appears on the above payroll has been paid the amount stated opposite his name after identifying him.</p>' + sig(['________________________________', 'Name and signature of Disbursing Officer']) + '</div></div></section>';
+  var payee = calcs.length === 1 ? calcs[0].v.name : calcs.length === 2 ? calcs[0].v.name + ' and ' + calcs[1].v.name : 'VARIOUS (SEE ATTACHED PAYROLL)';
+  var one = calcs.length === 1 ? calcs[0].c : null;
+  if (forms.dv) html += '<section class="page"><div class="hd"><div>Republic of the Philippines</div><div class="off">PROVINCE OF CAMARINES NORTE</div></div><table class="grid dv">' +
+    '<tr><td colspan="3"><h1 style="margin:0;text-align:left">DISBURSEMENT VOUCHER</h1></td><td>No.<br>Date:</td></tr>' +
+    '<tr><td>Mode of Payment</td><td colspan="3"><span class="bx">X</span> Check &nbsp; <span class="bx"></span> Cash &nbsp; <span class="bx"></span> Others</td></tr>' +
+    '<tr><td>Payee</td><td><b>' + E(payee) + '</b></td><td>TIN/Employee No.</td><td>Obligation Request No.</td></tr>' +
+    '<tr><td>Address</td><td><b>' + E(cd.address) + '</b></td><td>Office/Unit/Project<br><b>PIO</b></td><td>Code<br><b>' + E(cd.rc) + '</b></td></tr>' +
+    '<tr><th colspan="3">EXPLANATION</th><th>AMOUNT</th></tr><tr><td colspan="3" class="exp">TO PAYMENT for the above named Payee' + (calcs.length > 1 ? 's' : '') + ' for the reimbursement of ' + (calcs.length > 1 ? 'their' : 'the') + ' Travelling Expenses incurred on ' + E(period) + ' at ' + E(dest) + ' as per supporting papers hereto attached <i><b>amounting to ' + E(pesoWords(sum.total)) + ' only…</b></i>' +
+      '<table class="allow"><tr><td colspan="3"><b>ALLOWABLE ALLOWANCES</b></td></tr>' +
+      '<tr><td>Trans</td><td class="r">' + money(sum.transpo) + '</td><td>(to ' + E(dest) + ')</td></tr>' +
+      '<tr><td>Lodging</td><td class="r">' + money(sum.lodging) + '</td><td>' + (one ? '(' + one.nights + ' night' + (one.nights === 1 ? '' : 's') + ')' : '') + '</td></tr>' +
+      '<tr><td>Meal</td><td class="r">' + money(sum.food) + '</td><td>' + (one ? '(' + money(one.rt.meal) + '/meal X ' + one.meals + ')' : '') + '</td></tr>' +
+      '<tr><td>Incidental</td><td class="r">' + money(sum.other) + '</td><td>' + (one ? '(' + money(one.rt.inc) + '/day X ' + one.incDays + ' day' + (one.incDays === 1 ? '' : 's') + ')' : '') + '</td></tr>' +
+      '<tr><td><b>TOTAL:</b></td><td class="r"><b>' + money(sum.total) + '</b></td><td></td></tr></table>' +
+      '<p class="small"><b>CERTIFIED:</b> Each person whose name appears on this roll rendered service for the time stated</p>' + sig(sg.pio) + '</td><td class="r top"><b>' + money(sum.total) + '</b></td></tr>' +
+    '<tr><td colspan="3" class="r">Total</td><td class="r"><b>' + money(sum.total) + '</b></td></tr>' +
+    '<tr><td colspan="2"><i>A. Certified</i><p><span class="bx"></span> Allotment obligated for the purpose as indicated above</p><p><span class="bx"></span> Supporting documents complete</p>' + sig(sg.acct) + '<div class="small">Date</div></td><td colspan="2"><i>B. Certified</i><p class="c">Funds Available</p><br><br>' + sig(sg.treas) + '<div class="small">Date</div></td></tr>' +
+    '<tr><td colspan="2"><i>C. Approved for Payment</i><br><br><br>' + sig(sg.gov) + '</td><td colspan="2"><i>D. Received Payment</i><table class="allow small"><tr><td>Check No.</td><td>Bank Name</td><td>Date</td></tr><tr><td colspan="3">Signature</td></tr><tr><td colspan="2">Printed Name</td><td>Date</td></tr><tr><td>OR/Other Documents</td><td>JEV No.</td><td>Date</td></tr></table></td></tr></table></section>';
+  if (forms.or) html += '<section class="page"><div class="hd"><div>Republic of the Philippines</div><div class="off">PROVINCE OF CAMARINES NORTE</div></div><h1>OBLIGATION REQUEST</h1><div class="no">No. ________<br>Date: ________</div>' +
+    '<table class="grid"><tr><td>Payee</td><td colspan="4"><b>' + E(payee) + '</b></td></tr><tr><td>Office</td><td colspan="4">' + E(cd.office) + '</td></tr><tr><td>Address</td><td colspan="4">Daet, Camarines Norte</td></tr>' +
+    '<tr><th>Responsibility Center</th><th>Particulars</th><th>F.P.P</th><th>Account Code</th><th>Amount</th></tr>' +
+    '<tr class="tall"><td class="c top">' + E(cd.rc) + '</td><td class="top">Travelling Expenses incurred on ' + E(period) + ' at ' + E(dest) + '</td><td class="c top">' + E(cd.fpp) + '</td><td class="c top">' + E(cd.acct) + '</td><td class="r top">' + money(sum.total) + '</td></tr>' +
+    '<tr><td colspan="4" class="r">Total</td><td class="r"><b>' + money(sum.total) + '</b></td></tr>' +
+    '<tr><td colspan="2"><i>A. Certified</i><p class="small">Charges to budget necessary, lawful and under my direct supervision</p><p class="small">Supporting documents valid, proper and legal</p><br>' + sig(sg.pio) + '<div class="small">Date:</div></td><td colspan="3"><i>B. Certified</i><p class="small">Existence of Available Appropriation</p><br><br>' + sig(sg.budget) + '<div class="small">Date:</div></td></tr></table></section>';
+  if (forms.cert) calcs.forEach(function(x){
+    html += '<section class="page">' + head('') + '<p style="margin-top:18px">Appendix B</p><h1>CERTIFICATE OF TRAVEL COMPLETED</h1>' +
+      '<div class="cols"><div>' + sig(sg.payroll) + '</div><div class="r">' + E(fDate(dCert, o)) + '<br><span class="small">Date</span></div></div>' +
+      '<p class="body">I hereby certify that I have completed the travel authorized in Itinerary of Travel to ' + E(dest) + ' dated ' + E(period) + ' under conditions indicated below:</p>' +
+      '<p class="opt"><span class="bx">X</span> Strictly in accordance with the approved Itinerary.</p><p class="opt"><span class="bx"></span> Cut short as explained below. Additional itinerary submitted.</p><p class="opt"><span class="bx"></span> Extended as explained below. Additional itinerary submitted.</p><p class="opt"><span class="bx"></span> Other deviations explained below.</p>' +
+      '<p>Explanations/Justifications:</p><p class="line"></p><p>Evidence of travel hereto attached: Approved Travel Order dated ' + E(period) + ' with Certificate of Appearance and approved itinerary of travel.</p>' +
+      '<div class="cols"><div></div><div>' + sig([x.v.name, x.r.pos || x.r.et], 'Respectfully submitted:') + '</div></div>' +
+      '<p class="small">On evidence and information of which I have knowledge, the travel was actually undertaken.</p><div class="cols"><div></div><div>' + sig(sg.gov) + '</div></div></section>';
+  });
+  return '<!doctype html><html><head><meta charset="utf-8"><title>TEV · ' + E(t.event) + '</title><style>' +
+    '@page{size:A4 portrait;margin:14mm 14mm}@page land{size:A4 landscape;margin:10mm 10mm}' +
+    'body{font:11pt/1.35 "Times New Roman",serif;color:#000;margin:0}.page{page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}.land{page:land}' +
+    '.hd{text-align:center;line-height:1.3}.hd .off{font-weight:bold;margin-top:10px}h1{text-align:center;font-size:13pt;margin:14px 0 10px;letter-spacing:.04em}' +
+    '.no{text-align:right;margin:0 0 4px}table{border-collapse:collapse;width:100%}.kv td{padding:2px 4px;vertical-align:top}.r{text-align:right}.c{text-align:center}.top{vertical-align:top}' +
+    '.grid td,.grid th{border:1px solid #000;padding:4px 6px;vertical-align:top}.grid th{font-weight:bold;text-align:center}.grid .tot td{border-top:2px solid #000}.small{font-size:9pt}.grid.small td,.grid.small th{font-size:9pt;padding:3px 4px}' +
+    '.cols{display:flex;gap:30px;margin-top:22px}.cols>div{flex:1}.cols.three{gap:18px}.sig{text-align:center;margin-top:26px}.sig .lab{text-align:left;margin-bottom:26px}.sig b{display:block;text-decoration:underline}.sig span{display:block}' +
+    '.bx{display:inline-block;width:18px;height:14px;border:1px solid #000;text-align:center;font-size:9pt;line-height:14px;margin-right:4px;vertical-align:middle}' +
+    '.allow{width:auto;margin:10px 0 10px 30px}.allow td{padding:1px 10px 1px 0;border:0}.exp{line-height:1.5}.tall td{height:180px}.body{margin-top:24px;text-indent:30px}.opt{margin:6px 0 6px 40px}.line{border-bottom:1px solid #000;height:22px}' +
+    '</style></head><body>' + html + '</body></html>';
+}
+function printHtml(html){
+  var f = document.createElement('iframe'); f.setAttribute('aria-hidden', 'true'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+  document.body.appendChild(f);
+  var w = f.contentWindow; w.document.open(); w.document.write(html); w.document.close();
+  setTimeout(function(){ try { w.focus(); w.print(); } catch(e){ toast('Printing is blocked in this browser.'); } setTimeout(function(){ f.remove(); }, 60000); }, 400);
+}
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act]'); if (!t) return;
+  var a = t.dataset.act;
+  if (a === 'tevPrint'){ closeModal(); tevPrintDialog(t.dataset.to); }
+  else if (a === 'tevPrintGo'){
+    var to = toOf(M.printTo), forms = {}, ids = [];
+    document.querySelectorAll('#modal [data-form-pick]').forEach(function(c){ if (c.checked) forms[c.dataset.formPick] = 1; });
+    document.querySelectorAll('#modal [data-person-pick]').forEach(function(c){ if (c.checked) ids.push(c.dataset.personPick); });
+    if (!Object.keys(forms).length) return toast('Pick at least one form.');
+    if (!ids.length) return toast('Pick at least one person.');
+    var people = (S.tevs || []).filter(function(v){ return ids.indexOf(v.id) >= 0; });
+    printHtml(tevDocHtml(to, people, forms, document.getElementById('pDate').value || today(), document.getElementById('pCert').value || today()));
+  }
+});
+/* ---------- TEV rates and signatories (Settings) ---------- */
+(function(){
+  var VS = viewSettings;
+  viewSettings = function(){
+    var v = VS(), c = tevCfg(), sg = c.sign, cd = c.codes;
+    function num(id, val, lab, hint){ return '<div class="field"><label for="' + id + '">' + lab + '</label><input class="input num" type="number" min="0" step="0.01" id="' + id + '" value="' + val + '">' + (hint ? '<span class="hint">' + hint + '</span>' : '') + '</div>'; }
+    function who(k, lab){ return '<div class="two"><div class="field"><label for="sg_' + k + '0">' + lab + '</label><input class="input" id="sg_' + k + '0" value="' + esc(sg[k][0]) + '"></div><div class="field"><label for="sg_' + k + '1">Title</label><input class="input" id="sg_' + k + '1" value="' + esc(sg[k][1]) + '"></div></div>'; }
+    var panelHtml = '<form class="panel span-12" data-form="tevSetup"><div class="panel-h"><h2>' + ic('peso') + 'TEV rates and signatories</h2></div><div class="panel-b stack">' +
+      '<div class="two">' + num('rBd', c.bicol.daily, 'Within Bicol: daily rate', '50% lodging, 30% meals, 20% incidental') + num('rBt', c.bicol.transpo, 'Within Bicol: transportation cap') + '</div>' +
+      '<div class="two">' + num('rOd', c.outside.daily, 'Outside Bicol: daily rate') + num('rOt', c.outside.transpo, 'Outside Bicol: transportation cap') + '</div>' +
+      '<div class="two">' + num('rPm', c.province.meals, 'Within the province: 3 meals') + num('rPi', c.province.inc, 'Within the province: incidental', 'Only 50 km or more from the Capitol') + '</div>' +
+      '<div class="label">Signatories on the forms</div>' + who('pio', 'Provincial Information Officer') + who('gov', 'Governor (approves TO, itinerary, voucher)') + who('payroll', 'Payroll (plantilla) certified by') + who('padmin', 'Travel order: by authority of the Governor') + who('acct', 'Accountant') + who('treas', 'Treasurer') + who('budget', 'Budget Officer') +
+      '<div class="label">Codes</div><div class="two"><div class="field"><label for="cRc">Responsibility center</label><input class="input" id="cRc" value="' + esc(cd.rc) + '"></div><div class="field"><label for="cAc">Account code</label><input class="input" id="cAc" value="' + esc(cd.acct) + '"></div></div>' +
+      '<div class="field"><label for="cFp">F.P.P</label><input class="input" id="cFp" value="' + esc(cd.fpp) + '"></div>' +
+      '<p class="error" id="terr" role="alert"></p><div><button class="btn btn-primary" type="submit">Save TEV settings</button></div></div></form>';
+    v.body = v.body.replace(/<\/div>$/, panelHtml + '</div>');
+    return v;
+  };
+})();
+document.addEventListener('submit', function(ev){
+  var f = ev.target.closest('form[data-form="tevSetup"]'); if (!f) return;
+  ev.preventDefault(); ev.stopImmediatePropagation();
+  function n(id){ return Number(document.getElementById(id).value) || 0; } function s(id){ return document.getElementById(id).value.trim(); }
+  var sign = {}; ['pio', 'gov', 'payroll', 'padmin', 'acct', 'treas', 'budget'].forEach(function(k){ sign[k] = [s('sg_' + k + '0'), s('sg_' + k + '1')]; });
+  var tev = { bicol: { daily: n('rBd'), transpo: n('rBt') }, outside: { daily: n('rOd'), transpo: n('rOt') }, province: { meals: n('rPm'), inc: n('rPi') }, sign: sign,
+              codes: Object.assign({}, tevCfg().codes, { rc: s('cRc'), acct: s('cAc'), fpp: s('cFp') }) };
+  if (!tev.bicol.daily || !tev.outside.daily) return bad('terr', 'Enter the daily rates.');
+  busy(f.querySelector('[type=submit]'), act('saveTevSetup', { tev: tev }, 'TEV settings saved'), 'terr');
+}, true);
+
+/* ---------- position (shown on the TEV forms) in Manage ---------- */
+(function(){
+  var PM = personModal;
+  personModal = function(username){
+    PM(username);
+    var u = userOf(username), box = document.querySelector('#modal #pemp');
+    if (!isAdmin() || !u || !box) return;
+    var f = box.closest('.two'), d = document.createElement('div');
+    d.className = 'field'; d.innerHTML = '<label for="ppos">Position <span class="hint">(printed on TEV forms)</span></label><input class="input" id="ppos" data-setpos="' + esc(username) + '" maxlength="60" value="' + esc(u.position || '') + '" placeholder="e.g. Information Officer I">';
+    f.parentNode.insertBefore(d, f.nextSibling);
+  };
+})();
+document.addEventListener('change', function(ev){
+  var el = ev.target; if (!el.dataset || !el.dataset.setpos) return;
+  act('setPosition', { username: el.dataset.setpos, position: el.value }, 'Position saved').catch(function(e){ toast(e.message); });
+});
+
+/* ---------- drag to reorder the dashboard (Customize) ---------- */
+(function(){
+  var C = customizeModal;
+  customizeModal = function(){
+    C();
+    var draw = M.draw;
+    M.draw = function(){ draw(); document.querySelectorAll('#wl .w').forEach(function(row, i){ if (!row.querySelector('.drag')){ var h = document.createElement('span'); h.className = 'drag'; h.setAttribute('aria-hidden', 'true'); h.innerHTML = ic('menu'); row.insertBefore(h, row.firstChild); } row.dataset.i = i; }); };
+    M.draw();
+    var p = document.querySelector('#modal .wlist'); if (p) p.insertAdjacentHTML('beforebegin', '<p class="hint" style="margin:0">Drag ' + ic('menu') + ' to move, or use the arrows.</p>');
+  };
+})();
+(function(){
+  var drag = null;
+  document.addEventListener('pointerdown', function(ev){
+    var h = ev.target.closest('#wl .drag'); if (!h) return;
+    var row = h.closest('.w'), list = row.parentNode; ev.preventDefault();
+    drag = { row: row, list: list, y: ev.clientY, from: +row.dataset.i };
+    row.classList.add('dragging'); try { h.setPointerCapture(ev.pointerId); } catch(e){}
+  });
+  document.addEventListener('pointermove', function(ev){
+    if (!drag) return;
+    var rows = Array.prototype.slice.call(drag.list.querySelectorAll('.w')), y = ev.clientY;
+    for (var i = 0; i < rows.length; i++){
+      var r = rows[i]; if (r === drag.row) continue;
+      var b = r.getBoundingClientRect(), mid = b.top + b.height / 2, before = drag.row.compareDocumentPosition(r) & Node.DOCUMENT_POSITION_PRECEDING;
+      if (before && y < mid){ drag.list.insertBefore(drag.row, r); break; }
+      if (!before && y > mid){ drag.list.insertBefore(drag.row, r.nextSibling); }
+    }
+  });
+  function end(){
+    if (!drag) return;
+    var boxes = Array.prototype.slice.call(drag.list.querySelectorAll('.w input[data-w]')), ids = boxes.map(function(x){ return x.dataset.w; });
+    M.hidden = boxes.filter(function(x){ return !x.checked; }).map(function(x){ return x.dataset.w; });
+    drag.row.classList.remove('dragging'); drag = null;
+    if (ids.length === M.order.length) { M.order = ids; M.draw(); }
+  }
+  document.addEventListener('pointerup', end); document.addEventListener('pointercancel', end);
+})();
+
+/* ---------- travel order: print straight from the browser ---------- */
+TEV_DEF.sign.padmin = ['DON EDUARDO S. PADILLA', 'Provincial Administrator'];
+var printTODocx = printTO;
+printTO = function(t){ toPrintDialog(t.id); };
+function toPrintDialog(id){
+  var t = toOf(id); if (!t) return;
+  var others = activeTOs().filter(function(x){ return x.status === 'Prepared' && x.id !== id; }).sort(function(a, b){ return a.dateFrom < b.dateFrom ? 1 : -1; }).slice(0, 12);
+  M = { printTO: id };
+  modal('Print travel order', '<div class="sumbox"><b>' + esc(t.event) + '</b><span>' + esc(t.destination || '') + ' · ' + fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric', year:'numeric' }) + ' · ' + t.names.length + ' ' + (t.names.length === 1 ? 'person' : 'people') + '</span></div>' +
+    '<div class="two"><div class="field"><label for="tpDate">Date prepared</label><input class="input" type="date" id="tpDate" value="' + esc(t.datePrepared || today()) + '"><span class="hint">Printed at the top right.</span></div>' +
+    '<div class="field"><span class="label">TEV box</span><div class="hint" style="margin-top:8px">' + (t.tev === 'Yes' ? 'X on “entitled to collect traveling expenses”' : t.tev === 'No' ? 'X on “official time only”' : 'Both boxes empty (TEV not decided yet)') + '</div></div></div>' +
+    (selfRecommend(t) ? '<div class="info-note">' + ic('shield') + '<span>Sarah Marie P. Aviado is on this travel order, so Recommending Approval is left out.</span></div>' : '') +
+    (others.length ? '<div class="label">Also print</div><div class="wlist">' + others.map(function(x){ return '<label class="check" style="padding:10px 12px"><input type="checkbox" data-to-pick="' + x.id + '"><span><b>' + esc(x.event) + '</b><br><span class="hint">' + esc(fRange(x.dateFrom, x.dateTo, { month:'short', day:'numeric' })) + ' · ' + esc(x.destination || '') + '</span></span></label>'; }).join('') + '</div>' : ''),
+    '<button type="button" class="btn btn-ghost" data-act="toDocx" style="margin-right:auto">' + ic('download') + 'Word file</button><button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button type="button" class="btn btn-primary" data-act="toPrintGo">' + ic('print') + 'Print</button>');
+}
+function toPageHtml(t, prepared){
+  var o = { month:'long', day:'numeric', year:'numeric' }, sg = tevCfg().sign, names = sortNames(t.names), rec = !selfRecommend(t);
+  function E(x){ return esc(x == null ? '' : x); }
+  return '<section class="to"><img class="hdr" src="to-header.png" alt=""><img class="wm" src="to-watermark.jpg" alt=""><img class="ftr" src="to-footer.png" alt="">' +
+    '<div class="body"><h1>TRAVEL ORDER</h1><p class="dp">' + E(fDate(prepared || today(), o)) + '</p>' +
+    '<table class="to-names"><tr><td class="k">TO:</td><td>' + names.map(function(n){ return '<b>' + E(n) + '</b>'; }).join('<br>') + '</td></tr></table>' +
+    '<p>You are hereby directed to undertake the following Itinerary of Travel:</p>' +
+    '<table class="kv"><tr><td>Place of Destination</td><td>:</td><td>' + E(t.destination) + '</td></tr><tr><td>Date/Time of Departure</td><td>:</td><td>' + E(fDate(t.dateFrom, o)) + '</td></tr>' +
+    '<tr><td>Date/Time of Arrival</td><td>:</td><td>' + E(fDate(t.dateTo || t.dateFrom, o)) + '</td></tr><tr><td>Purpose</td><td>:</td><td>' + E(String(t.event || '').replace(/[.\s]+$/, '') + (t.destination ? ' at ' + t.destination : '')) + '</td></tr></table>' +
+    '<div class="opt"><span class="bx">' + (t.tev === 'No' ? 'X' : '') + '</span><span>This order allows official time only.</span></div>' +
+    '<div class="opt"><span class="bx">' + (t.tev === 'Yes' ? 'X' : '') + '</span><span>By way of this directive, you are entitled to collect traveling expenses subject to the usual accounting and auditing rules and regulations.</span></div>' +
+    '<div class="sigs">' + (rec ? '<div class="s rec"><div>RECOMMENDING APPROVAL:</div><b>' + E(sg.pio[0]) + '</b><span>' + E(sg.pio[1]) + '</span></div>' : '<div class="s rec"></div>') +
+    '<div class="s app"><div>APPROVED BY:</div><b>' + E(sg.gov[0].replace(/^HON\.\s*/, '')) + '</b><span>' + E(sg.gov[1]) + '</span></div>' +
+    '<div class="s auth"><div>By Authority of the Governor:</div><b>' + E((sg.padmin || TEV_DEF.sign.padmin)[0]) + '</b><span>' + E((sg.padmin || TEV_DEF.sign.padmin)[1]) + '</span></div></div></div></section>';
+}
+function toDocHtml(list, prepared){
+  var base = location.href.replace(/[#?].*$/, '').replace(/[^\/]*$/, '');
+  return '<!doctype html><html><head><meta charset="utf-8"><base href="' + base + '"><title>Travel Order</title><style>' +
+    '@page{size:A4 portrait;margin:0}html,body{margin:0;padding:0}body{font:11pt/1.35 "Maiandra GD","Century Gothic","Segoe UI",Arial,sans-serif;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+    '.to{position:relative;width:210mm;height:297mm;overflow:hidden;page-break-after:always;break-after:page}.to:last-child{page-break-after:auto;break-after:auto}' +
+    '.hdr{position:absolute;left:1.6mm;top:0;width:216mm}.wm{position:absolute;left:4.5mm;top:20mm;width:201mm;opacity:.07}.ftr{position:absolute;left:1.2mm;top:258.8mm;width:207mm}' +
+    '.body{position:absolute;left:25.4mm;right:25.4mm;top:37mm;bottom:42mm}h1{font-size:13pt;text-align:center;margin:0 0 6mm}.dp{text-align:right;margin:0 0 5mm}' +
+    '.to-names{border-collapse:collapse;margin-bottom:6mm}.to-names td{vertical-align:top;padding:0}.to-names .k{width:24mm;font-weight:bold}' +
+    'p{margin:0 0 2mm}.kv{border-collapse:collapse;margin-bottom:6mm}.kv td{padding:0 2mm 0 0;vertical-align:top}.kv td:first-child{width:43mm;white-space:nowrap}.kv td:nth-child(2){width:4mm}' +
+    '.opt{display:flex;gap:6mm;align-items:flex-start;margin:0 0 4mm 2mm}.bx{flex:none;width:13mm;height:6mm;border:1px solid #000;text-align:center;font-weight:bold;line-height:6mm;background:#fff}' +
+    '.sigs{position:relative;margin-top:8mm}.s div{margin-bottom:9mm}.s b{display:block}.s span{display:block;font-size:10pt}.rec{margin-left:78mm;min-height:24mm}' +
+    '.app{margin:8mm 0 0 48mm}.auth{margin:10mm 0 0 38mm;text-align:left}.auth b,.auth span{margin-left:25mm}' +
+    '</style></head><body>' + list.map(function(t){ return toPageHtml(t, t.id === M.printTO ? prepared : t.datePrepared); }).join('') + '</body></html>';
+}
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act]'); if (!t) return;
+  var a = t.dataset.act;
+  if (a === 'toDocx'){ var x = toOf(M.printTO); if (x) printTODocx(Object.assign({}, x, { datePrepared: (document.getElementById('tpDate') || {}).value || x.datePrepared }), t); }
+  else if (a === 'toPrintGo'){
+    var main = toOf(M.printTO); if (!main) return;
+    var list = [main].concat(Array.prototype.slice.call(document.querySelectorAll('#modal [data-to-pick]:checked')).map(function(c){ return toOf(c.dataset.toPick); }).filter(Boolean));
+    var prep = (document.getElementById('tpDate') || {}).value || today();
+    var html = toDocHtml(list, prep);
+    // wait for the letterhead images before opening the print window
+    var f = document.createElement('iframe'); f.setAttribute('aria-hidden', 'true'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+    document.body.appendChild(f);
+    var w = f.contentWindow; w.document.open(); w.document.write(html); w.document.close();
+    var imgs = Array.prototype.slice.call(w.document.images), go = function(){ try { w.focus(); w.print(); } catch(e){ toast('Printing is blocked in this browser.'); } setTimeout(function(){ f.remove(); }, 60000); };
+    Promise.all(imgs.map(function(im){ return im.complete ? 0 : new Promise(function(r){ im.onload = im.onerror = r; }); })).then(function(){ setTimeout(go, 150); });
+  }
+});
 
 /* =====================================================================
    Instant saving. Forms close and the new item shows right away, marked
@@ -2984,7 +3407,7 @@ var Mock = (function(){
   add('mbautista','USE',-9,'Used',0.5,'','','Confirmed');
   entries.forEach(function(e){ activity.unshift({ at: e.createdAt, actor: e.createdBy, action: e.type === 'USE' ? (e.status === 'Pending' ? 'Requested a day off' : 'Recorded offset use') : 'Logged an offset', target: e.username, details: (e.event ? e.event + ' · ' : '') + e.date + ' · ' + e.days + ' day(s)' }); });
   activity.sort(function(a,b){ return a.at < b.at ? 1 : -1; });
-  function pub(u){ return { username:u.username, name:u.name, role:u.role, division:u.division, active:u.active, empType:u.empType || 'JO', noPin: u.uid === '' }; }
+  function pub(u){ return { username:u.username, name:u.name, role:u.role, division:u.division, active:u.active, empType:u.empType || 'JO', noPin: u.uid === '', position: u.position || '' }; }
   function find(u){ return users.filter(function(x){ return x.username === String(u||'').toLowerCase(); })[0]; }
   function bal(u){ return ledgerFor(entries, u, settings.carryCap).avail; }
   function fail(m){ return { ok:false, error:m }; }
@@ -3065,15 +3488,19 @@ var Mock = (function(){
     if (a === 'deleteTO'){ var dt = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && (dt.createdBy !== me.username || dt.status !== 'Filed')) return fail('You can only delete your own travel orders that are not yet prepared.'); tos = tos.filter(function(t){ return t !== dt; }); log(me, 'Deleted a travel order', dt.event); return ok(me); }
     if (!adm) return fail('Only admins can do that.');
     if (a === 'setTOStatus'){ var st2 = tos.filter(function(t){ return t.id === p.id; })[0]; st2.status = p.status; st2.tev = p.tev; st2.toNo = p.toNo || ''; st2.datePrepared = p.datePrepared || st2.datePrepared || (p.status === 'Prepared' ? today() : ''); log(me, 'Updated a travel order', st2.event, 'Status: ' + p.status + ' · TEV: ' + (p.tev || 'not set'));
-      var made = 0; if (p.tev === 'Yes' && p.status !== 'Cancelled') st2.names.forEach(function(nm2){ if (tevs.some(function(v){ return v.toId === st2.id && v.name === nm2; })) return; var u2 = users.filter(function(x){ return x.name.toUpperCase() === nm2; })[0]; tevs.push({ id:'v' + nid(), toId:st2.id, name:nm2, username:u2 ? u2.username : '', status:'To prepare', transpo:0, food:0, lodging:0, other:0, total:0, submittedOn:'', releasedOn:'', chequeNo:'', note:'' }); made++; });
+      var made = 0; if (p.tev === 'Yes' && p.status !== 'Cancelled') st2.names.forEach(function(nm2){ if (tevs.some(function(v){ return v.toId === st2.id && v.name === nm2; })) return; var u2 = users.filter(function(x){ return x.name.toUpperCase() === nm2; })[0]; if (u2 && u2.empType === 'COS') return; tevs.push({ id:'v' + nid(), toId:st2.id, name:nm2, username:u2 ? u2.username : '', status:'To prepare', transpo:0, food:0, lodging:0, other:0, total:0, submittedOn:'', releasedOn:'', chequeNo:'', note:'' }); made++; });
       return ok(me, { tevsMade: made }); }
     if (a === 'saveTEV'){ var am = function(k){ return Math.round((Number(p[k]) || 0) * 100) / 100; }, td3 = new Date().toISOString().slice(0,10);
       var vf = { status: p.status, transpo: am('transpo'), food: am('food'), lodging: am('lodging'), other: am('other'), chequeNo: p.chequeNo || '', note: p.note || '', submittedOn: p.submittedOn || (p.status !== 'To prepare' ? td3 : ''), releasedOn: p.releasedOn || (p.status === 'Claimed' ? td3 : '') };
       vf.total = Math.round((vf.transpo + vf.food + vf.lodging + vf.other) * 100) / 100;
+      if (Array.isArray(p.days)) vf.days = p.days.map(function(d){ return { date: String(d.date), b: !!d.b, l: !!d.l, d: !!d.d, lodge: !!d.lodge, inc: !!d.inc }; });
+      if (p.trip && p.toId0){ var tt0 = tos.filter(function(t){ return t.id === p.toId0; })[0]; if (tt0) tt0.trip = { scope: String(p.trip.scope || ''), far: !!p.trip.far, gov: !!p.trip.gov, dep: String(p.trip.dep || ''), arr: String(p.trip.arr || '') }; }
       if (p.id){ var ev2 = tevs.filter(function(v){ return v.id === p.id; })[0]; if (!ev2) return fail('TEV not found.'); Object.assign(ev2, vf); }
       else { var tt = tos.filter(function(t){ return t.id === p.toId; })[0]; if (!tt) return fail('Pick a travel order.'); var u3 = users.filter(function(x){ return x.name.toUpperCase() === String(p.name).toUpperCase(); })[0]; tevs.push(Object.assign({ id:'v' + nid(), toId:tt.id, name:String(p.name).toUpperCase(), username:u3 ? u3.username : '' }, vf)); }
       log(me, p.id ? 'Updated a TEV' : 'Added a TEV', p.name || '', vf.status + ' · ₱' + vf.total); return ok(me); }
     if (a === 'setTEVStatus'){ var td4 = new Date().toISOString().slice(0,10), nn = 0; tevs.forEach(function(v){ if ((p.ids||[]).indexOf(v.id) < 0) return; v.status = p.status; if (!v.submittedOn) v.submittedOn = td4; if (p.status === 'Claimed' && !v.releasedOn) v.releasedOn = td4; nn++; }); log(me, 'Claimed TEVs', '', nn + ' TEV(s)'); return ok(me, { updated: nn }); }
+    if (a === 'saveTevSetup'){ settings = Object.assign({}, settings, { tev: p.tev || {} }); log(me, 'Changed TEV rates and signatories', ''); return ok(me); }
+    if (a === 'setPosition'){ var pu = find(p.username); if (!pu) return fail('Employee not found.'); pu.position = String(p.position || '').trim().slice(0, 60); log(me, 'Changed a position', p.username, pu.position); return ok(me); }
     if (a === 'deleteTEV'){ tevs = tevs.filter(function(v){ return v.id !== p.id; }); log(me, 'Deleted a TEV', ''); return ok(me); }
     if (a === 'syncHolidays') return ok(me, { added: 0 });
     if (a === 'setEmpType'){ find(p.username).empType = p.empType; log(me, 'Changed employment type', p.username, p.empType); return ok(me); }
@@ -3104,7 +3531,7 @@ var Mock = (function(){
     if (a === 'deleteDivision'){ var cc = users.filter(function(u){ return u.division === p.id; }).length; if (cc) return fail('Move the ' + cc + ' staff in this division to another division first.'); divisions = divisions.filter(function(d){ return d.id !== p.id; }); log(me, 'Deleted a division', p.id); return ok(me); }
     if (a === 'saveHoliday'){ if (!p.date || !String(p.name||'').trim()) return fail('Enter a date and a name.'); holidays = holidays.filter(function(h){ return h.date !== p.date; }); holidays.push({ date:p.date, name:p.name.trim(), kind:p.kind }); holidays.sort(function(x,y){ return x.date < y.date ? -1 : 1; }); log(me, 'Added a holiday', p.date, p.name); return ok(me); }
     if (a === 'deleteHoliday'){ holidays = holidays.filter(function(h){ return h.date !== p.date; }); log(me, 'Deleted a holiday', p.date); return ok(me); }
-    if (a === 'saveSettings'){ var cap = Number(p.carryCap), wd = Number(p.workdays); if (!(cap >= 0)) return fail('Carry-over cap must be 0 (no limit) or a number of days.'); if (!(wd >= 15 && wd <= 26)) return fail('Workdays must be a whole number from 15 to 26.'); settings = { workdays: wd, carryCap: cap, wellnessDays: p.wellnessDays == null ? settings.wellnessDays : Number(p.wellnessDays), tevBudget: p.tevBudget == null ? settings.tevBudget : Number(p.tevBudget) || 0 }; log(me, 'Changed settings', '', 'Carry-over cap: ' + (cap || 'no limit') + ' · Workdays: ' + wd); return ok(me); }
+    if (a === 'saveSettings'){ var cap = Number(p.carryCap), wd = Number(p.workdays); if (!(cap >= 0)) return fail('Carry-over cap must be 0 (no limit) or a number of days.'); if (!(wd >= 15 && wd <= 26)) return fail('Workdays must be a whole number from 15 to 26.'); settings = Object.assign({}, settings, { workdays: wd, carryCap: cap, wellnessDays: p.wellnessDays == null ? settings.wellnessDays : Number(p.wellnessDays), tevBudget: p.tevBudget == null ? settings.tevBudget : Number(p.tevBudget) || 0 }); log(me, 'Changed settings', '', 'Carry-over cap: ' + (cap || 'no limit') + ' · Workdays: ' + wd); return ok(me); }
     if (a === 'backupToDrive'){ log(me, 'Saved a backup to Google Drive', 'Preview'); return ok(me, { url: 'https://drive.google.com/', name: 'PIO Overwatch — backup (preview)' }); }
     if (a === 'exportAll') return { ok:true, data: { exportedAt: now, exportedBy: me.username, users: users.map(pub), entries: copy(entries), divisions: copy(divisions), holidays: copy(holidays), settings: copy(settings), activity: copy(activity), travelOrders: copy(tos), leaves: copy(leaves), credits: copy(credits), tevs: copy(tevs) } };
     return fail('Unknown action.');
