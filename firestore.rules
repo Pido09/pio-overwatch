@@ -1,0 +1,94 @@
+rules_version = '2';
+// PIO Overwatch security rules. Paste this whole file into Firebase console > Firestore Database > Rules, then Publish.
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function memberDoc() { return /databases/$(db)/documents/members/$(request.auth.uid); }
+    function isMember() { return signedIn() && exists(memberDoc()) && get(memberDoc()).data.active == true; }
+    function isAdmin() { return isMember() && get(memberDoc()).data.role == 'admin'; }
+    function myName() { return get(memberDoc()).data.username; }
+    function stamped() { return request.resource.data._t == request.time; }
+    // the very first sign-up: creates meta/app and the first admin in one batch
+    function setupBatch() {
+      return signedIn() && !exists(/databases/$(db)/documents/meta/app)
+        && getAfter(/databases/$(db)/documents/meta/app).data.owner == request.auth.uid;
+    }
+    function adminWrite() { return isAdmin() || setupBatch(); }
+
+    match /meta/app {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.owner == request.auth.uid;
+      allow update: if isAdmin();
+    }
+    match /members/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if isAdmin() || (setupBatch() && uid == request.auth.uid && request.resource.data.role == 'admin');
+      allow update, delete: if isAdmin();
+    }
+    // username -> sign-in address; needed before signing in
+    match /logins/{username} {
+      allow read: if true;
+      allow write: if adminWrite();
+    }
+    match /divisions/{id} {
+      allow read: if true;                       // the sign-in page shows the divisions
+      allow write: if adminWrite() && stamped();
+    }
+    match /users/{username} {
+      allow read: if isMember();
+      allow write: if adminWrite() && stamped();
+      // staff may change only their own division (picked on the sign-in page)
+      allow update: if isMember() && username == myName() && stamped()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['division', '_t']);
+    }
+    match /holidays/{id} {
+      allow read: if isMember();
+      allow write: if adminWrite() && stamped();
+    }
+    match /settings/{id} {
+      allow read: if isMember();
+      allow write: if adminWrite() && stamped();
+    }
+    match /board/{id} {                          // who is out (no leave types)
+      allow read: if isMember();
+      allow write: if isAdmin() && stamped();
+    }
+    match /travelOrders/{id} {
+      allow read: if isMember();
+      allow create: if stamped() && (isAdmin() || (isMember()
+        && request.resource.data.createdBy == myName() && request.resource.data.status == 'Filed' && request.resource.data.tev == ''));
+      allow update: if stamped() && (isAdmin() || (isMember()
+        && resource.data.createdBy == myName() && resource.data.status == 'Filed'
+        && request.resource.data.createdBy == myName() && request.resource.data.status == 'Filed'
+        && request.resource.data.tev == resource.data.tev));
+    }
+    match /entries/{id} {
+      allow read: if isAdmin() || (isMember() && resource.data.username == myName());
+      allow create: if stamped() && (isAdmin() || (isMember()
+        && request.resource.data.username == myName() && request.resource.data.createdBy == myName()
+        && request.resource.data.status == 'Pending' && request.resource.data.type in ['EARN', 'USE']));
+      // staff may edit or remove (mark _del) their own entries while still waiting for review
+      allow update: if stamped() && (isAdmin() || (isMember()
+        && resource.data.username == myName() && resource.data.status == 'Pending'
+        && request.resource.data.username == myName() && request.resource.data.status == 'Pending'
+        && request.resource.data.type == resource.data.type));
+    }
+    match /leaves/{id} {
+      allow read: if isAdmin() || (isMember() && resource.data.username == myName());
+      allow write: if isAdmin() && stamped();
+    }
+    match /credits/{id} {
+      allow read: if isAdmin() || (isMember() && resource.data.username == myName());
+      allow write: if isAdmin() && stamped();
+    }
+    match /tevs/{id} {
+      allow read: if isAdmin() || (isMember() && resource.data.username == myName());
+      allow write: if isAdmin() && stamped();
+    }
+    match /activity/{id} {                       // audit trail: added to, never changed
+      allow read: if isAdmin();
+      allow create: if stamped() && (isAdmin() || setupBatch() || (isMember() && request.resource.data.actor == myName()));
+    }
+  }
+}

@@ -1,65 +1,70 @@
 # PIO Overwatch
 
 Offsets, travel orders, TEVs, leave credits and staff availability for the Provincial Information Office, Camarines Norte.
-The app is hosted on GitHub Pages. Data is saved in a Google Sheet through Google Apps Script.
+The app is hosted on GitHub Pages. Data is saved in Google Firebase (Cloud Firestore), with sign-in through Firebase Authentication.
 
-Current version: **5.1** (server `Code.gs` shows `VERSION = '5.1'`).
+Current version: **6.0** (Firebase).
 
 ## Files
 
 | File | What it is |
 |---|---|
-| `index.html` | The whole app (screens and design). Edit this for most patches. |
-| `config.js` | The Apps Script link. Set once. |
-| `sw.js` | Lets the app install and open fast. Change the version line (`pio-offsets-v9`) whenever `index.html` changes, so phones pick up the update. |
+| `index.html` | The whole app (screens, design and rules). Edit this for most patches. |
+| `config.js` | Your Firebase settings (or the old Apps Script link). Set once. |
+| `firebase.js` | The Firebase tools, bundled so the app needs no outside sites. Don't edit. |
+| `firestore.rules` | Who may read and change what. Paste into Firebase console > Firestore > Rules. |
+| `sw.js` | Lets the app install and open fast. Change the version line (`pio-offsets-v11`) whenever `index.html` changes, so phones pick up the update. |
 | `to-template.docx` | The office travel order template, with fill-in spots: `{DATE}` `{NAME}` `{DEST}` `{DEP}` `{ARR}` `{PURPOSE}` `{X1}` `{X2}` `{REC1}`–`{REC3}`. |
-| `jszip.min.js` | The tool that builds the travel order Word file inside the app. Don't edit. |
+| `jszip.min.js` | Builds the travel order Word file inside the app. Don't edit. |
 | `manifest.webmanifest`, `icon-*.png` | Make it installable (Add to Home Screen). |
 | `pio-logo.webp`, `pio-digital.webp`, `capitol.webp` | PIO seal, sign-in wordmark and Capitol photo. Replace with a file of the same name to change them. |
-| `apps-script/Code.gs` | The server code. It runs in Apps Script, not on GitHub Pages. This copy keeps a record of versions. |
+| `apps-script/Code.gs` | The old Google Sheet server. Only needed to export your data before switching, or if you go back to it. |
 
-## Setup (once)
+## Setup with Firebase (once)
 
-### 1. Google Sheet and Apps Script
-1. Create a blank Google Sheet named "PIO Offset Tracker", using the account that should own the data.
-2. Go to Extensions > Apps Script. Replace everything in `Code.gs` with `apps-script/Code.gs`. Save.
-3. Go to Deploy > New deployment > gear icon > Web app.
-   - Execute as: **Me**
-   - Who has access: **Anyone**
-4. Click Deploy, then authorize. If Google shows "unverified app", click Advanced > Go to project.
-5. Copy the **Web app URL**. It ends in `/exec`.
-6. In the editor, pick `installWarmUp` from the function menu and click Run. This keeps the app fast during office hours and updates holidays weekly.
-7. Pick `syncHolidaysNow` and click Run. Allow access to Calendar. This loads the Philippine holidays.
+### 1. Save your current data
+In the current app (still on the Google Sheet): Settings > **Backup (.json)**. Keep the file.
 
-### 2. GitHub
-1. Create a repository named `pio-offset-tracker` (Public).
-2. Click "uploading an existing file". Drag in everything from this folder, including the `apps-script` folder. Commit.
-3. Open `config.js`, click the pencil icon, paste the Web app URL between the quotes, and commit.
-4. Go to Settings > Pages. Under Source, pick **Deploy from a branch**, then `main` and `/ (root)`. Save.
-5. After a minute or two the site is live at `https://<your-username>.github.io/pio-offset-tracker/`.
+### 2. Create the Firebase project
+1. Go to <https://console.firebase.google.com> with the office Google account. **Create a project** named "pio-overwatch". Google Analytics: off.
+2. **Build > Authentication > Get started > Sign-in method > Email/Password > Enable** (leave "Email link" off). Save.
+3. **Authentication > Settings > Authorized domains > Add domain**: `<your-username>.github.io`.
+4. **Build > Firestore Database > Create database**. Location: **asia-southeast1 (Singapore)**. Start in **production mode**.
+5. **Firestore > Rules**: replace everything with the contents of `firestore.rules`. **Publish**.
+6. **Project settings (gear) > General > Your apps > Web (`</>`)**. Nickname "Overwatch". Don't tick Hosting. Register.
+   Copy the `firebaseConfig` values (apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId).
+7. Holidays (optional but recommended): open <https://console.cloud.google.com/apis/library/calendar-json.googleapis.com>, pick the same project, click **Enable**.
+   This lets the app load the Philippine holidays by itself.
 
-### 3. First use
-1. Open the site. The first screen asks you to create the admin account.
-2. Add staff in Staff. Set each person's division and employment type (Regular, Casual, JO or COS) under **Manage**.
-3. In Settings, enter the yearly TEV budget.
+### 3. GitHub
+1. Upload `index.html`, `firebase.js`, `firestore.rules`, `sw.js`, `README.md`. Commit.
+2. Open `config.js` on GitHub, click the pencil, and paste the values into `window.PIO_FIREBASE`. Commit.
+3. After a minute, open the site. It shows **Create the admin account**: use your own username and PIN.
+
+### 4. Bring in the old data
+1. **Settings > Bring in data from the Google Sheet > Import backup (.json)**. Pick the file from step 1. Confirm.
+2. **Staff > Set PINs for N**: give everyone one starting PIN. PINs can't be copied from the Sheet. Each person can change theirs after signing in.
+3. Check the numbers (offsets, leaves, TEVs) against the Sheet for two or three people.
 
 ## Updating
 
 | What changed | Where | Steps |
 |---|---|---|
 | `index.html`, `sw.js`, template | GitHub | Upload the files (same names) and commit. Live in about a minute. Refresh twice on phones. |
-| `Code.gs` | Apps Script | Paste the code, save, then Deploy > Manage deployments > pencil > Version: **New version** > Deploy. Also update `apps-script/Code.gs` on GitHub to keep a record. |
+| `firestore.rules` | Firebase console | Firestore > Rules > paste > Publish. Also update the copy on GitHub. |
 
-Always edit the existing deployment. "New deployment" creates a new URL, and `config.js` would still point to the old one.
-When both files change, update Apps Script first, then GitHub.
+## Free plan limits (Spark)
+
+- 50,000 reads and 20,000 writes a day, 1 GB stored. Each device keeps its own copy and only downloads what changed, so a 30-person office uses a small part of this.
+- See usage in Firebase console > Firestore > **Usage**. If it ever gets close, switch to the Blaze plan (pay as you go). At this size it costs centavos a month.
 
 ## How it works
 
 ### Accounts
-- Sign in with username and PIN. "Keep me signed in" lasts 30 days, renewed with use.
-- Too many wrong PINs locks the account for a while.
-- Resetting a PIN, or deactivating or removing an account, signs that person out everywhere.
-- Admins see everything. Staff see only their own entries, leaves and TEVs, plus who is out.
+- Sign in with username and 4–6 digit PIN. "Keep me signed in" keeps the device signed in; without it, closing the browser signs out.
+- Too many wrong PINs and Firebase blocks sign-in from that device for a few minutes.
+- Deactivating or removing an account blocks it right away. Resetting a PIN makes the old PIN stop working.
+- Admins see everything. Staff see only their own entries, leaves and TEVs, plus who is out. The rules in `firestore.rules` enforce this on Firebase's side, not only in the app.
 
 ### Employment types
 - **Regular and Casual**: the dashboard shows leave credits first. Offsets are still available.
@@ -92,7 +97,7 @@ When both files change, update Apps Script first, then GitHub.
 
 ### TEVs (Field work > TEVs)
 - Marking a travel order TEV: Yes starts a TEV for each person and asks "Make the TEVs now?".
-- Statuses: **To prepare** > **Pending** (waiting for the cheque) > **Claimed**.
+- Statuses: **To prepare** > **Pending** (waiting for the cheque) > **Claimed**. Each row has a one-tap button for the next step (Submit, Claim), and a travel order with several pending TEVs has **Claim all**.
 - Each TEV lists what it covers (transportation, food, accommodation, other) with amounts. A category counts only if it has an amount.
 - Totals for the year: released, pending, to prepare, and left for spending (budget − released − pending).
 
@@ -105,20 +110,20 @@ When both files change, update Apps Script first, then GitHub.
 - The calendar shows holidays, travel orders, leaves, offsets and days off, plus an **Events in [month]** list.
 
 ### Holidays
-- National holidays update by themselves every week from Google's Philippine holiday calendar. Admins can also tap **Update now** in Settings.
+- National holidays update by themselves every week (when an admin opens the app) from Google's Philippine holiday calendar. Admins can also tap **Update now** in Settings. Needs the Calendar API step in Setup.
 - Add provincial and local holidays in Settings.
 
 ## Good to know
 
-- Sheet tabs: `Users`, `Entries`, `Divisions`, `Holidays`, `Settings`, `Activity`, `TravelOrders`, `TEVs`, `Leaves`, `LeaveCredits`. Don't rename the column headers. New columns are added by themselves.
-- **Activity** is the audit trail: every change with who, what and when. The app never edits or deletes it. Admins see it under Records > Activity log.
-- Saves happen in the background. If the connection drops, they wait on the device and send by themselves. A "Saving" pill shows what's pending.
-- When someone else adds something, a "New entries" bar offers a refresh. What you're typing is kept.
-- Backups (Settings): save a copy of the Sheet to Drive, or download JSON/CSV. Do it monthly and before big changes.
+- Firestore collections: `users`, `entries`, `travelOrders`, `tevs`, `leaves`, `credits`, `divisions`, `holidays`, `settings`, `board` (who is out), `activity`, plus `members` and `logins` (sign-in). Don't edit them by hand unless you know what you're doing; use the app.
+- Deleted records are kept with a `_del` mark so every device knows they were removed.
+- **Activity** is the audit trail: every change with who, what and when. It can only be added to. Admins see it under Records > Activity log.
+- Saves show on screen right away and reach Firebase in under a second. Offline, they wait on the device and send by themselves.
+- Changes made by others appear on your screen by themselves. What you're typing is kept.
+- Backups: Settings > **Backup (.json)** and **All entries (.csv)**. Do it monthly and before big changes.
 - Phones and tablets: swipe from the left edge or tap ☰ for the menu. Install with Add to Home Screen (Chrome on Android, Safari on iPhone).
-- If you edit the Sheet by hand, tap **Refresh** in the app to reload from the Sheet.
 
 ## Handover
 
-- The Sheet, script and deployment belong to the account that created them. Share the Sheet and the Apps Script project with a second admin or an office account so the app keeps running if that account changes.
-- To move ownership: share the Sheet with the new owner as Editor, then make them Owner. They redeploy the script from their account (same steps as Setup 1.3–1.7) and update `config.js` with the new URL.
+- The Firebase project belongs to the Google account that created it. Add a second owner: Firebase console > Project settings > **Users and permissions** > Add member > Owner.
+- Keep `config.js` values somewhere safe. They are not secret (anyone using the app can see them); the rules are what protect the data.

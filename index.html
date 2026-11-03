@@ -549,6 +549,8 @@ tr.grp td{background:var(--surface-2);padding:7px 14px;border-bottom:1px solid v
 li.grp{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 18px;background:var(--surface-2);border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink-2)}
 li.grp .hint{display:block;font-size:12px}
 li.tev-grp b{font-size:13.5px;color:var(--ink)}
+li.tev-grp>div{flex:1;min-width:0}
+li.tev-grp .btn{flex:none}
 li.ev-day{text-transform:uppercase;letter-spacing:.04em;font-size:11.5px}
 .mark.to{background:var(--violet-soft);color:var(--violet)}
 .amt.num,.row .amt{white-space:nowrap}
@@ -600,7 +602,8 @@ button.link{background:none;border:0;padding:0;color:var(--brand-strong);font:in
 <script>
 var LOGO = 'pio-logo.webp';
 var API = (window.PIO_API_URL || '').trim();
-var LIVE = /^https:\/\/script\.google\.com\//.test(API);
+var FIRE = !!(window.PIO_FIREBASE && window.PIO_FIREBASE.apiKey && window.PIO_FIREBASE.projectId);
+var LIVE = FIRE || /^https:\/\/script\.google\.com\//.test(API);
 var S = { token: null, me: null, users: [], entries: [], divisions: [], holidays: [], activity: [], travelOrders: [], leaves: [], credits: [], board: [], availDate: null, toFilter: 'upcoming', toMine: false,
           settings: { workdays: 22, carryCap: 0 }, view: 'dashboard', cal: null, mon: null, calUser: 'all', selDay: null,
           dashDiv: 'all', rf: { user: 'all', div: 'all', type: 'all', status: 'all' }, recTab: 'entries', holYear: null,
@@ -729,7 +732,8 @@ function call(action, p){
       if (r && r.expired){ clearSession(); S.token = null; S.me = null; render(); }
       reject(new Error(r && r.error ? r.error : 'Something went wrong. Please try again.'));
     }
-    if (LIVE){
+    if (FIRE){ Fire.api(action, p || {}).then(function(r){ if (r && !r.ok && r.net){ var er = new Error(r.error); er.net = true; return reject(er); } done(r); }, function(e){ var er = new Error(e.message || 'Could not reach the server.'); er.net = true; reject(er); }); }
+    else if (LIVE){
       fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: action, p: p || {}, token: S.token }) })
         .then(function(r){ return r.text(); }, function(){ throw new Error('net'); })
         .then(function(t){ var j; try { j = JSON.parse(t); } catch(e){ throw new Error('html'); } done(j); })
@@ -865,7 +869,7 @@ document.addEventListener('submit', function(ev){ var f = ev.target.closest && e
 document.addEventListener('input', function(ev){ var f = ev.target.closest && ev.target.closest('form[data-form]'); if (f && f.dataset.form === S.sentForm) S.sentForm = null; }, true);
 function render(){
   var app = document.getElementById('app');
-  var banner = LIVE ? '' : '<div class="preview">Preview mode with sample data. Nothing is saved. Sign in as <b>admin</b> or <b>jdelacruz</b>, PIN <b>1234</b>. To go live, put the Apps Script web app URL in config.js.</div>';
+  var banner = LIVE ? '' : '<div class="preview">Preview mode with sample data. Nothing is saved. Sign in as <b>admin</b> or <b>jdelacruz</b>, PIN <b>1234</b>. To go live, put your Firebase settings in config.js (see README).</div>';
   if (!S.me){ app.innerHTML = banner + (S.needsSetup ? viewSetup() : viewLogin()); return; }
   var nav = navItems(), pc = isAdmin() ? pending().filter(canReview).length : 0;
   function navBtn(n){ return '<button data-go="' + n[0] + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ic(n[1]) + '<span>' + n[2] + '</span>' + (n[0] === 'approvals' && pc ? '<span class="badge">' + pc + '</span>' : '') + '</button>'; }
@@ -1326,14 +1330,14 @@ function viewStaff(){
     var st = stats(u.username), self = u.username === S.me.username;
     return '<tr class="tap" data-grp="' + esc(u.division) + '" data-person="' + esc(u.username) + '" tabindex="0"><td><b>' + esc(u.name) + '</b><div class="hint">@' + esc(u.username) + ' · <span class="cap">' + esc(u.role) + '</span></div></td>' +
       '<td>' + esc(u.empType || 'JO') + '</td>' +
-      '<td>' + (u.active ? '<span class="pill Confirmed">Active</span>' : '<span class="pill off">Inactive</span>') + '</td><td class="r num">' + fD(st.avail) + '</td>' +
+      '<td>' + (u.noPin ? '<span class="pill Pending">PIN not set</span>' : u.active ? '<span class="pill Confirmed">Active</span>' : '<span class="pill off">Inactive</span>') + '</td><td class="r num">' + fD(st.avail) + '</td>' +
       '<td class="r"><button class="btn btn-sm btn-ghost" data-person="' + esc(u.username) + '">Manage' + (self ? ' (you)' : '') + '</button></td></tr>';
   }).join('');
   var divs = S.divisions.map(function(d){ var n = S.users.filter(function(u){ return u.division === d.id && u.active; }).length;
     return '<li class="row tap" data-act="divModal" data-id="' + esc(d.id) + '" tabindex="0">' + divBadge(d, 38) + '<div class="body"><div class="t">' + esc(d.name) + '</div><div class="m">' + n + ' active staff · shown as “' + esc(d.short) + '”</div></div><span class="hint">' + ic('edit') + '</span></li>'; }).join('');
   return { eyebrow: 'People', title: 'Staff', sub: 'Tap a person to change their division or employment type, reset their PIN, or manage their account.',
     actions: '<button class="btn btn-sun" data-act="focusAdd">' + ic('plus') + 'Add staff</button>',
-    body: '<div class="grid">' + panel('Accounts', 'users', '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Employment</th><th>Status</th><th class="r">Offsets</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>', '<span class="hint num">' + S.users.length + ' total</span>', 'span-12') +
+    body: '<div class="grid">' + panel('Accounts', 'users', '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Employment</th><th>Status</th><th class="r">Offsets</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>', (function(){ var np = S.users.filter(function(u){ return u.noPin; }).length; return np ? '<button class="btn btn-sm btn-primary" data-act="setPins">' + ic('key') + 'Set PINs for ' + np + '</button>' : '<span class="hint num">' + S.users.length + ' total</span>'; })(), 'span-12') +
       panel('Divisions', 'pie', (divs ? '<ul class="list">' + divs + '</ul>' : empty('pie', 'No divisions', 'Add the PIO divisions so staff can choose theirs at sign-in.')) + '<div class="panel-b hint" style="border-top:1px solid var(--line)">Staff pick their division on the sign-in page. To change someone’s division or employment type, tap Manage.</div>', '<button class="btn btn-sm btn-primary" data-act="divModal">' + ic('plus') + 'Add division</button>', 'span-6') +
       '<form class="panel span-6" data-form="addUser" autocomplete="off" id="addUser"><div class="panel-h"><h2>' + ic('plus') + 'Add staff</h2></div><div class="panel-b stack">' +
         '<div class="field"><label for="an">Full name</label><input class="input" id="an" name="name" required></div>' +
@@ -1357,8 +1361,9 @@ function viewSettings(){
         '<div class="field"><label for="stb">TEV budget for the year (₱)</label><input class="input num" id="stb" name="tevBudget" type="number" min="0" step="0.01" value="' + (S.settings.tevBudget || 0) + '"><span class="hint">Used for “Left for spending” on the TEV page. 0 hides it.</span></div>' +
         '<p class="error" id="err" role="alert"></p><div><button class="btn btn-primary" type="submit">Save rules</button></div></div></form>' +
       panel('Backup and export', 'drive', '<div class="panel-b stack">' +
-        '<div><b>Save a copy to Google Drive</b><p class="hint" style="margin:4px 0 8px">Makes a full copy of the Sheet in the admin’s Drive, PIN hashes included. Do this before big changes or at year-end.</p><button class="btn btn-ghost" data-act="backupDrive">' + ic('drive') + 'Save copy to Drive</button></div>' +
+        (FIRE ? '' : '<div><b>Save a copy to Google Drive</b><p class="hint" style="margin:4px 0 8px">Makes a full copy of the Sheet in the admin’s Drive, PIN hashes included. Do this before big changes or at year-end.</p><button class="btn btn-ghost" data-act="backupDrive">' + ic('drive') + 'Save copy to Drive</button></div>') +
         '<div><b>Download a backup file</b><p class="hint" style="margin:4px 0 8px">Everything except PINs, as one JSON file, plus all entries as CSV for Excel.</p><div class="row-btns"><button class="btn btn-ghost" data-act="exportJson">' + ic('download') + 'Backup (.json)</button><button class="btn btn-ghost" data-act="exportAllCsv">' + ic('download') + 'All entries (.csv)</button></div></div>' +
+        (FIRE ? '<div><b>Bring in data from the Google Sheet</b><p class="hint" style="margin:4px 0 8px">One time, after switching to Firebase. In the old app, download Settings > Backup (.json), then pick that file here. Existing records with the same ID are updated, nothing is deleted. PINs do not carry over: set them in Staff afterwards.</p><label class="btn btn-ghost" style="cursor:pointer">' + ic('upload') + 'Import backup (.json)<input type="file" id="importJson" accept=".json,application/json" hidden></label></div>' : '') +
         '<div><b>Monthly report</b><p class="hint" style="margin:4px 0 8px">Print or download per division from the Monthly page.</p><button class="btn btn-ghost" data-go="monthly">' + ic('month') + 'Open monthly report</button></div></div>', '', 'span-6') +
       panel('Holidays', 'flag', '<div class="table-wrap"><table><thead><tr><th>Date</th><th>Holiday</th><th>Kind</th><th></th></tr></thead><tbody>' +
           (hol.length ? hol.map(function(h){ return '<tr><td class="num">' + fDate(h.date, { weekday:'short', month:'short', day:'numeric' }) + '</td><td><b>' + esc(h.name) + '</b></td><td><span class="pill hol">' + esc(h.kind) + '</span></td><td class="r"><button class="icon-btn" data-act="delHoliday" data-date="' + h.date + '" aria-label="Delete ' + esc(h.name) + '">' + ic('trash') + '</button></td></tr>'; }).join('') : '<tr><td colspan="4" class="hint">No holidays for ' + yr + ' yet. Add them below when the Palace releases the list.</td></tr>') +
@@ -1451,7 +1456,7 @@ function personModal(username){
     '<div class="mini-tiles"><div><span>Offsets available</span><b>' + fD(st.avail) + '</b></div><div><span>' + mShort(curMonth()) + ' so far</span><b>+' + fD(st.month) + '</b></div><div><span>Waiting for review</span><b>' + fD(st.pending + st.reqDays) + '</b></div><div><span>Used this year</span><b>' + fD(st.usedY) + '</b></div></div>' +
     (isAdmin() ? '<div class="label">Details</div><div class="two"><div class="field"><label for="pdiv">Division</label>' + divSelect('pdiv', u.division, 'Division', false, true).replace('class="input"', 'class="input" data-setdiv="' + esc(username) + '"') + '</div>' +
       '<div class="field"><label for="pemp">Employment</label><select class="input" id="pemp" data-setemp="' + esc(username) + '">' + [['JO','JO (Job order)'],['COS','COS (Contract of service)'],['Casual','Casual'],['Regular','Regular']].map(function(t){ return '<option value="' + t[0] + '"' + ((u.empType || 'JO') === t[0] ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('') + '</select><span class="hint">Regular and casual get CSC leave credits.</span></div></div>' +
-      '<div class="label">Account</div><div class="acct"><button type="button" class="btn btn-sm btn-ghost" data-act="pinModal" data-u="' + esc(username) + '">' + ic('key') + 'Reset PIN</button>' +
+      '<div class="label">Account</div><div class="acct"><button type="button" class="btn btn-sm btn-ghost" data-act="pinModal" data-u="' + esc(username) + '">' + ic('key') + (u.noPin ? 'Set PIN' : 'Reset PIN') + '</button>' +
       (self ? '<span class="hint">Another admin manages your own role and status.</span>' :
         '<button type="button" class="btn btn-sm btn-ghost" data-act="setRole" data-u="' + esc(username) + '" data-r="' + (u.role === 'admin' ? 'employee' : 'admin') + '">' + ic('shield') + (u.role === 'admin' ? 'Make employee' : 'Make admin') + '</button>' +
         '<button type="button" class="btn btn-sm btn-ghost" data-act="toggleActive" data-u="' + esc(username) + '" data-a="' + (u.active ? '0' : '1') + '">' + (u.active ? 'Deactivate' : 'Activate') + '</button>' +
@@ -1621,7 +1626,7 @@ document.addEventListener('submit', function(ev){
     if (kind === 'setup' && d.pin !== d.pin2){ err.textContent = 'The two PINs do not match.'; return; }
     var remember = !!d.remember; d.remember = remember;
     if (d.division) lSet('pio_div', d.division);
-    p = call(kind, d).then(function(r){ S.token = r.token; saveSession(r.token, remember); S.view = 'dashboard'; if (!S.me) return refresh().then(function(){ window.scrollTo(0,0); }); if (remember) lSet('pio_cache', JSON.stringify({ me:S.me, users:S.users, entries:S.entries, divisions:S.divisions, holidays:S.holidays, settings:S.settings, activity:S.activity })); render(); window.scrollTo(0,0); });
+    p = call(kind, d).then(function(r){ S.needsSetup = false; S.token = r.token; saveSession(r.token, remember); S.view = 'dashboard'; if (!S.me) return refresh().then(function(){ window.scrollTo(0,0); }); if (remember) lSet('pio_cache', JSON.stringify({ me:S.me, users:S.users, entries:S.entries, divisions:S.divisions, holidays:S.holidays, settings:S.settings, activity:S.activity })); render(); window.scrollTo(0,0); });
   }
   else if (kind === 'earn'){ d.noTravelOrder = !!d.noTravelOrder; d.notInPayroll = !!d.notInPayroll; var selfLog = !isAdmin() || !d.username || d.username === S.me.username;
     p = act('logEarn', d, isAdmin() && !(selfLog && otherAdmins()) ? 'Offset saved and confirmed' : 'Sent for confirmation').then(function(){ S.view = 'dashboard'; render(); window.scrollTo(0,0); }); }
@@ -2000,7 +2005,23 @@ function tevRow(v){
   return '<li class="row' + (adm && !v._saving ? ' tap" data-act="tevEdit" data-id="' + v.id + '" tabindex="0' : '') + '"><span class="avatar">' + esc(initials(v.name)) + '</span><div class="body"><div class="t">' + esc(v.name) + '</div>' +
     '<div class="m">' + (cov.length ? cov.map(function(c){ return c[1] + ' ' + peso(v[c[0]]); }).join(' · ') : 'No amounts yet') +
       (v.chequeNo ? ' · Cheque ' + esc(v.chequeNo) : '') + (v.releasedOn ? ' · Released ' + fDate(v.releasedOn) : v.submittedOn ? ' · Submitted ' + fDate(v.submittedOn) : '') + '</div></div>' +
-    '<span class="amt">' + peso(v.total) + '</span><span class="pill ' + st[1] + '">' + (v._saving ? 'Saving…' : st[0]) + '</span></li>';
+    '<span class="amt">' + peso(v.total) + '</span>' + (adm && !v._saving ? tevQuick(v) : '<span class="pill ' + st[1] + '">' + (v._saving ? 'Saving…' : st[0]) + '</span>') + '</li>';
+}
+/* One-tap next step: Submit (to prepare > pending) and Claim (pending > claimed). */
+function tevQuick(v){
+  if (v.status === 'Pending') return '<button class="btn btn-sm btn-primary" data-act="tevClaim" data-id="' + v.id + '">' + ic('check') + 'Claim</button>';
+  if (v.status === 'To prepare') return v.total > 0 ? '<button class="btn btn-sm btn-ghost" data-act="tevSubmit" data-id="' + v.id + '">Submit</button>' : '<button class="btn btn-sm btn-ghost" data-act="tevEdit" data-id="' + v.id + '">' + ic('edit') + 'Fill in</button>';
+  return '<span class="pill Confirmed">Claimed</span>';
+}
+function tevStep(ids, status){
+  var td = today(), list = (S.tevs || []).filter(function(v){ return ids.indexOf(v.id) >= 0 && !v._saving; });
+  if (!list.length) return;
+  var one = list.length === 1, patch = { status: status };
+  if (status === 'Claimed') patch.releasedOn = td;
+  // one request for the whole group; the server keeps any dates already set
+  bg('setTEVStatus', { ids: list.map(function(v){ return v.id; }), status: status }, { arr: 'tevs', ids: list.map(function(v){ return v.id; }), patch: patch },
+     one ? (status === 'Claimed' ? 'Claimed' : 'Submitted') + ' · ' + list[0].name : list.length + ' TEVs ' + (status === 'Claimed' ? 'claimed' : 'submitted'),
+     one ? 'The TEV for ' + list[0].name : list.length + ' TEVs');
 }
 function viewTEV(){
   var adm = isAdmin(), tab = S.tevTab || 'To prepare', yr = today().slice(0, 4), budget = Number(S.settings.tevBudget) || 0;
@@ -2011,7 +2032,9 @@ function viewTEV(){
   order.sort(function(a, b){ var x = toOf(a), y = toOf(b); return ((y && y.dateFrom) || '') < ((x && x.dateFrom) || '') ? -1 : 1; });
   var body = order.map(function(id){
     var t = toOf(id), vs = groups[id], sum = vs.reduce(function(n, v){ return n + v.total; }, 0);
-    return '<li class="grp tev-grp"><div><b>' + esc(t ? t.event : 'Travel order') + '</b><span class="hint">' + (t ? fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') : 'Removed') + '</span></div><b class="num">' + peso(sum) + '</b></li>' +
+    return '<li class="grp tev-grp"><div><b>' + esc(t ? t.event : 'Travel order') + '</b><span class="hint">' + (t ? fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') : 'Removed') + '</span></div>' +
+      (function(){ var pend = vs.filter(function(v){ return v.status === 'Pending' && !v._saving; }); return adm && pend.length > 1 ? '<button class="btn btn-sm btn-primary" data-act="tevClaimAll" data-ids="' + pend.map(function(v){ return v.id; }).join(',') + '">' + ic('check') + 'Claim all ' + pend.length + '</button>' : ''; })() +
+      '<b class="num">' + peso(sum) + '</b></li>' +
       vs.sort(function(a, b){ return a.name < b.name ? -1 : 1; }).map(tevRow).join('');
   }).join('');
   var tabs = '<div class="tabs" role="group" aria-label="Show">' + ['To prepare', 'Pending', 'Claimed', 'All'].map(function(x){ var n = all.filter(function(v){ return (x === 'All' || v.status === x) && (!S.tevTO || v.toId === S.tevTO); }).length; return '<button data-act="tevTab" data-t="' + x + '" aria-pressed="' + (tab === x) + '">' + x + (n ? ' · ' + n : '') + '</button>'; }).join('') + '</div>';
@@ -2189,6 +2212,9 @@ document.addEventListener('click', function(ev){
   else if (a === 'tevAll'){ S.tevTO = null; render(); }
   else if (a === 'tevGo'){ closeModal(); S.tevTO = t.dataset.id; S.tevTab = 'All'; S.view = 'tev'; render(); window.scrollTo(0, 0); }
   else if (a === 'tevEdit') tevModal(t.dataset.id);
+  else if (a === 'tevClaim') tevStep([t.dataset.id], 'Claimed');
+  else if (a === 'tevSubmit') tevStep([t.dataset.id], 'Pending');
+  else if (a === 'tevClaimAll') tevStep(t.dataset.ids.split(','), 'Claimed');
   else if (a === 'tevNew') tevModal(null, S.tevTO);
   else if (a === 'tevDel'){ if (!sure(t, 'Tap again to delete')) return; busy(t, act('deleteTEV', { id: t.dataset.id }, 'TEV deleted').then(closeModal), 'merr'); }
   else if (a === 'syncHol') busy(t, act('syncHolidays', {}, function(r){ return r && r.added ? r.added + ' holiday' + (r.added === 1 ? '' : 's') + ' added' : 'Holidays are up to date'; }));
@@ -2248,7 +2274,7 @@ function applySpec(sp){
   var arr = S[sp.arr], key = sp.key || 'id';
   if (!arr) return;
   if (sp.item){ if (!arr.some(function(x){ return x[key] === sp.item[key]; })) arr.push(Object.assign({}, sp.item)); }
-  else arr.forEach(function(x){ if (x[key] === sp.id) Object.assign(x, sp.patch, { _saving: true }); });
+  else arr.forEach(function(x){ if (x[key] === sp.id || (sp.ids && sp.ids.indexOf(x[key]) >= 0)) Object.assign(x, sp.patch, { _saving: true }); });
 }
 function reapply(){ Q.ops.forEach(function(op){ try { applySpec(op.spec); } catch(e){} }); }
 function qKey(){ return S.me ? 'pio_q_' + S.me.username : null; }
@@ -2492,6 +2518,411 @@ document.addEventListener('click', function(ev){
   document.addEventListener('touchcancel', function(){ if (t){ t = null; clear(); } });
 })();
 
+/* =====================================================================
+   PIO Overwatch: Firebase backend (used when config.js has PIO_FIREBASE)
+   - Sign-in: Firebase Authentication (username + PIN, padded behind the scenes).
+   - Data: Cloud Firestore. The same rules the preview uses run in the browser
+     (Mock.engine), and the changed records are written to Firestore in one batch.
+   - Security: firestore.rules (who can read and write what).
+   - Each device keeps a copy and only downloads what changed since last time,
+     so the free plan's daily reads go a long way.
+   ===================================================================== */
+var Fire = (function(){
+  var CFG = window.PIO_FIREBASE || {}, F = null, app = null, auth = null, db = null, booting = null;
+  var me = null, member = null, unsub = [], store = null, timer = null, syncing = null, DEF = null;
+  var DOMAIN = 'pio-overwatch.local';
+  var COLS = { users: 'username', entries: 'id', travelOrders: 'id', leaves: 'id', tevs: 'id', divisions: 'id', holidays: 'date', credits: 'username', settings: 'id', board: 'id' };
+  var PRIVATE = { entries: 1, leaves: 1, credits: 1, tevs: 1 };
+  var ENGINE = { users: 'users', entries: 'entries', travelOrders: 'tos', leaves: 'leaves', tevs: 'tevs', divisions: 'divisions', holidays: 'holidays', credits: 'credits' };
+  var PH_CAL = 'en.philippines#holiday@group.v.calendar.google.com';
+
+  function email(u, k){ return u + (k ? '.' + k : '') + '@' + DOMAIN; }
+  function pw(pin){ return 'pio#' + pin + '#ow'; }          // Firebase needs 6+ characters; staff still type their 4-6 digit PIN
+  function ok(d, fresh){ return { ok: true, data: d === undefined ? true : d, fresh: fresh }; }
+  function fail(m, extra){ return Object.assign({ ok: false, error: m }, extra || {}); }
+  function clone(x){ return JSON.parse(JSON.stringify(x)); }
+  function nowIso(){ return new Date().toISOString(); }
+  function rid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 10); }
+  function authMsg(e){
+    var c = (e && e.code) || '';
+    if (/invalid-credential|wrong-password|user-not-found|invalid-email/.test(c)) return 'Wrong username or PIN.';
+    if (/too-many-requests/.test(c)) return 'Too many tries. Wait a few minutes, then try again.';
+    if (/network-request-failed|unavailable|deadline-exceeded/.test(c) || /client is offline/i.test((e && e.message) || '')) return 'Could not reach the server. Check your internet connection and try again.';
+    if (/permission-denied/.test(c)) return 'You don’t have permission to do that.';
+    return (e && e.message) || 'Something went wrong. Please try again.';
+  }
+  function netErr(e){ var er = new Error(authMsg(e)); er.net = /network|unavailable|deadline/.test((e && e.code) || '') || /client is offline/i.test((e && e.message) || ''); return er; }
+
+  /* ---------- start-up ---------- */
+  function script(src){ return new Promise(function(res, rej){ var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function(){ rej(new Error('Could not load ' + src + '. Check your internet connection.')); }; document.head.appendChild(s); }); }
+  function init(){
+    if (booting) return booting;
+    booting = (window.FB ? Promise.resolve() : script('firebase.js')).then(function(){
+      F = window.FB;
+      if (!DEF){ var d0 = Mock.engine.dump(); DEF = { divisions: clone(d0.divisions), holidays: clone(d0.holidays), settings: clone(d0.settings) }; }
+      app = F.initializeApp(CFG);
+      auth = F.getAuth(app);
+      db = F.initializeFirestore(app, { localCache: F.memoryLocalCache() });
+      if (CFG.emulator){ F.connectAuthEmulator(auth, 'http://' + CFG.emulator + ':9099', { disableWarnings: true }); F.connectFirestoreEmulator(db, CFG.emulator, 8080); }
+      return new Promise(function(res){ var off = F.onAuthStateChanged(auth, function(){ off(); res(); }); });
+    });
+    return booting;
+  }
+  function D(path){ return F.doc.apply(null, [db].concat(path.split('/'))); }
+
+  /* ---------- local copy ---------- */
+  function key(){ return 'pio_fs_' + (CFG.projectId || 'x') + '_' + me; }
+  function emptyStore(){ var s = {}; Object.keys(COLS).forEach(function(c){ s[c] = { since: 0, docs: {} }; }); s.activity = { docs: {} }; return s; }
+  function loadStore(){ store = emptyStore(); try { var x = JSON.parse(lGet(key()) || 'null'); if (x && x.v === 2) Object.keys(COLS).forEach(function(c){ if (x[c]) store[c] = x[c]; }); } catch(e){} }
+  function saveStore(){ try { var x = { v: 2 }; Object.keys(COLS).forEach(function(c){ x[c] = store[c]; }); lSet(key(), JSON.stringify(x)); } catch(e){} }
+  function arrays(){
+    function vals(c){ return Object.keys(store[c].docs).map(function(id){ return clone(store[c].docs[id]); }); }
+    var settings = store.settings.docs.app ? clone(store.settings.docs.app) : clone(DEF.settings); delete settings.id;
+    return { users: vals('users'), entries: vals('entries'), tos: vals('travelOrders'), leaves: vals('leaves'), tevs: vals('tevs'), divisions: vals('divisions').sort(function(a, b){ return (a.order || 0) - (b.order || 0); }),
+      holidays: vals('holidays').sort(function(a, b){ return a.date < b.date ? -1 : 1; }), credits: vals('credits'), settings: settings,
+      activity: Object.keys(store.activity.docs).map(function(id){ return store.activity.docs[id]; }).sort(function(a, b){ return a.at < b.at ? 1 : -1; }), board: vals('board') };
+  }
+  function strip(d){ var o = {}; Object.keys(d).forEach(function(k){ if (k !== '_t' && k !== '_del') o[k] = d[k]; }); return o; }
+
+  /* ---------- live sync: only what changed since this device last looked ---------- */
+  function stopSync(){ unsub.forEach(function(u){ try { u(); } catch(e){} }); unsub = []; syncing = null; }
+  function startSync(){
+    if (syncing) return syncing;
+    loadStore();
+    var adm = member.role === 'admin';
+    var jobs = Object.keys(COLS).map(function(c){
+      return new Promise(function(res){
+        var q, own = PRIVATE[c] && !adm, first = true;
+        if (own) q = F.query(F.collection(db, c), F.where('username', '==', me));
+        else q = F.query(F.collection(db, c), F.where('_t', '>', F.Timestamp.fromMillis(Math.max(0, (store[c].since || 0) - 5000))));
+        unsub.push(F.onSnapshot(q, function(snap){
+          if (own && first) store[c].docs = {};
+          snap.docChanges().forEach(function(ch){
+            var d = ch.doc.data(), id = ch.doc.id, t = d._t && d._t.toMillis ? d._t.toMillis() : 0;
+            if (ch.type === 'removed'){ if (own) delete store[c].docs[id]; return; }
+            if (d._del) delete store[c].docs[id]; else store[c].docs[id] = strip(d);
+            if (t > (store[c].since || 0)) store[c].since = t;
+          });
+          saveStore();
+          if (first){ first = false; res(); } else changed();
+        }, function(err){ console.warn('sync ' + c, err); if (first){ first = false; res(); } }));
+      });
+    });
+    if (adm) jobs.push(new Promise(function(res){
+      var first = true;
+      unsub.push(F.onSnapshot(F.query(F.collection(db, 'activity'), F.orderBy('_t', 'desc'), F.limit(200)), function(snap){
+        snap.docChanges().forEach(function(ch){ if (ch.type === 'removed') return; store.activity.docs[ch.doc.id] = strip(ch.doc.data()); });
+        if (first){ first = false; res(); } else changed();
+      }, function(){ if (first){ first = false; res(); } }));
+    }));
+    syncing = Promise.all(jobs).then(function(){ Mock.engine.load(arrays()); if (adm) autoHolidays(); });
+    return syncing;
+  }
+  /* Someone else saved something: show it (what you are typing is kept). */
+  function changed(){
+    clearTimeout(timer);
+    timer = setTimeout(function(){
+      if (!S.me || !member) return;
+      Mock.engine.load(arrays());
+      var d = Mock.engine.data(me); if (!d) return;
+      apply(d); if (typeof reapply === 'function') reapply(); render();
+    }, 250);
+  }
+
+  /* ---------- session ---------- */
+  function session(){
+    var u = auth.currentUser;
+    if (!u) return Promise.resolve(null);
+    if (member && member.uid === u.uid) return Promise.resolve(member);
+    return F.getDoc(D('members/' + u.uid)).then(function(s){
+      if (!s.exists() || s.data().active === false){ return F.signOut(auth).then(function(){ return null; }); }
+      member = Object.assign({ uid: u.uid }, s.data()); me = member.username; return member;
+    });
+  }
+  function needSession(fn){
+    return session().then(function(m){ if (!m) return fail('Your session has ended. Please sign in again.', { expired: true }); return startSync().then(fn); });
+  }
+  function fresh(){ return Mock.engine.data(me); }
+
+  /* ---------- writing: run the action, then save what changed ---------- */
+  function diff(before, after, extra){
+    var w = [];
+    function cmp(c, list, keyName){
+      var seen = {};
+      list.forEach(function(x){
+        var id = String(x[keyName]); seen[id] = 1;
+        var data = clone(x); delete data.pin; delete data._saving;
+        if (c === 'travelOrders' || c === 'entries' || c === 'leaves' || c === 'tevs' || c === 'divisions') data.id = id;
+        var old = before[c].docs[id];
+        if (!old || JSON.stringify(old) !== JSON.stringify(data)) w.push({ c: c, id: id, data: data });
+      });
+      Object.keys(before[c].docs).forEach(function(id){ if (!seen[id]) w.push({ c: c, id: id, data: before[c].docs[id], del: true }); });
+    }
+    Object.keys(ENGINE).forEach(function(c){ cmp(c, after[ENGINE[c]], COLS[c]); });
+    var st = clone(after.settings); st.id = 'app'; var olds = before.settings.docs.app;
+    if (!olds || JSON.stringify(olds) !== JSON.stringify(st)) w.push({ c: 'settings', id: 'app', data: st });
+    var known = {}; Object.keys(before.activity.docs).forEach(function(id){ known[before.activity.docs[id].at + '|' + before.activity.docs[id].action + '|' + before.activity.docs[id].target] = 1; });
+    after.activity.forEach(function(a){ if (!a.id && !known[a.at + '|' + a.action + '|' + a.target]){ var id = rid(); w.push({ c: 'activity', id: id, data: Object.assign({ id: id }, a) }); } });
+    if (member.role === 'admin') cmp('board', Mock.engine.board(), 'id');
+    return w.concat(extra || []);
+  }
+  function commit(w){
+    if (!w.length) return Promise.resolve();
+    // members, logins and meta are plain records; everything else carries a server time so other devices can catch up
+    w.forEach(function(x){
+      if (x.c === 'members' || x.c === 'logins' || x.c === 'meta') return;
+      if (x.c === 'activity'){ store.activity.docs[x.id] = x.data; return; }
+      if (x.del) delete store[x.c].docs[x.id]; else store[x.c].docs[x.id] = clone(x.data);
+    });
+    saveStore();
+    var chunks = []; for (var i = 0; i < w.length; i += 400) chunks.push(w.slice(i, i + 400));
+    return chunks.reduce(function(p, ch){
+      return p.then(function(){
+        var b = F.writeBatch(db);
+        ch.forEach(function(x){
+          var ref = D(x.c + '/' + x.id);
+          if (x.hard) b.delete(ref);
+          else if (x.c === 'members' || x.c === 'logins' || x.c === 'meta') b.set(ref, x.data, x.merge ? { merge: true } : undefined);
+          else b.set(ref, Object.assign({}, x.data, x.del ? { _del: true } : {}, { _t: F.serverTimestamp() }));
+        });
+        return b.commit();
+      });
+    }, Promise.resolve()).catch(function(e){ throw netErr(e); });
+  }
+  function membersFor(w){
+    // keep members/{uid} (what the security rules check) in step with role and active
+    var extra = [];
+    w.forEach(function(x){
+      if (x.c !== 'users' || !x.data.uid) return;
+      if (x.del) extra.push({ c: 'members', id: x.data.uid, hard: true }, { c: 'logins', id: x.id, hard: true });
+      else extra.push({ c: 'members', id: x.data.uid, data: { username: x.id, role: x.data.role, active: x.data.active !== false } });
+    });
+    return extra;
+  }
+  /* Staff may only save their own entries, their own unprepared travel orders and the activity log (the rules enforce the same). */
+  function staffMay(x){
+    if (x.c === 'activity') return true;
+    if (x.c === 'entries') return x.data.username === me;
+    if (x.c === 'travelOrders'){ var old = store.travelOrders.docs[x.id]; return old ? old.createdBy === me && old.status === 'Filed' && x.data.status === 'Filed' : x.data.createdBy === me && x.data.status === 'Filed'; }
+    return false;
+  }
+  function run(action, p, extra, patch){
+    Mock.engine.load(arrays());
+    var r = Mock.engine.run(me, action, p);
+    if (!r.ok){
+      var op = p && p._op && String(p._op).replace(/[^A-Za-z0-9_-]/g, '');
+      if (op && Object.keys(COLS).some(function(c){ return Object.keys(store[c].docs).some(function(id){ return id.indexOf(op + '-') === 0; }); })) return Promise.resolve(ok(true, fresh()));
+      return Promise.resolve(r);
+    }
+    if (patch) patch(Mock.engine.dump());
+    var w = diff(store, Mock.engine.dump(), extra);
+    if (member.role !== 'admin') w = w.filter(staffMay);
+    w = w.concat(membersFor(w));
+    return commit(w).then(function(){ return ok(r.data, fresh()); });
+  }
+
+  /* ---------- accounts ---------- */
+  var sec = null;
+  function secondAuth(){
+    // a second, invisible sign-in so an admin can create accounts without being signed out
+    if (!sec){ var a2 = F.initializeApp(CFG, 'accounts'); sec = F.getAuth(a2); if (CFG.emulator) F.connectAuthEmulator(sec, 'http://' + CFG.emulator + ':9099', { disableWarnings: true }); }
+    return F.setPersistence(sec, F.inMemoryPersistence).then(function(){ return sec; });
+  }
+  function makeAccount(username, pin, startK){
+    return secondAuth().then(function(a){
+      function attempt(k){
+        if (k > startK + 20) throw new Error('Could not create the sign-in for ' + username + '.');
+        return F.createUserWithEmailAndPassword(a, email(username, k), pw(pin)).then(function(c){ var uid = c.user.uid; return F.signOut(a).then(function(){ return { uid: uid, k: k, email: email(username, k) }; }); },
+          function(e){ if (/email-already-in-use/.test(e.code || '')) return attempt(k + 1); throw netErr(e); });
+      }
+      return attempt(startK || 0);
+    });
+  }
+  function loginOf(username){ return F.getDoc(D('logins/' + username)).then(function(s){ return s.exists() ? s.data() : null; }); }
+  function setPin(username, pin){
+    if (!/^\d{4,6}$/.test(String(pin || ''))) return Promise.resolve(fail('PIN must be 4 to 6 digits.'));
+    var u = store.users.docs[username]; if (!u) return Promise.resolve(fail('Employee not found.'));
+    return loginOf(username).then(function(l){
+      return makeAccount(username, pin, l ? (l.k || 0) + 1 : 0).then(function(acct){
+        var extra = [{ c: 'logins', id: username, data: { email: acct.email, uid: acct.uid, k: acct.k } }];
+        if (u.uid) extra.push({ c: 'members', id: u.uid, hard: true });
+        return run('resetPin', { username: username, pin: pin }, extra, function(dump){ dump.users.forEach(function(x){ if (x.username === username) x.uid = acct.uid; }); });
+      });
+    });
+  }
+
+  /* ---------- holidays from Google's Philippine holiday calendar ---------- */
+  function fetchHolidays(){
+    var y = +today().slice(0, 4), url = 'https://www.googleapis.com/calendar/v3/calendars/' + encodeURIComponent(PH_CAL) + '/events?key=' + encodeURIComponent(CFG.apiKey) +
+      '&singleEvents=true&maxResults=250&timeMin=' + y + '-01-01T00:00:00Z&timeMax=' + (y + 2) + '-01-01T00:00:00Z';
+    return fetch(url).then(function(r){ return r.json(); }).then(function(j){
+      if (j.error) throw new Error('Google Calendar: ' + j.error.message + ' Turn on the Google Calendar API for this Firebase project (see README).');
+      return (j.items || []).filter(function(e){ return e.start && e.start.date && !/observance/i.test(e.description || ''); })
+        .map(function(e){ return { date: e.start.date, name: e.summary, kind: /special/i.test(e.description || '') ? 'Special' : 'Regular' }; });
+    });
+  }
+  function syncHolidays(){
+    return fetchHolidays().then(function(list){
+      var have = store.holidays.docs, add = list.filter(function(h){ return !have[h.date]; });
+      var w = add.map(function(h){ return { c: 'holidays', id: h.date, data: h }; });
+      w.push({ c: 'meta', id: 'app', data: { holidaysAt: Date.now() }, merge: true });
+      if (add.length) w.push({ c: 'activity', id: rid(), data: { at: nowIso(), actor: me, action: 'Updated holidays', target: '', details: add.length + ' added from the Philippine holiday calendar' } });
+      return commit(w).then(function(){ Mock.engine.load(arrays()); return ok({ added: add.length }, fresh()); });
+    });
+  }
+  function autoHolidays(){
+    F.getDoc(D('meta/app')).then(function(s){ var t = s.exists() && s.data().holidaysAt; if (!t || Date.now() - t > 7 * 864e5) return syncHolidays().then(function(r){ if (r.data && r.data.added) changed(); }); }).catch(function(){});
+  }
+
+  /* ---------- moving data from the old Google Sheet (Backup .json) ---------- */
+  function importBackup(p){
+    var j = p.json || {}, a = arrays(), mine = a.users.filter(function(u){ return u.username === me; })[0], n = {};
+    function merge(cur, inc, k){ var m = {}; cur.forEach(function(x){ m[x[k]] = x; }); (inc || []).forEach(function(x){ if (x && x[k] != null && x[k] !== '') m[x[k]] = Object.assign({}, m[x[k]] || {}, x); }); return Object.keys(m).map(function(id){ return m[id]; }); }
+    if (!j.users || !j.entries) return Promise.resolve(fail('This is not a PIO Overwatch backup file. In the old app, use Settings > Backup (.json).'));
+    var users = merge(a.users, j.users.map(function(u){ var x = clone(u); x.uid = ''; delete x.pin; return x; }), 'username').map(function(u){ var cur = a.users.filter(function(x){ return x.username === u.username; })[0]; if (cur && cur.uid){ u.uid = cur.uid; u.role = cur.role; u.active = cur.active; } if (u.uid == null) u.uid = ''; return u; });
+    var dump = { users: users, entries: merge(a.entries, j.entries, 'id'), tos: merge(a.tos, j.travelOrders, 'id'), leaves: merge(a.leaves, j.leaves, 'id'), tevs: merge(a.tevs, j.tevs, 'id'),
+                 divisions: merge(a.divisions, j.divisions, 'id'), holidays: merge(a.holidays, j.holidays, 'date'), credits: merge(a.credits, j.credits, 'username'),
+                 settings: Object.assign({}, a.settings, j.settings || {}), activity: a.activity.concat((j.activity || []).slice(0, 1500).map(function(x){ return { at: x.at, actor: x.actor, action: x.action, target: x.target || '', details: x.details || '' }; })) };
+    dump.activity.push({ at: nowIso(), actor: me, action: 'Imported data', target: '', details: 'From the Google Sheet backup' + (j.exportedAt ? ' of ' + String(j.exportedAt).slice(0, 10) : '') });
+    Mock.engine.load(dump);
+    var w = diff(store, Mock.engine.dump());
+    w.forEach(function(x){ n[x.c] = (n[x.c] || 0) + 1; });
+    return commit(w.concat(membersFor(w))).then(function(){ Mock.engine.load(arrays()); return ok({ counts: n, noPin: users.filter(function(u){ return !u.uid; }).length }, fresh()); });
+  }
+
+  /* ---------- the API the app calls ---------- */
+  function api(action, p){
+    p = p || {};
+    return init().then(function(){
+      if (action === 'status') return Promise.all([F.getDoc(D('meta/app')), F.getDocs(F.collection(db, 'divisions'))]).then(function(r){
+        var divs = []; r[1].forEach(function(s){ var d = s.data(); if (!d._del) divs.push(strip(d)); });
+        divs.sort(function(a, b){ return (a.order || 0) - (b.order || 0); });
+        return ok({ needsSetup: !r[0].exists(), divisions: divs.length ? divs : DEF.divisions });
+      });
+      if (action === 'setup') return setup(p);
+      if (action === 'login') return login(p);
+      if (action === 'logout'){ stopSync(); member = null; me = null; return F.signOut(auth).then(function(){ return ok(); }); }
+      if (action === 'ping') return ok({ lastWrite: S.lastWrite || 0 });
+      return needSession(function(){
+        if (action === 'data'){
+          // changes arrive live; Refresh just redraws from this device's copy
+          Mock.engine.load(arrays()); return ok(fresh());
+        }
+        if (action === 'changePin') return changePin(p);
+        if (action === 'backupToDrive') return fail('With Firebase, use Download a backup file (.json) instead.');
+        var adm = member.role === 'admin';
+        if (!adm && ['addUser', 'resetPin', 'setPins', 'removeUser', 'syncHolidays', 'importBackup'].indexOf(action) >= 0) return fail('Only admins can do that.');
+        if (action === 'addUser') return addUser(p);
+        if (action === 'resetPin') return setPin(p.username, p.pin);
+        if (action === 'setPins') return (p.usernames || []).reduce(function(pr, u){ return pr.then(function(r){ return r && !r.ok ? r : setPin(u, p.pin); }); }, Promise.resolve(null)).then(function(r){ return r || ok(); });
+        if (action === 'removeUser'){ var ru = store.users.docs[p.username]; return run('removeUser', p, ru && ru.uid ? [{ c: 'members', id: ru.uid, hard: true }, { c: 'logins', id: p.username, hard: true }] : []); }
+        if (action === 'syncHolidays') return syncHolidays();
+        if (action === 'importBackup') return importBackup(p);
+        if (action === 'exportAll'){ Mock.engine.load(arrays()); return Mock.engine.run(me, 'exportAll', p); }
+        return run(action, p);
+      });
+    }).catch(function(e){ var er = e && e.net != null ? e : netErr(e); return fail(er.message, er.net ? { net: true } : {}); });
+  }
+  function login(p){
+    var u = String(p.username || '').trim().toLowerCase();
+    return loginOf(u).then(function(l){
+      if (!l) return fail('Wrong username or PIN.');
+      return F.setPersistence(auth, p.remember ? F.browserLocalPersistence : F.browserSessionPersistence)
+        .then(function(){ return F.signInWithEmailAndPassword(auth, l.email, pw(p.pin)); })
+        .then(function(){ member = null; stopSync(); return session(); })
+        .then(function(m){
+          if (!m) return fail('This account is turned off. Ask an admin.');
+          return startSync().then(function(){
+            var cur = store.users.docs[u];
+            if (p.division && cur && cur.division !== p.division && store.divisions.docs[p.division])
+              return commit([{ c: 'users', id: u, data: Object.assign({}, cur, { division: p.division }) }]).catch(function(){}).then(function(){ Mock.engine.load(arrays()); });
+          }).then(function(){ return ok({ token: 'fb' }, fresh()); });
+        }, function(e){ return fail(authMsg(e)); });
+    });
+  }
+  function setup(p){
+    var u = String(p.username || '').trim().toLowerCase();
+    if (!/^[a-z0-9._-]{3,30}$/.test(u)) return Promise.resolve(fail('Usernames use 3–30 letters, numbers, dots or dashes.'));
+    if (!/^\d{4,6}$/.test(String(p.pin || ''))) return Promise.resolve(fail('PIN must be 4 to 6 digits.'));
+    if (!String(p.name || '').trim()) return Promise.resolve(fail('Full name is required.'));
+    return F.getDoc(D('meta/app')).then(function(m){
+      if (m.exists()) return fail('The admin account already exists. Sign in instead.');
+      return F.setPersistence(auth, p.remember ? F.browserLocalPersistence : F.browserSessionPersistence)
+        .then(function(){ return F.createUserWithEmailAndPassword(auth, email(u, 0), pw(p.pin)); })
+        .then(function(c){
+          var uid = c.user.uid, now = nowIso(), b = F.writeBatch(db), t = F.serverTimestamp();
+          b.set(D('meta/app'), { owner: uid, createdAt: now });
+          b.set(D('members/' + uid), { username: u, role: 'admin', active: true });
+          b.set(D('logins/' + u), { email: email(u, 0), uid: uid, k: 0 });
+          b.set(D('users/' + u), { username: u, name: p.name.trim(), role: 'admin', division: p.division || '', active: true, empType: 'Regular', uid: uid, _t: t });
+          DEF.divisions.forEach(function(d){ b.set(D('divisions/' + d.id), Object.assign({}, d, { _t: t })); });
+          DEF.holidays.forEach(function(h){ b.set(D('holidays/' + h.date), Object.assign({}, h, { _t: t })); });
+          b.set(D('settings/app'), Object.assign({ id: 'app' }, DEF.settings, { tevBudget: 0, _t: t }));
+          b.set(D('activity/' + rid()), { at: now, actor: u, action: 'Created the admin account', target: u, details: 'First setup', _t: t });
+          return b.commit().then(function(){ member = null; return session(); }).then(function(){ return startSync(); }).then(function(){ return ok({ token: 'fb' }, fresh()); });
+        }, function(e){ return fail(authMsg(e)); });
+    });
+  }
+  function addUser(p){
+    var u = String(p.username || '').trim().toLowerCase();
+    if (!/^[a-z0-9._-]{3,30}$/.test(u)) return Promise.resolve(fail('Usernames use 3–30 letters, numbers, dots or dashes.'));
+    if (store.users.docs[u]) return Promise.resolve(fail('That username is taken.'));
+    if (!/^\d{4,6}$/.test(String(p.pin || ''))) return Promise.resolve(fail('PIN must be 4 to 6 digits.'));
+    if (!String(p.name || '').trim()) return Promise.resolve(fail('Full name is required.'));
+    return loginOf(u).then(function(l){
+      return makeAccount(u, p.pin, l ? (l.k || 0) + 1 : 0).then(function(acct){
+        return run('addUser', Object.assign({}, p, { username: u }), [{ c: 'logins', id: u, data: { email: acct.email, uid: acct.uid, k: acct.k } }],
+          function(dump){ dump.users.forEach(function(x){ if (x.username === u) x.uid = acct.uid; }); });
+      });
+    });
+  }
+  function changePin(p){
+    if (!/^\d{4,6}$/.test(String(p.newPin || ''))) return Promise.resolve(fail('PIN must be 4 to 6 digits.'));
+    return loginOf(me).then(function(l){
+      var cred = F.EmailAuthProvider.credential(l.email, pw(p.oldPin));
+      return F.reauthenticateWithCredential(auth.currentUser, cred).then(function(){ return F.updatePassword(auth.currentUser, pw(p.newPin)); })
+        .then(function(){ return commit([{ c: 'activity', id: rid(), data: { at: nowIso(), actor: me, action: 'Changed own PIN', target: me, details: '' } }]); })
+        .then(function(){ return ok(true, fresh()); }, function(e){ return fail(/invalid-credential|wrong-password/.test(e.code || '') ? 'Current PIN is wrong.' : authMsg(e)); });
+    });
+  }
+  return { api: api };
+})();
+
+/* ---------- Firebase-only screens: import and starting PINs ---------- */
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act="setPins"]'); if (!t) return;
+  var list = S.users.filter(function(u){ return u.noPin; });
+  modal('Set starting PINs', '<p style="margin:0">These ' + list.length + ' people came from the Google Sheet and cannot sign in yet. Give them one starting PIN; each can change it after signing in.</p>' +
+    '<ul class="list boxed">' + list.map(function(u){ return '<li class="row"><span class="avatar">' + esc(initials(u.name)) + '</span><div class="body"><div class="t">' + esc(u.name) + '</div><div class="m">@' + esc(u.username) + '</div></div></li>'; }).join('') + '</ul>' +
+    '<div class="field"><label for="spn">Starting PIN</label><input class="input pin" id="spn" name="pin" inputmode="numeric" maxlength="6" placeholder="4–6 digits" required></div>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">' + ic('key') + 'Set PINs</button>', 'setPins');
+});
+document.addEventListener('submit', function(ev){
+  var f = ev.target.closest('form[data-form="setPins"]'); if (!f) return;
+  ev.preventDefault(); ev.stopImmediatePropagation();
+  var pin = f.querySelector('#spn').value, names = S.users.filter(function(u){ return u.noPin; }).map(function(u){ return u.username; });
+  if (!/^\d{4,6}$/.test(pin)) return bad('merr', 'PIN must be 4 to 6 digits.');
+  busy(f.querySelector('[type=submit]'), act('setPins', { usernames: names, pin: pin }, 'PINs set. They can sign in now.').then(closeModal), 'merr');
+}, true);
+document.addEventListener('change', function(ev){
+  var inp = ev.target; if (inp.id !== 'importJson' || !inp.files[0]) return;
+  var file = inp.files[0], rd = new FileReader();
+  rd.onload = function(){
+    var j; try { j = JSON.parse(rd.result); } catch(e){ return toast('That file is not a backup (.json).'); }
+    if (!j || !j.users || !j.entries) return toast('That file is not a PIO Overwatch backup.');
+    M = { importJson: j };
+    modal('Import from the Google Sheet', '<p style="margin:0">Backup from <b>' + esc(String(j.exportedAt || '').slice(0, 10) || 'unknown date') + '</b>:</p>' +
+      '<div class="mini-tiles"><div><span>Staff</span><b>' + j.users.length + '</b></div><div><span>Offset entries</span><b>' + j.entries.length + '</b></div><div><span>Travel orders</span><b>' + (j.travelOrders || []).length + '</b></div><div><span>Leaves</span><b>' + (j.leaves || []).length + '</b></div><div><span>TEVs</span><b>' + (j.tevs || []).length + '</b></div><div><span>Holidays</span><b>' + (j.holidays || []).length + '</b></div></div>' +
+      '<p class="hint" style="margin:0">Records with the same ID are updated; nothing here is deleted. Run it once. PINs do not carry over.</p>',
+      '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button type="button" class="btn btn-primary" data-act="doImport">' + ic('upload') + 'Import</button>');
+  };
+  rd.readAsText(file); inp.value = '';
+});
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act="doImport"]'); if (!t || !M.importJson) return;
+  busy(t, act('importBackup', { json: M.importJson }, function(r){ return 'Imported. ' + (r && r.noPin ? r.noPin + ' people need a starting PIN (Staff page).' : ''); }).then(closeModal), 'merr');
+});
+
 /* ---------- preview backend (used only when config.js has no API URL) ---------- */
 var Mock = (function(){
   var divisions = [
@@ -2553,7 +2984,7 @@ var Mock = (function(){
   add('mbautista','USE',-9,'Used',0.5,'','','Confirmed');
   entries.forEach(function(e){ activity.unshift({ at: e.createdAt, actor: e.createdBy, action: e.type === 'USE' ? (e.status === 'Pending' ? 'Requested a day off' : 'Recorded offset use') : 'Logged an offset', target: e.username, details: (e.event ? e.event + ' · ' : '') + e.date + ' · ' + e.days + ' day(s)' }); });
   activity.sort(function(a,b){ return a.at < b.at ? 1 : -1; });
-  function pub(u){ return { username:u.username, name:u.name, role:u.role, division:u.division, active:u.active, empType:u.empType || 'JO' }; }
+  function pub(u){ return { username:u.username, name:u.name, role:u.role, division:u.division, active:u.active, empType:u.empType || 'JO', noPin: u.uid === '' }; }
   function find(u){ return users.filter(function(x){ return x.username === String(u||'').toLowerCase(); })[0]; }
   function bal(u){ return ledgerFor(entries, u, settings.carryCap).avail; }
   function fail(m){ return { ok:false, error:m }; }
@@ -2561,10 +2992,23 @@ var Mock = (function(){
   function others(me){ return users.filter(function(u){ return u.role === 'admin' && u.active && u.username !== me.username; }).length; }
   function log(me, action, target, details){ activity.unshift({ at: new Date().toISOString(), actor: me.username, action: action, target: target || '', details: details || '' }); }
   function data(me){ var adm = me.role === 'admin'; tos.forEach(linkTO);
+    if (extBoard && !adm){ var own = leaves.filter(function(l){ return l.username === me.username && !/^ADJ/.test(l.type); }).map(function(l){ return { username:l.username, from:l.dateFrom, to:l.dateTo, kind:'leave', label:l.type }; });
+      return Object.assign(data0(me), { board: extBoard.filter(function(x){ return x.username !== me.username || x.kind !== 'leave'; }).map(function(x){ return { username:x.username, from:x.from, to:x.to, kind:x.kind, label:'' }; }).concat(own) }); }
+    return data0(me);
+  }
+  function data0(me){ var adm = me.role === 'admin';
     var board = leaves.filter(function(l){ return !/^ADJ/.test(l.type); }).map(function(l){ return { username:l.username, from:l.dateFrom, to:l.dateTo, kind:'leave', label: adm || l.username === me.username ? l.type : '' }; });
     if (!adm) entries.forEach(function(e){ if (e.type === 'USE' && e.status === 'Confirmed' && e.username !== me.username) board.push({ username:e.username, from:e.date, to:e.date, kind:'off', label:'' }); });
     return { me:pub(me), users: users.map(pub), divisions:copy(divisions), holidays:copy(holidays), settings:copy(settings), activity: adm ? copy(activity) : [], entries: copy(entries.filter(function(e){ return adm || e.username === me.username; })),
       lastWrite: lastWrite, travelOrders: copy(tos), tevs: copy(tevs.filter(function(v){ return adm || v.username === me.username; })), leaves: copy(leaves.filter(function(l){ return adm || l.username === me.username; })), credits: copy(credits.filter(function(c){ return adm || c.username === me.username; })), board: board }; }
+  /* Shared with the Firebase layer: the same rules run in the browser, and the changes are written to Firestore. */
+  var OP = '', K = 0, extBoard = null;
+  function nid(){ return OP ? OP.replace(/[^A-Za-z0-9_-]/g, '') + '-' + (++K) : Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + (++K); }
+  function boardOf(){
+    var b = leaves.filter(function(l){ return !/^ADJ/.test(l.type); }).map(function(l){ return { id: 'lv_' + l.id, username: l.username, from: l.dateFrom, to: l.dateTo, kind: 'leave', label: '' }; });
+    entries.forEach(function(e){ if (e.type === 'USE' && e.status === 'Confirmed') b.push({ id: 'off_' + e.id, username: e.username, from: e.date, to: e.date, kind: 'off', label: '' }); });
+    return b;
+  }
   function ok(me, d){ lastWrite = Date.now(); return { ok:true, data:d === undefined ? true : d, fresh: data(me) }; }
   function earn(p){
     if (!String(p.event||'').trim()) throw 'Event name is required.';
@@ -2578,7 +3022,16 @@ var Mock = (function(){
     else if (days !== 0.5 && days !== 1) throw 'Pick ½ day or 1 day.';
     return { date:p.date, category:p.category, days:days, event:p.event.trim(), venue:p.venue.trim(), endTime:end, toId: isTO ? p.toId : '' };
   }
-  return { bump: function(){ lastWrite = Date.now(); }, api: function(a, p, tok){
+  return { bump: function(){ lastWrite = Date.now(); },
+    engine: {
+      load: function(o){ users = o.users; entries = o.entries; divisions = o.divisions; holidays = o.holidays; settings = o.settings; activity = o.activity; tos = o.tos; leaves = o.leaves; credits = o.credits; tevs = o.tevs; extBoard = o.board || null; sessions = {}; },
+      dump: function(){ return { users: users, entries: entries, divisions: divisions, holidays: holidays, settings: settings, activity: activity, tos: tos, leaves: leaves, credits: credits, tevs: tevs }; },
+      board: boardOf,
+      run: function(username, a, p){ sessions.fb = username; return Mock.api(a, p, 'fb'); },
+      data: function(username){ var me = find(username); return me ? data(me) : null; }
+    },
+    api: function(a, p, tok){
+    OP = (p && p._op) || ''; K = 0;
     try {
     var me = sessions[tok] && find(sessions[tok]);
     if (a === 'ping') return { ok:true, data:{ lastWrite: lastWrite } };
@@ -2592,14 +3045,14 @@ var Mock = (function(){
       var who = adm && p.username ? p.username : me.username, f = earn(p);
       if (entries.some(function(e){ return e.username === who && e.type === 'EARN' && e.date === f.date && e.category === f.category && e.status !== 'Rejected'; })) return fail('An offset for this date and type is already logged.');
       var auto = adm && (who !== me.username || others(me) === 0);
-      entries.push(Object.assign({ id:'e' + (++n), username:who, type:'EARN', status: auto ? 'Confirmed' : 'Pending', note:'', createdBy:me.username, createdAt:now, reviewedBy: auto ? me.username : '', reviewedAt: auto ? now : '' }, f));
+      entries.push(Object.assign({ id:'e' + nid(), username:who, type:'EARN', status: auto ? 'Confirmed' : 'Pending', note:'', createdBy:me.username, createdAt:now, reviewedBy: auto ? me.username : '', reviewedAt: auto ? now : '' }, f));
       log(me, auto ? 'Added a confirmed offset' : 'Logged an offset', who, f.event + ' · ' + f.date + ' · ' + f.days + ' day(s)'); return ok(me);
     }
     if (a === 'editEntry'){ var x = entries.filter(function(e){ return e.id === p.id; })[0]; if (!x || x.status !== 'Pending') return fail('Only entries waiting for review can be edited.'); if (!adm && x.username !== me.username) return fail('You can only edit your own entries.');
       if (x.type === 'EARN') Object.assign(x, earn(p)); else { x.date = p.date; x.days = Number(p.days); } log(me, 'Edited an entry', x.username, x.date); return ok(me); }
     if (a === 'requestUse'){ var held = entries.filter(function(e){ return e.username === me.username && e.type === 'USE' && e.status === 'Pending'; }).reduce(function(s,e){ return s + e.days; }, 0), free = bal(me.username) - held, dd = Number(p.days);
       if (!(dd >= 0.5) || dd * 2 !== Math.round(dd * 2)) return fail('Days must be in half-day steps.'); if (dd > free) return fail('You have ' + fD(Math.max(free,0)) + ' available to request.');
-      var au = adm && others(me) === 0; entries.push({ id:'e' + (++n), username:me.username, type:'USE', date:p.date, category:'Used', days:dd, event:'', venue:'', endTime:'', status: au ? 'Confirmed' : 'Pending', note:'', createdBy:me.username, createdAt:now, reviewedBy: au ? me.username : '', reviewedAt: au ? now : '' });
+      var au = adm && others(me) === 0; entries.push({ id:'e' + nid(), username:me.username, type:'USE', date:p.date, category:'Used', days:dd, event:'', venue:'', endTime:'', status: au ? 'Confirmed' : 'Pending', note:'', createdBy:me.username, createdAt:now, reviewedBy: au ? me.username : '', reviewedAt: au ? now : '' });
       log(me, 'Requested a day off', me.username, p.date + ' · ' + dd + ' day(s)'); return ok(me); }
     if (a === 'deleteEntry'){ var i = entries.findIndex(function(e){ return e.id === p.id; }); if (i < 0) return fail('Entry not found.'); var e = entries[i]; if (!adm && !(e.username === me.username && e.status === 'Pending')) return fail('You can only remove your own pending entries.'); entries.splice(i,1); log(me, 'Removed an entry', e.username, e.date + ' · ' + e.days + ' day(s)'); return ok(me); }
     if (a === 'changePin'){ if (p.oldPin !== me.pin) return fail('Current PIN is wrong.'); if (!/^\d{4,6}$/.test(p.newPin)) return fail('PIN must be 4 to 6 digits.'); me.pin = p.newPin; log(me, 'Changed own PIN', me.username); return ok(me); }
@@ -2607,19 +3060,20 @@ var Mock = (function(){
       var tf = { dateFrom:p.dateFrom, dateTo:p.dateTo || p.dateFrom, event:p.event.trim(), destination:(p.destination||'').trim(), names:nm, updatedBy:me.username, updatedAt:now };
       if (tf.dateTo < tf.dateFrom) return fail('The end date is before the start date.');
       if (p.id){ var ex1 = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && (ex1.createdBy !== me.username || ex1.status !== 'Filed')) return fail('Only admins can edit a travel order after it is prepared.'); Object.assign(ex1, tf); log(me, 'Edited a travel order', tf.event); }
-      else { tos.push(Object.assign({ id:'t' + (++n), toNo:'', status:'Filed', tev:'', createdBy:me.username, createdAt:now, usernames:[] }, tf)); log(me, 'Filed a travel order', tf.event, tf.dateFrom + ' · ' + nm.join(', ')); }
+      else { tos.push(Object.assign({ id:'t' + nid(), toNo:'', status:'Filed', tev:'', createdBy:me.username, createdAt:now, usernames:[] }, tf)); log(me, 'Filed a travel order', tf.event, tf.dateFrom + ' · ' + nm.join(', ')); }
       return ok(me); }
     if (a === 'deleteTO'){ var dt = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && (dt.createdBy !== me.username || dt.status !== 'Filed')) return fail('You can only delete your own travel orders that are not yet prepared.'); tos = tos.filter(function(t){ return t !== dt; }); log(me, 'Deleted a travel order', dt.event); return ok(me); }
     if (!adm) return fail('Only admins can do that.');
     if (a === 'setTOStatus'){ var st2 = tos.filter(function(t){ return t.id === p.id; })[0]; st2.status = p.status; st2.tev = p.tev; st2.toNo = p.toNo || ''; st2.datePrepared = p.datePrepared || st2.datePrepared || (p.status === 'Prepared' ? today() : ''); log(me, 'Updated a travel order', st2.event, 'Status: ' + p.status + ' · TEV: ' + (p.tev || 'not set'));
-      var made = 0; if (p.tev === 'Yes' && p.status !== 'Cancelled') st2.names.forEach(function(nm2){ if (tevs.some(function(v){ return v.toId === st2.id && v.name === nm2; })) return; var u2 = users.filter(function(x){ return x.name.toUpperCase() === nm2; })[0]; tevs.push({ id:'v' + (++n), toId:st2.id, name:nm2, username:u2 ? u2.username : '', status:'To prepare', transpo:0, food:0, lodging:0, other:0, total:0, submittedOn:'', releasedOn:'', chequeNo:'', note:'' }); made++; });
+      var made = 0; if (p.tev === 'Yes' && p.status !== 'Cancelled') st2.names.forEach(function(nm2){ if (tevs.some(function(v){ return v.toId === st2.id && v.name === nm2; })) return; var u2 = users.filter(function(x){ return x.name.toUpperCase() === nm2; })[0]; tevs.push({ id:'v' + nid(), toId:st2.id, name:nm2, username:u2 ? u2.username : '', status:'To prepare', transpo:0, food:0, lodging:0, other:0, total:0, submittedOn:'', releasedOn:'', chequeNo:'', note:'' }); made++; });
       return ok(me, { tevsMade: made }); }
     if (a === 'saveTEV'){ var am = function(k){ return Math.round((Number(p[k]) || 0) * 100) / 100; }, td3 = new Date().toISOString().slice(0,10);
       var vf = { status: p.status, transpo: am('transpo'), food: am('food'), lodging: am('lodging'), other: am('other'), chequeNo: p.chequeNo || '', note: p.note || '', submittedOn: p.submittedOn || (p.status !== 'To prepare' ? td3 : ''), releasedOn: p.releasedOn || (p.status === 'Claimed' ? td3 : '') };
       vf.total = Math.round((vf.transpo + vf.food + vf.lodging + vf.other) * 100) / 100;
       if (p.id){ var ev2 = tevs.filter(function(v){ return v.id === p.id; })[0]; if (!ev2) return fail('TEV not found.'); Object.assign(ev2, vf); }
-      else { var tt = tos.filter(function(t){ return t.id === p.toId; })[0]; if (!tt) return fail('Pick a travel order.'); var u3 = users.filter(function(x){ return x.name.toUpperCase() === String(p.name).toUpperCase(); })[0]; tevs.push(Object.assign({ id:'v' + (++n), toId:tt.id, name:String(p.name).toUpperCase(), username:u3 ? u3.username : '' }, vf)); }
+      else { var tt = tos.filter(function(t){ return t.id === p.toId; })[0]; if (!tt) return fail('Pick a travel order.'); var u3 = users.filter(function(x){ return x.name.toUpperCase() === String(p.name).toUpperCase(); })[0]; tevs.push(Object.assign({ id:'v' + nid(), toId:tt.id, name:String(p.name).toUpperCase(), username:u3 ? u3.username : '' }, vf)); }
       log(me, p.id ? 'Updated a TEV' : 'Added a TEV', p.name || '', vf.status + ' · ₱' + vf.total); return ok(me); }
+    if (a === 'setTEVStatus'){ var td4 = new Date().toISOString().slice(0,10), nn = 0; tevs.forEach(function(v){ if ((p.ids||[]).indexOf(v.id) < 0) return; v.status = p.status; if (!v.submittedOn) v.submittedOn = td4; if (p.status === 'Claimed' && !v.releasedOn) v.releasedOn = td4; nn++; }); log(me, 'Claimed TEVs', '', nn + ' TEV(s)'); return ok(me, { updated: nn }); }
     if (a === 'deleteTEV'){ tevs = tevs.filter(function(v){ return v.id !== p.id; }); log(me, 'Deleted a TEV', ''); return ok(me); }
     if (a === 'syncHolidays') return ok(me, { added: 0 });
     if (a === 'setEmpType'){ find(p.username).empType = p.empType; log(me, 'Changed employment type', p.username, p.empType); return ok(me); }
@@ -2627,17 +3081,17 @@ var Mock = (function(){
       if (r.pool === 'VL' && dd2 > b.vl) sh = 'Only ' + fD(b.vl) + ' of vacation leave left.'; if (r.pool === 'SL' && dd2 > b.sl) sh = 'Only ' + fD(b.sl) + ' of sick leave left.';
       var cp = p.type === 'WL' ? settings.wellnessDays : r.year; if (cp && (b.used[p.type] || 0) + dd2 > cp) sh = r.name + ': only ' + fD(Math.max(cp - (b.used[p.type] || 0), 0)) + ' left this year.';
       if (sh && !p.override) return fail(sh + ' Record the rest as Leave Without Pay.');
-      leaves.push({ id:'l' + (++n), username:lu.username, type:p.type, dateFrom:p.dateFrom, dateTo:p.dateTo || p.dateFrom, days:dd2, note:p.note || '', createdBy:me.username, createdAt:now }); log(me, 'Recorded a leave', lu.username, r.name + ' · ' + p.dateFrom + ' · ' + dd2 + ' day(s)'); return ok(me); }
+      leaves.push({ id:'l' + nid(), username:lu.username, type:p.type, dateFrom:p.dateFrom, dateTo:p.dateTo || p.dateFrom, days:dd2, note:p.note || '', createdBy:me.username, createdAt:now }); log(me, 'Recorded a leave', lu.username, r.name + ' · ' + p.dateFrom + ' · ' + dd2 + ' day(s)'); return ok(me); }
     if (a === 'deleteLeave'){ leaves = leaves.filter(function(l){ return l.id !== p.id; }); log(me, 'Removed a leave record', ''); return ok(me); }
     if (a === 'setCredits'){ credits = credits.filter(function(c){ return c.username !== p.username; }); credits.push({ username:p.username, vl:Number(p.vl), sl:Number(p.sl), asOf:p.asOf }); log(me, 'Set leave balances', p.username, 'VL ' + p.vl + ' · SL ' + p.sl); return ok(me); }
-    if (a === 'adjustLeave'){ if (!Number(p.days)) return fail('Enter the number of days to add (or a negative number to deduct).'); if (!String(p.note||'').trim()) return fail('Reason is required.'); leaves.push({ id:'l' + (++n), username:p.username, type:'ADJ-' + p.pool, dateFrom:today(), dateTo:today(), days:Number(p.days), note:p.note, createdBy:me.username, createdAt:now }); log(me, 'Adjusted leave credits', p.username, p.pool + ' ' + p.days); return ok(me); }
+    if (a === 'adjustLeave'){ if (!Number(p.days)) return fail('Enter the number of days to add (or a negative number to deduct).'); if (!String(p.note||'').trim()) return fail('Reason is required.'); leaves.push({ id:'l' + nid(), username:p.username, type:'ADJ-' + p.pool, dateFrom:today(), dateTo:today(), days:Number(p.days), note:p.note, createdBy:me.username, createdAt:now }); log(me, 'Adjusted leave credits', p.username, p.pool + ' ' + p.days); return ok(me); }
     if (a === 'review' || a === 'reviewMany'){ var ids = a === 'review' ? [p.id] : p.ids, c = 0;
       if (a === 'review' && entries.some(function(e){ return e.id === p.id && e.username === me.username; }) && others(me)) return fail('Another admin needs to review your own entry.');
       entries.forEach(function(e){ if (ids.indexOf(e.id) < 0 || e.status !== 'Pending' || (e.username === me.username && others(me))) return; if (e.type === 'USE' && p.decision === 'Confirmed' && e.days > bal(e.username)) return;
         e.status = p.decision; e.reviewedBy = me.username; e.reviewedAt = now; if (p.decision === 'Rejected') e.note = p.note || ''; c++; log(me, (p.decision === 'Confirmed' ? 'Approved ' : 'Rejected ') + (e.type === 'USE' ? 'a day-off request' : 'an offset'), e.username, e.date + (p.note ? ' · Reason: ' + p.note : '')); });
       return c ? ok(me, c) : fail('Nothing was reviewed.'); }
     if (a === 'recordUse'){ var dy = Number(p.days), b = bal(p.username); if (!(dy >= 0.5) || dy > 30 || dy * 2 !== Math.round(dy * 2)) return fail('Days must be in half-day steps, from ½ to 30.'); if (dy > b) return fail(find(p.username).name + ' has only ' + fD(b) + ' available.');
-      entries.push({ id:'e' + (++n), username:p.username, type:'USE', date:p.date, category:'Used', days:dy, event:'', venue:'', endTime:'', status:'Confirmed', note:'', createdBy:me.username, createdAt:now, reviewedBy:me.username, reviewedAt:now }); log(me, 'Recorded offset use', p.username, p.date + ' · ' + dy + ' day(s)'); return ok(me); }
+      entries.push({ id:'e' + nid(), username:p.username, type:'USE', date:p.date, category:'Used', days:dy, event:'', venue:'', endTime:'', status:'Confirmed', note:'', createdBy:me.username, createdAt:now, reviewedBy:me.username, reviewedAt:now }); log(me, 'Recorded offset use', p.username, p.date + ' · ' + dy + ' day(s)'); return ok(me); }
     if (a === 'addUser'){ var nu = String(p.username||'').trim().toLowerCase(); if (!/^[a-z0-9._-]{3,30}$/.test(nu)) return fail('Usernames use 3–30 letters, numbers, dots or dashes.'); if (find(nu)) return fail('That username is taken.'); if (!/^\d{4,6}$/.test(p.pin)) return fail('PIN must be 4 to 6 digits.'); users.push({ username:nu, name:p.name, role:p.role, division:p.division||'', pin:p.pin, active:true, empType:p.empType || 'JO' }); log(me, 'Added an account', nu, p.role); return ok(me); }
     if (a === 'resetPin'){ if (!/^\d{4,6}$/.test(p.pin)) return fail('PIN must be 4 to 6 digits.'); find(p.username).pin = p.pin; log(me, 'Reset a PIN', p.username); return ok(me); }
     if (a === 'setActive'){ find(p.username).active = p.active; log(me, p.active ? 'Activated an account' : 'Deactivated an account', p.username); return ok(me); }
@@ -2646,13 +3100,13 @@ var Mock = (function(){
     if (a === 'removeUser'){ var ru = find(p.username); if (!ru) return fail('User not found.'); if (ru.username === me.username) return fail('You cannot remove your own account. Ask another admin.'); if (ru.role === 'admin' && users.filter(function(u){ return u.role === 'admin' && u.active; }).length <= 1) return fail('This is the only admin. Make someone else an admin first.');
       log(me, 'Removed an account', ru.username, ru.name + ' · balance left: ' + fD(bal(ru.username))); users = users.filter(function(u){ return u !== ru; }); return ok(me); }
     if (a === 'saveDivision'){ if (!String(p.name||'').trim()) return fail('Division name is required.'); var fd2 = { name:p.name.trim(), short:(p.short||'').trim() || p.name.trim(), color:p.color, icon:p.icon, logo:p.logo||'' }, ex = divisions.filter(function(d){ return d.id === p.id; })[0];
-      if (ex) Object.assign(ex, fd2); else divisions.push(Object.assign({ id:'d' + (++n), order:divisions.length + 1 }, fd2)); log(me, ex ? 'Edited a division' : 'Added a division', fd2.name); return ok(me); }
+      if (ex) Object.assign(ex, fd2); else divisions.push(Object.assign({ id:'d' + nid(), order:divisions.length + 1 }, fd2)); log(me, ex ? 'Edited a division' : 'Added a division', fd2.name); return ok(me); }
     if (a === 'deleteDivision'){ var cc = users.filter(function(u){ return u.division === p.id; }).length; if (cc) return fail('Move the ' + cc + ' staff in this division to another division first.'); divisions = divisions.filter(function(d){ return d.id !== p.id; }); log(me, 'Deleted a division', p.id); return ok(me); }
     if (a === 'saveHoliday'){ if (!p.date || !String(p.name||'').trim()) return fail('Enter a date and a name.'); holidays = holidays.filter(function(h){ return h.date !== p.date; }); holidays.push({ date:p.date, name:p.name.trim(), kind:p.kind }); holidays.sort(function(x,y){ return x.date < y.date ? -1 : 1; }); log(me, 'Added a holiday', p.date, p.name); return ok(me); }
     if (a === 'deleteHoliday'){ holidays = holidays.filter(function(h){ return h.date !== p.date; }); log(me, 'Deleted a holiday', p.date); return ok(me); }
     if (a === 'saveSettings'){ var cap = Number(p.carryCap), wd = Number(p.workdays); if (!(cap >= 0)) return fail('Carry-over cap must be 0 (no limit) or a number of days.'); if (!(wd >= 15 && wd <= 26)) return fail('Workdays must be a whole number from 15 to 26.'); settings = { workdays: wd, carryCap: cap, wellnessDays: p.wellnessDays == null ? settings.wellnessDays : Number(p.wellnessDays), tevBudget: p.tevBudget == null ? settings.tevBudget : Number(p.tevBudget) || 0 }; log(me, 'Changed settings', '', 'Carry-over cap: ' + (cap || 'no limit') + ' · Workdays: ' + wd); return ok(me); }
     if (a === 'backupToDrive'){ log(me, 'Saved a backup to Google Drive', 'Preview'); return ok(me, { url: 'https://drive.google.com/', name: 'PIO Overwatch — backup (preview)' }); }
-    if (a === 'exportAll') return { ok:true, data: { exportedAt: now, users: users.map(pub), entries: copy(entries), divisions: copy(divisions), holidays: copy(holidays), settings: copy(settings), activity: copy(activity) } };
+    if (a === 'exportAll') return { ok:true, data: { exportedAt: now, exportedBy: me.username, users: users.map(pub), entries: copy(entries), divisions: copy(divisions), holidays: copy(holidays), settings: copy(settings), activity: copy(activity), travelOrders: copy(tos), leaves: copy(leaves), credits: copy(credits), tevs: copy(tevs) } };
     return fail('Unknown action.');
     } catch(err){ return fail(typeof err === 'string' ? err : 'Something went wrong.'); }
   } };
