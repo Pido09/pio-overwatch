@@ -2564,7 +2564,7 @@ function tevDocHtml(t, people, forms, dPrep, dCert){
   return '<!doctype html><html><head><meta charset="utf-8"><title>TEV · ' + E(t.event) + '</title><style>' +
     '@page{size:A4 portrait;margin:12mm 14mm}@page land{size:A4 landscape;margin:10mm 10mm}' +
     'html,body{margin:0}body{font-family:Cambria,"Cambria Math",Georgia,"Times New Roman",serif;font-size:11pt;color:#000;line-height:1.3}' +
-    '.pg{page-break-after:always;break-after:page}.pg:last-child{page-break-after:auto;break-after:auto}.land{page:land}' +
+    '.pg{page-break-after:always;break-after:page;height:268mm;overflow:hidden}.pg.land{height:186mm}.fit{transform-origin:top left}.pg:last-child{page-break-after:auto;break-after:auto}.land{page:land}' +
     'table{border-collapse:collapse}.r{text-align:right}.c{text-align:center}.b{font-weight:bold}.top{vertical-align:top}.xs{font-size:7.5pt}.xs2{font-size:8pt}' +
     '.sig{text-align:center;line-height:1.25}.sig b{display:block}.sig span{display:block}.sig.ul b{text-decoration:underline}.sig.ov b{border-top:1.5px solid #000;padding-top:2px;text-decoration:none}' +
     'u.dbl{text-decoration:underline double}' +
@@ -2589,19 +2589,21 @@ function tevDocHtml(t, people, forms, dPrep, dCert){
     '.hd2{line-height:1.3;padding:6px}.hd2 .big{font-size:13pt}.box .h td{height:13mm}.box .title{font-size:14pt;padding-left:12mm}.box .sm{font-size:9.5pt;width:24%}.box .lbl{width:20%;text-align:center}.box .sm2{font-size:10pt}' +
     '.mop .bx{margin:0 3mm 0 6mm}.mop .bx.gap{margin-left:24mm}' +
     '.bx{display:inline-block;width:12mm;height:6mm;border:1px solid #000;text-align:center;line-height:6mm;vertical-align:middle}.bx.tall{height:10mm}' +
-    '.exp{text-align:center;vertical-align:top;padding:4mm 6mm;line-height:1.45}.tallx td{height:64mm}.amt{padding-top:16mm}' +
+    '.exp{text-align:center;vertical-align:top;padding:4mm 6mm;line-height:1.45}.tallx>td{height:56mm}.amt{padding-top:16mm}' +
     '.allow{margin:6mm auto 0 18mm;text-align:left}.allow td{border:0;padding:0 8px 0 0}' +
     '.cA{vertical-align:top;height:36mm}.ck{display:flex;gap:4mm;align-items:flex-start;margin:6mm 0 0 8mm}.ck .bx{flex:none;width:8mm;height:5mm}.fa{margin-top:6mm}' +
-    '.sigrow td{height:17mm;vertical-align:bottom;border-top:0}.dt{font-size:10pt;padding:1px 6px}.cC{vertical-align:top;height:44mm}.cC .gsig{margin-top:20mm}.cD{vertical-align:top;padding:0}.cD i{display:block;padding:3px 6px}' +
+    '.sigrow td{height:17mm;vertical-align:bottom;border-top:0}.dt{font-size:10pt;padding:1px 6px}.cC{vertical-align:top;height:40mm}.cC .gsig{margin-top:17mm}.cD{vertical-align:top;padding:0}.cD i{display:block;padding:3px 6px}' +
     '.rp{width:100%;font-size:10pt}.rp td{border:1px solid #000;height:7.5mm;vertical-align:top;padding:2px 4px}.rp tr:first-child td{border-top:1px solid #000}' +
-    '.orq .tallx td{height:92mm}.sigrow2 td{height:40mm;vertical-align:bottom}.sigrow2 .sig{margin-bottom:10mm}.dl{text-align:left;margin:0 0 4mm 4mm;font-size:10pt}' +
+    '.orq .tallx>td{height:92mm}.sigrow2 td{height:40mm;vertical-align:bottom}.sigrow2 .sig{margin-bottom:10mm}.dl{text-align:left;margin:0 0 4mm 4mm;font-size:10pt}' +
     /* certificate */
     '.ct{font-family:Arial,Helvetica,sans-serif;font-size:10.5pt}.ct-t{text-align:center;margin-top:9mm;line-height:1.35}' +
     '.ct-top{display:flex;justify-content:space-between;margin:11mm 6mm 0 10mm}.ct-top .r2{width:62mm}.ct .ol{border-bottom:1px solid #000;text-align:center}.ct .dt2{margin-top:9mm}' +
     '.ct-body{text-align:center;margin:8mm 0 4mm}.ct-opts{margin-left:42mm}.ct-opts td{padding:2mm 0}.ct-opts .ln2{width:20mm;border-bottom:1px solid #000;text-align:center;color:#1d4ed8}.ct-opts td+td{padding-left:20mm}' +
     '.ct-ex{width:100%;margin-top:6mm}.ct-ex td{vertical-align:top;padding:0}.ct-ex .k{width:72mm;padding:3mm 0 0 8mm}.ul2{border-bottom:1px solid #000;min-height:5.5mm;font-size:8.5pt;white-space:nowrap}.ul2.tx{padding-top:1mm}' +
     '.ct-sub{width:80mm;margin:9mm 0 0 auto;text-align:center}.ct-sub .lab{margin-bottom:8mm}.ct-ev{margin:9mm 0 0 30mm}.ct-gov{width:70mm;margin:9mm 0 0 auto}' +
-    '</style></head><body>' + html + '</body></html>';
+    '</style></head><body>' + html +
+    // shrink any page that would spill onto a second sheet (fonts differ between computers)
+    '<script>function fit(){document.querySelectorAll(".pg").forEach(function(p){var w=document.createElement("div");w.className="fit";while(p.firstChild)w.appendChild(p.firstChild);p.appendChild(w);var h=p.clientHeight,c=w.scrollHeight;if(c>h){var k=h/c;w.style.transform="scale("+k+")";w.style.width=(100/k)+"%";}});}fit();<\/script></body></html>';
 }
 function printHtml(html){
   var f = document.createElement('iframe'); f.setAttribute('aria-hidden', 'true'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
