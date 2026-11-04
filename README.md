@@ -13,7 +13,7 @@ Current version: **6.0** (Firebase).
 | `config.js` | Your Firebase settings (or the old Apps Script link). Set once. |
 | `firebase.js` | The Firebase tools, bundled so the app needs no outside sites. Don't edit. |
 | `firestore.rules` | Who may read and change what. Paste into Firebase console > Firestore > Rules. |
-| `sw.js` | Lets the app install and open fast. Change the version line (`pio-offsets-v18`) whenever `index.html` changes, so phones pick up the update. |
+| `sw.js` | Lets the app install and open fast. Change the version line (`pio-offsets-v19`) whenever `index.html` changes, so phones pick up the update. |
 | `to-header.png`, `to-footer.png`, `to-watermark.jpg` | Letterhead for printing travel orders from the browser (taken from the template). |
 | `to-template.docx` | The office travel order template, with fill-in spots: `{DATE}` `{NAME}` `{DEST}` `{DEP}` `{ARR}` `{PURPOSE}` `{X1}` `{X2}` `{REC1}`–`{REC3}`. |
 | `jszip.min.js` | Builds the travel order Word file inside the app. Don't edit. |
