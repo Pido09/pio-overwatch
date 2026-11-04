@@ -2896,13 +2896,13 @@ tevDocHtml = function(t, people, forms, dPrep, dCert){
   return '<!doctype html><html><head><meta charset="utf-8"><title>TEV · ' + esc(t.event) + '</title><style>' +
     '@page{size:A4 portrait;margin:10mm 15mm 12mm}@page land{size:A4 landscape;margin:12mm 8mm 10mm}' +
     'html,body{margin:0}body{color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
-    '.pg{page-break-after:always;break-after:page;width:180mm;height:274mm;overflow:hidden;position:relative}.pg:last-child{page-break-after:auto;break-after:auto}' +
-    '.pg.land{page:land;width:281mm;height:187mm}' +
-    '.xlw{position:relative;transform-origin:top left}.xl{border-collapse:collapse;table-layout:fixed}.xl td{padding:0 3px;line-height:1.15;overflow:visible}' +
+    '.pg{page-break-after:always;break-after:page;break-inside:avoid;position:relative}.pg:last-child{page-break-after:auto;break-after:auto}' +
+    '.pg.land{page:land}' +
+    '.xlw{position:relative;margin:0 auto}.xl{border-collapse:collapse;table-layout:fixed}.xl td{padding:0 3px;line-height:1.15;overflow:visible}' +
     '.xs{position:absolute;border:1px solid #000;background:#fff;box-sizing:border-box;text-align:center;font:10pt Arial,sans-serif;display:flex;align-items:center;justify-content:center}' +
     '</style></head><body>' + pages.join('') +
     // scale each form to fill the printable width of A4, like Excel's "fit to page"
-    '<script>document.querySelectorAll(".pg").forEach(function(p){var w=p.firstChild,s=Math.min(p.clientWidth/w.offsetWidth,p.clientHeight/w.offsetHeight);w.style.transform="scale("+s+")";});<\/script></body></html>';
+    '<script>(function(){var mm=96/25.4;document.querySelectorAll(".pg").forEach(function(p){var land=p.classList.contains("land"),W=(land?279:178)*mm,H=(land?184:270)*mm,w=p.firstChild,z=Math.min(W/w.offsetWidth,H/w.offsetHeight);w.style.zoom=z;});})();<\/script></body></html>';
 };
 
 /* =====================================================================
