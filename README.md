@@ -110,7 +110,7 @@ In the current app (still on the Google Sheet): Settings > **Backup (.json)**. K
 - **Noon rule:** leaving 12:00 NN or later, the first day is not claimed. The return day has meals and incidental, no lodging.
 - Untick meals the host provided. **Government vehicle** = no transportation claim. JO: no incidental. COS: no TEV (none is created for them).
 - Rates, signatories and codes can be changed in Settings > TEV rates and signatories.
-- **Print** (printer icon on each travel order in TEVs, or in the TEV): Itinerary of Travel (per person), Payroll, Disbursement Voucher (amount in words filled in), Obligation Request, Certificate of Travel Completed (per person). Pick forms and people, then print or Save as PDF.
+- **Print** (printer icon on each travel order in TEVs, or in the TEV): Itinerary of Travel (per person), Payroll, Disbursement Voucher (amount in words filled in), Obligation Request, Certificate of Travel Completed (per person). Pick forms and people, then print or Save as PDF. The other forms print on A4; the Payroll prints as its own job on long bond paper (8.5 × 13 in). After the A4 forms, the app asks you to load long bond and print the payroll.
 - Positions printed on the forms: Staff > Manage > Position.
 
 ### Leaves (Regular and Casual)
