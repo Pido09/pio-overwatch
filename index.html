@@ -2287,7 +2287,7 @@ var TEV_DEF = {
     treas: ['DANTE E. MANLAPAZ', 'Provincial Treasurer'], budget: ['MERCEDES M. ALFUERTE, CPA', 'Provincial Budget Officer']
   },
   codes: { rc: '1121', fpp: '1120-004-1-02-004-001-001', acct: '5 02 01 010', agency: 'PROVINCIAL GOVERNORS OFFICE/ PIO', office: 'Provincial Information Office (PIO)',
-           address: 'PIO, Daet, Camarines Norte', station: 'Provincial Information Office, PGCN, Daet, Camarines Norte' }
+           address: 'PIO, Daet Camarines Norte', station: 'Provincial Information Office, PGCN, Daet, Camarines Norte' }
 };
 var SCOPES = [['province', 'Within the province', 'No lodging'], ['bicol', 'Within Bicol', '₱1,500 a day'], ['outside', 'Outside Bicol', '₱2,200 a day']];
 COVER[2][1] = 'Accommodation'; COVER[3][1] = 'Incidental';
@@ -2442,85 +2442,165 @@ function tevPrintDialog(toId){
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button type="button" class="btn btn-primary" data-act="tevPrintGo">' + ic('print') + 'Print</button>');
 }
 function tevDocHtml(t, people, forms, dPrep, dCert){
-  var cfg = tevCfg(), sg = cfg.sign, cd = cfg.codes, o = { month:'long', day:'numeric', year:'numeric' }, tr = tripOf(t), dest = t.destination || '';
+  var cfg = tevCfg(), sg = cfg.sign, cd = cfg.codes, tr = tripOf(t), dest = t.destination || '';
+  var MON = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var ABB = ['Jan.','Feb.','Mar.','Apr.','May','June','July','Aug.','Sept.','Oct.','Nov.','Dec.'];
   function E(x){ return esc(x == null ? '' : x); }
   function money(n){ return n ? (Number(n) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'; }
-  function range(a, b){ return a === b ? fDate(a, o) : fRange(a, b, o); }
-  function head(title){ return '<div class="hd"><div>Republic of the Philippines</div><div>PROVINCE OF CAMARINES NORTE</div><div>D a e t</div><div class="off">PROVINCIAL INFORMATION OFFICE</div></div>' + (title ? '<h1>' + title + '</h1>' : ''); }
-  function sig(s, lab){ return '<div class="sig">' + (lab ? '<div class="lab">' + lab + '</div>' : '') + '<b>' + E(s[0]) + '</b><span>' + E(s[1]) + '</span></div>'; }
+  function ymdParts(d){ return { y: +d.slice(0, 4), m: +d.slice(5, 7) - 1, d: +d.slice(8, 10) }; }
+  // "September 22-25, 2026", "Sept. 23-25, 2026", "September 30-October 2, 2026"
+  function rng(a, b, short){
+    var M = short ? ABB : MON, x = ymdParts(a), y = ymdParts(b || a);
+    if (a === (b || a)) return M[x.m] + ' ' + x.d + ', ' + x.y;
+    if (x.y === y.y && x.m === y.m) return M[x.m] + ' ' + x.d + '-' + y.d + ', ' + x.y;
+    if (x.y === y.y) return M[x.m] + ' ' + x.d + '-' + M[y.m] + ' ' + y.d + ', ' + x.y;
+    return M[x.m] + ' ' + x.d + ', ' + x.y + '-' + M[y.m] + ' ' + y.d + ', ' + y.y;
+  }
+  function day(d){ return rng(d, d); }
+  function tm(x){ if (!x) return ''; var h = +x.slice(0, 2), m = x.slice(3); return (h % 12 || 12) + ':' + m + (h < 12 ? ' am' : 'pm'); }
   var calcs = people.map(function(v){ return { v: v, c: tevCalc(t, v), r: tevRule(v) }; });
-  var sum = { transpo: 0, lodging: 0, food: 0, other: 0, total: 0, meals: 0, nights: 0, inc: 0 };
-  calcs.forEach(function(x){ ['transpo','lodging','food','other','total'].forEach(function(k){ sum[k] += x.c[k]; }); sum.meals += x.c.meals; sum.nights += x.c.nights; sum.inc += x.c.incDays; });
-  var period = range(t.dateFrom, t.dateTo || t.dateFrom), purpose = String(t.event || '').replace(/[.\s]+$/, '') + (dest ? ' at ' + dest : '');
+  var sum = { transpo: 0, lodging: 0, food: 0, other: 0, total: 0 };
+  calcs.forEach(function(x){ ['transpo','lodging','food','other','total'].forEach(function(k){ sum[k] += x.c[k]; }); });
+  var period = rng(t.dateFrom, t.dateTo || t.dateFrom), purpose = String(t.event || '').replace(/[.\s]+$/, '') + (dest ? ' at ' + dest : '') + '.';
+  var payee = calcs.length === 1 ? calcs[0].v.name : calcs[0].v.name + ' AND ' + (calcs.length - 1) + ' OTHER' + (calcs.length > 2 ? 'S' : '');
+  var hd = '<div class="hd"><div>Republic of the Philippines</div><div>PROVINCE OF CAMARINES NORTE</div><div class="sp">D a e t</div><div class="off">PROVINCIAL INFORMATION OFFICE</div></div>';
+  function sig(s, cls){ return '<div class="sig ' + (cls || '') + '"><b>' + E(s[0]) + '</b><span>' + E(s[1]) + '</span></div>'; }
   var html = '';
+
+  /* ---- Itinerary of Travel (one per person) ---- */
   if (forms.itin) calcs.forEach(function(x){
     var c = x.c, rows = c.rows, n = rows.length, lines = [];
-    // departure day, days in between (grouped), return day, like the office form
-    if (n === 1) lines.push({ d: range(rows[0].date, rows[0].date), p: 'Station to ' + dest + ' and back', dep: tr.dep, arr: tr.arr, amt: rows[0].amt });
+    if (n === 1) lines.push({ d: rng(rows[0].date, rows[0].date, true), p: 'Station to ' + dest + ' and back', dep: tr.dep, arr: tr.arr, amt: rows[0].amt });
     else {
-      lines.push({ d: fDate(rows[0].date, o), p: 'Station to ' + dest, dep: tr.dep, amt: rows[0].amt });
-      if (n > 2){ var mid = rows.slice(1, n - 1); lines.push({ d: range(mid[0].date, mid[mid.length - 1].date), p: dest, amt: mid.reduce(function(s, r){ return s + r.amt; }, 0) }); }
-      lines.push({ d: fDate(rows[n - 1].date, o), p: dest + ' to Station', arr: tr.arr, amt: rows[n - 1].amt });
+      // like the office forms: departure day, then the rest of the days together, then the trip back
+      lines.push({ d: rng(rows[0].date, rows[0].date, true), p: 'Station to ' + dest, dep: tr.dep, amt: rows[0].amt });
+      lines.push({ d: rng(rows[1].date, rows[n - 1].date, true), p: dest, amt: rows.slice(1).reduce(function(s, r){ return s + r.amt; }, 0) });
+      lines.push({ d: rng(rows[n - 1].date, rows[n - 1].date, true), p: dest + ' to Station', arr: tr.arr, amt: null });
     }
-    var per = lines.reduce(function(s, l){ return s + l.amt; }, 0);
-    function tm(x){ if (!x) return ''; var h = +x.slice(0, 2), m = x.slice(3); return (h % 12 || 12) + ':' + m + (h < 12 ? ' AM' : ' PM'); }
-    html += '<section class="page">' + head('') + '<div class="no">No. ________<br>Date: ' + E(fDate(dPrep, o)) + '</div><h1>ITINERARY OF TRAVEL</h1>' +
-      '<table class="kv"><tr><td>Name</td><td>:</td><td><b>' + E(x.v.name) + '</b></td><td class="r">Monthly Salary: Php ________</td></tr><tr><td>Position</td><td>:</td><td colspan="2">' + E(x.r.pos || x.r.et) + '</td></tr>' +
-      '<tr><td>Official Station</td><td>:</td><td colspan="2">' + E(cd.station) + '</td></tr></table><p>Purpose: ' + E(purpose) + '</p>' +
-      '<table class="grid"><thead><tr><th rowspan="2">Date</th><th rowspan="2">Places to be visited</th><th colspan="2">Time</th><th rowspan="2">Means of Transportation</th><th colspan="2">Allowable Expenses</th><th rowspan="2">Total</th></tr><tr><th>Departure</th><th>Arrival</th><th>Trans. Allow.</th><th>Per Diems</th></tr></thead><tbody>' +
-      lines.map(function(l, i){ var trn = i === 0 ? c.transpo : 0; return '<tr><td>' + E(l.d) + '</td><td>' + E(l.p) + '</td><td class="c">' + E(tm(l.dep)) + '</td><td class="c">' + E(tm(l.arr)) + '</td><td class="c">' + (i === 0 ? E(tr.gov ? 'Government Vehicle' : 'Private/Public Vehicle') : '') + '</td><td class="r">' + money(trn) + '</td><td class="r">' + money(l.amt) + '</td><td class="r">' + money(trn + l.amt) + '</td></tr>'; }).join('') +
-      '<tr class="tot"><td></td><td><b>TOTALS</b></td><td></td><td></td><td></td><td class="r">' + money(c.transpo) + '</td><td class="r">' + money(per) + '</td><td class="r"><b>' + money(c.total) + '</b></td></tr></tbody></table>' +
-      '<div class="cols"><div><p class="small">I certify that 1) I have reviewed the foregoing itinerary. 2) the travel is necessary to the service. 3) the period covered is reasonable and 4) the expenses are proper.</p>' + sig(sg.pio) + '</div>' +
-      '<div>' + sig([x.v.name, 'Employee'], 'Prepared by:') + sig(sg.gov, 'Approved by:') + '</div></div></section>';
+    var per = rows.reduce(function(s, r){ return s + r.amt; }, 0);
+    html += '<section class="pg it">' + hd +
+      '<div class="no"><div>No.<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></div><div>Date: &nbsp;&nbsp;&nbsp;' + E(day(dPrep)) + '</div></div><h1>ITINERARY OF TRAVEL</h1>' +
+      '<table class="kv"><tr><td class="k">Name</td><td class="c1">:</td><td><b>' + E(x.v.name) + '</b></td><td class="sal">Monthly Salary: &nbsp;Php</td></tr>' +
+      '<tr><td class="k">Position</td><td class="c1">:</td><td colspan="2">' + E(x.r.pos || x.r.et) + '</td></tr>' +
+      '<tr><td colspan="4">Official Station &nbsp;: &nbsp;' + E(cd.station) + '</td></tr></table>' +
+      '<p class="purp"><i>Purpose: ' + E(purpose) + '</i></p>' +
+      '<table class="itin"><thead><tr><th rowspan="2" class="bt">Date</th><th rowspan="2">Places<br>to be visited</th><th colspan="2">T i m e</th><th rowspan="2">Means of<br>Transportation</th><th colspan="2">Allowable Expenses</th><th rowspan="2">Total</th></tr>' +
+      '<tr><th>Departure</th><th>Arrival</th><th>Trans<br>Allow</th><th>Per<br>Diems</th></tr></thead><tbody><tr class="bodyrow">' +
+      '<td>' + lines.map(function(l){ return '<div class="ln">' + E(l.d) + '</div>'; }).join('') + '</td>' +
+      '<td class="c">' + lines.map(function(l){ return '<div class="ln">' + E(l.p) + '</div>'; }).join('') + '</td>' +
+      '<td class="c">' + lines.map(function(l){ return '<div class="ln">' + E(tm(l.dep)) + '</div>'; }).join('') + '</td>' +
+      '<td class="c">' + lines.map(function(l){ return '<div class="ln">' + E(tm(l.arr)) + '</div>'; }).join('') + '</td>' +
+      '<td class="c mid"><div class="ln">&nbsp;</div><div>' + E(tr.gov ? 'Government Vehicle' : 'Public/Private Vehicle') + '</div></td>' +
+      '<td class="r">' + lines.map(function(l, i){ return '<div class="ln">' + (i === 0 && c.transpo ? money(c.transpo) : '') + '</div>'; }).join('') + '</td>' +
+      '<td class="r">' + lines.map(function(l){ return '<div class="ln">' + (l.amt ? money(l.amt) : '') + '</div>'; }).join('') + '</td>' +
+      '<td class="r">' + lines.map(function(l, i){ var v = (l.amt || 0) + (i === 0 ? c.transpo : 0); return '<div class="ln">' + (v ? money(v) : '') + '</div>'; }).join('') + '</td></tr>' +
+      '<tr class="tot"><td></td><td><b>TOTALS</b></td><td></td><td></td><td></td><td class="r">' + money(c.transpo) + '</td><td class="r">' + money(per) + '</td><td class="r"><u class="dbl">' + money(c.total) + '</u></td></tr></tbody></table>' +
+      '<div class="it-foot"><div class="cert">I certify that 1) I have reviewed the<br>the foregoing itinerary. 2) the travel<br>is necessary to the service. 3) the<br>period covered is reasonable and<br>4) the expense are proper.</div>' +
+      '<div class="prep"><div class="lab">Prepared by:</div>' + sig([x.v.name, 'Employee'], 'ul') + '<div class="lab ap">Approved by:</div></div></div>' +
+      '<div class="it-sigs">' + sig(sg.pio, 'ov') + sig(sg.gov, 'ov') + '</div></section>';
   });
-  if (forms.payroll) html += '<section class="page land"><h1>PAYROLL</h1><table class="kv"><tr><td><b>Agency:</b> ' + E(cd.agency) + '</td><td class="r"><b>Period:</b> ' + E(period.toUpperCase()) + '</td></tr></table><p><i>Purpose: ' + E(purpose) + '</i></p>' +
-    '<table class="grid small"><thead><tr><th rowspan="2">No.</th><th rowspan="2">NAME</th><th rowspan="2">OCCUPATION</th><th rowspan="2">No. of Days</th><th colspan="4">Allowable Expenses</th><th colspan="2">Philhealth</th><th colspan="2">PAG-IBIG</th><th rowspan="2">NET PAY</th><th rowspan="2">No.</th><th rowspan="2">Signature / thumbmark</th><th rowspan="2">CTC NUMBER</th><th rowspan="2">Issued At</th><th rowspan="2">Issued on</th></tr>' +
-    '<tr><th>Trans</th><th>Lodging</th><th>Meal</th><th>Incidental</th><th>Gov’t Share</th><th>Personal Share</th><th>Gov’t Share</th><th>Personal Share</th></tr></thead><tbody>' +
-    calcs.map(function(x, i){ return '<tr><td class="c">' + (i + 1) + '</td><td>' + E(x.v.name) + '</td><td class="c">' + E(x.r.pos || x.r.et) + '</td><td class="c">' + x.c.rows.length + '</td><td class="r">' + money(x.c.transpo) + '</td><td class="r">' + money(x.c.lodging) + '</td><td class="r">' + money(x.c.food) + '</td><td class="r">' + money(x.c.other) + '</td><td></td><td></td><td></td><td></td><td class="r"><b>' + money(x.c.total) + '</b></td><td class="c">' + (i + 1) + '</td><td></td><td></td><td></td><td></td></tr>'; }).join('') +
-    '<tr class="tot"><td></td><td><b>TOTAL</b></td><td></td><td></td><td class="r">' + money(sum.transpo) + '</td><td class="r">' + money(sum.lodging) + '</td><td class="r">' + money(sum.food) + '</td><td class="r">' + money(sum.other) + '</td><td></td><td></td><td></td><td></td><td class="r"><b>' + money(sum.total) + '</b></td><td colspan="6"></td></tr></tbody></table>' +
-    '<div class="cols three"><div><p class="small">CERTIFIED: Each person whose name appears on this roll rendered service for the time stated.</p>' + sig(sg.pio) + '</div><div><p class="small">CERTIFIED CORRECT AS PER APPROVED PLANTILLA</p>' + sig(sg.payroll) + '</div><div><p class="small">CERTIFIED: Each person whose name appears on the above payroll has been paid the amount stated opposite his name after identifying him.</p>' + sig(['________________________________', 'Name and signature of Disbursing Officer']) + '</div></div></section>';
-  var payee = calcs.length === 1 ? calcs[0].v.name : calcs.length === 2 ? calcs[0].v.name + ' and ' + calcs[1].v.name : 'VARIOUS (SEE ATTACHED PAYROLL)';
+
+  /* ---- Payroll (A4 landscape, everyone on the travel order) ---- */
+  if (forms.payroll) html += '<section class="pg land"><div class="pr">' +
+    '<div class="pr-top"><div class="pr-t">PAYROLL</div><div class="pr-per"><i>Period:</i> &nbsp;<b>' + E(period.toUpperCase()) + '</b></div></div>' +
+    '<div class="pr-ag"><b>Agency:</b> &nbsp;<u>' + E(cd.agency) + '</u><div class="rev"><i>Revised January 1992</i></div></div>' +
+    '<p class="purp"><i>Purpose: ' + E(purpose) + '</i></p>' +
+    '<table class="pay"><thead><tr><th rowspan="2" style="width:3%">No.</th><th rowspan="2" style="width:17%">NAME</th><th rowspan="2" style="width:12%">OCCUPATION</th><th rowspan="2" style="width:5%">No. of<br>Days</th><th colspan="4">Allowable Expenses</th><th colspan="2">Philhealth</th><th colspan="2">PAG-IBIG</th><th rowspan="2" style="width:7%">NET PAY</th><th rowspan="2" style="width:3%">No.</th><th rowspan="2" style="width:7%">Signature<br>/thumbmark</th><th rowspan="2" style="width:5%">CTC<br>NUMBER</th><th rowspan="2" style="width:5%">Issued At</th><th rowspan="2" style="width:6%">Issued on</th></tr>' +
+    '<tr><th>Trans</th><th>Lodging</th><th>Meal</th><th>Incidental</th><th class="xs">Gov’t Share</th><th class="xs">Personal Share</th><th class="xs">Gov’t Share</th><th class="xs">Personal Share</th></tr></thead><tbody>' +
+    calcs.map(function(x, i){ return '<tr><td class="c">' + (i + 1) + '</td><td>' + E(x.v.name) + '</td><td class="c">' + E(x.r.pos || x.r.et) + '</td><td class="c">' + x.c.rows.length + '</td><td class="r">' + (x.c.transpo ? money(x.c.transpo) : '') + '</td><td class="r">' + (x.c.lodging ? money(x.c.lodging) : '') + '</td><td class="r">' + money(x.c.food) + '</td><td class="r">' + (x.c.other ? money(x.c.other) : '') + '</td><td></td><td></td><td></td><td></td><td class="r"><b>' + money(x.c.total) + '</b></td><td class="c">' + (i + 1) + '</td><td></td><td></td><td></td><td></td></tr>'; }).join('') +
+    '<tr><td></td><td><b>TOTAL</b></td><td></td><td></td><td class="r">' + (sum.transpo ? money(sum.transpo) : '') + '</td><td class="r">' + (sum.lodging ? money(sum.lodging) : '-') + '</td><td class="r"><b>' + money(sum.food) + '</b></td><td class="r"><b>' + (sum.other ? money(sum.other) : '') + '</b></td><td></td><td></td><td></td><td></td><td class="r"><u class="dbl">' + money(sum.total) + '</u></td><td colspan="5"></td></tr></tbody></table>' +
+    '<table class="pay-foot"><tr><td style="width:46%"><div class="xs">CERTIFIED:</div><div class="xs ind">Each person whose name appears on this roll had<br>rendered service for the time stated</div>' + sig(sg.pio, 'ul') + '</td>' +
+    '<td style="width:27%"><div class="xs">APPROVED PLANTILLA</div>' + sig(sg.payroll, 'ul') + '</td>' +
+    '<td><div class="xs">CERTIFIED:</div><div class="xs">Each person whose name appears on the above payroll has been paid the amount stated opposite his name after identifying Him.</div><div class="dis">Name and signature of Disbursing officer</div></td></tr></table></div></section>';
+
+  /* ---- Disbursement Voucher ---- */
   var one = calcs.length === 1 ? calcs[0].c : null;
-  if (forms.dv) html += '<section class="page"><div class="hd"><div>Republic of the Philippines</div><div class="off">PROVINCE OF CAMARINES NORTE</div></div><table class="grid dv">' +
-    '<tr><td colspan="3"><h1 style="margin:0;text-align:left">DISBURSEMENT VOUCHER</h1></td><td>No.<br>Date:</td></tr>' +
-    '<tr><td>Mode of Payment</td><td colspan="3"><span class="bx">X</span> Check &nbsp; <span class="bx"></span> Cash &nbsp; <span class="bx"></span> Others</td></tr>' +
-    '<tr><td>Payee</td><td><b>' + E(payee) + '</b></td><td>TIN/Employee No.</td><td>Obligation Request No.</td></tr>' +
-    '<tr><td>Address</td><td><b>' + E(cd.address) + '</b></td><td>Office/Unit/Project<br><b>PIO</b></td><td>Code<br><b>' + E(cd.rc) + '</b></td></tr>' +
-    '<tr><th colspan="3">EXPLANATION</th><th>AMOUNT</th></tr><tr><td colspan="3" class="exp">TO PAYMENT for the above named Payee' + (calcs.length > 1 ? 's' : '') + ' for the reimbursement of ' + (calcs.length > 1 ? 'their' : 'the') + ' Travelling Expenses incurred on ' + E(period) + ' at ' + E(dest) + ' as per supporting papers hereto attached <i><b>amounting to ' + E(pesoWords(sum.total)) + ' only…</b></i>' +
-      '<table class="allow"><tr><td colspan="3"><b>ALLOWABLE ALLOWANCES</b></td></tr>' +
-      '<tr><td>Trans</td><td class="r">' + money(sum.transpo) + '</td><td>(to ' + E(dest) + ')</td></tr>' +
-      '<tr><td>Lodging</td><td class="r">' + money(sum.lodging) + '</td><td>' + (one ? '(' + one.nights + ' night' + (one.nights === 1 ? '' : 's') + ')' : '') + '</td></tr>' +
-      '<tr><td>Meal</td><td class="r">' + money(sum.food) + '</td><td>' + (one ? '(' + money(one.rt.meal) + '/meal X ' + one.meals + ')' : '') + '</td></tr>' +
-      '<tr><td>Incidental</td><td class="r">' + money(sum.other) + '</td><td>' + (one ? '(' + money(one.rt.inc) + '/day X ' + one.incDays + ' day' + (one.incDays === 1 ? '' : 's') + ')' : '') + '</td></tr>' +
-      '<tr><td><b>TOTAL:</b></td><td class="r"><b>' + money(sum.total) + '</b></td><td></td></tr></table>' +
-      '<p class="small"><b>CERTIFIED:</b> Each person whose name appears on this roll rendered service for the time stated</p>' + sig(sg.pio) + '</td><td class="r top"><b>' + money(sum.total) + '</b></td></tr>' +
-    '<tr><td colspan="3" class="r">Total</td><td class="r"><b>' + money(sum.total) + '</b></td></tr>' +
-    '<tr><td colspan="2"><i>A. Certified</i><p><span class="bx"></span> Allotment obligated for the purpose as indicated above</p><p><span class="bx"></span> Supporting documents complete</p>' + sig(sg.acct) + '<div class="small">Date</div></td><td colspan="2"><i>B. Certified</i><p class="c">Funds Available</p><br><br>' + sig(sg.treas) + '<div class="small">Date</div></td></tr>' +
-    '<tr><td colspan="2"><i>C. Approved for Payment</i><br><br><br>' + sig(sg.gov) + '</td><td colspan="2"><i>D. Received Payment</i><table class="allow small"><tr><td>Check No.</td><td>Bank Name</td><td>Date</td></tr><tr><td colspan="3">Signature</td></tr><tr><td colspan="2">Printed Name</td><td>Date</td></tr><tr><td>OR/Other Documents</td><td>JEV No.</td><td>Date</td></tr></table></td></tr></table></section>';
-  if (forms.or) html += '<section class="page"><div class="hd"><div>Republic of the Philippines</div><div class="off">PROVINCE OF CAMARINES NORTE</div></div><h1>OBLIGATION REQUEST</h1><div class="no">No. ________<br>Date: ________</div>' +
-    '<table class="grid"><tr><td>Payee</td><td colspan="4"><b>' + E(payee) + '</b></td></tr><tr><td>Office</td><td colspan="4">' + E(cd.office) + '</td></tr><tr><td>Address</td><td colspan="4">Daet, Camarines Norte</td></tr>' +
-    '<tr><th>Responsibility Center</th><th>Particulars</th><th>F.P.P</th><th>Account Code</th><th>Amount</th></tr>' +
-    '<tr class="tall"><td class="c top">' + E(cd.rc) + '</td><td class="top">Travelling Expenses incurred on ' + E(period) + ' at ' + E(dest) + '</td><td class="c top">' + E(cd.fpp) + '</td><td class="c top">' + E(cd.acct) + '</td><td class="r top">' + money(sum.total) + '</td></tr>' +
-    '<tr><td colspan="4" class="r">Total</td><td class="r"><b>' + money(sum.total) + '</b></td></tr>' +
-    '<tr><td colspan="2"><i>A. Certified</i><p class="small">Charges to budget necessary, lawful and under my direct supervision</p><p class="small">Supporting documents valid, proper and legal</p><br>' + sig(sg.pio) + '<div class="small">Date:</div></td><td colspan="3"><i>B. Certified</i><p class="small">Existence of Available Appropriation</p><br><br>' + sig(sg.budget) + '<div class="small">Date:</div></td></tr></table></section>';
+  if (forms.dv) html += '<section class="pg dvp"><table class="box dv">' +
+    '<tr><td colspan="4" class="c hd2">Republic of the Philippines<br><span class="big">PROVINCE OF CAMARINES NORTE</span></td></tr>' +
+    '<tr class="h"><td colspan="3" class="title">DISBURSEMENT VOUCHER</td><td class="sm">No.<br>Date:</td></tr>' +
+    '<tr><td class="lbl">Mode of Payment</td><td colspan="3" class="mop"><span class="bx">X</span> Check <span class="bx gap"></span> Cash <span class="bx gap"></span> Others</td></tr>' +
+    '<tr><td class="lbl">Payee</td><td class="b">' + E(payee) + '</td><td class="c sm2">TIN/Employee No.</td><td class="c sm2">Obligation Request<br>No.</td></tr>' +
+    '<tr><td class="lbl" rowspan="2">Address</td><td class="b" rowspan="2">' + E(cd.address) + '</td><td colspan="2" class="c sm2">Responsibility Center</td></tr>' +
+    '<tr><td class="c sm2">Office/Unit/Project<br><b>PIO</b></td><td class="c sm2">Code<br><b>' + E(cd.rc) + '</b></td></tr>' +
+    '<tr><td colspan="3" class="c b">EXPLANATION</td><td class="c b">AMOUNT</td></tr>' +
+    '<tr class="tallx"><td colspan="3" class="exp">TO PAYMENT for the above named Payee' + (calcs.length > 1 ? 's' : '') + ' for the reimbursement of ' + (calcs.length > 1 ? 'their' : 'his/her') + ' Travelling Expenses incurred on <b>' + E(period) + '</b> at <b>' + E(dest) + '</b> as per supporting papers hereto attached &nbsp;amounting to<br><b>' + E(pesoWords(sum.total)) + ' only………</b>' +
+      (one ? '<table class="allow"><tr><td colspan="3"><b>ALLOWABLE ALLOWANCES</b></td></tr><tr><td>Trans</td><td class="r">' + money(one.transpo) + '</td><td>(to ' + E(dest) + ')</td></tr><tr><td>Lodging</td><td class="r">' + money(one.lodging) + '</td><td>(' + one.nights + ' night' + (one.nights === 1 ? '' : 's') + ')</td></tr><tr><td>Meal</td><td class="r">' + money(one.food) + '</td><td>(' + money(one.rt.meal) + '/meal X ' + one.meals + ')</td></tr><tr><td>Incidental</td><td class="r">' + money(one.other) + '</td><td>(' + money(one.rt.inc) + '/day X ' + one.incDays + ' days)</td></tr><tr><td><b>TOTAL:</b></td><td class="r"><b>' + money(one.total) + '</b></td><td></td></tr></table>' : '') +
+    '</td><td class="r top amt">' + money(sum.total) + '</td></tr>' +
+    '<tr><td colspan="3" class="r">Total &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td><td class="r b">' + money(sum.total) + '</td></tr>' +
+    '<tr><td colspan="2" class="cA"><i>A. Certified</i><div class="ck"><span class="bx"></span>Allotment obligated for the purpose<br>as indicated above</div><div class="ck"><span class="bx tall"></span>Supporting documents complete</div></td><td colspan="2" class="cA"><i>B. Certified</i><div class="c fa">Funds Available</div></td></tr>' +
+    '<tr class="sigrow"><td colspan="2" class="c">' + sig(sg.acct, 'ul') + '</td><td colspan="2" class="c">' + sig(sg.treas) + '</td></tr>' +
+    '<tr><td colspan="2" class="dt">Date</td><td colspan="2" class="dt">Date</td></tr>' +
+    '<tr><td colspan="2" class="cC"><i>C. Approved for Payment</i><div class="gsig">' + sig(sg.gov) + '</div></td><td colspan="2" class="cD"><i>D. Received Payment</i>' +
+      '<table class="rp"><tr><td style="width:28%">Check No.</td><td>Bank Name</td><td style="width:30%">Date</td></tr><tr><td colspan="3">Signature</td></tr><tr><td colspan="3">Printed Name<br><span style="margin-left:28%">Date</span></td></tr><tr><td colspan="2" class="c">OR/Other Documents</td><td>JEV No. &nbsp;&nbsp;Date</td></tr></table></td></tr></table></section>';
+
+  /* ---- Obligation Request ---- */
+  if (forms.or) html += '<section class="pg dvp"><table class="box orq">' +
+    '<tr><td colspan="5" class="c hd2"><b class="xs2">Republic of the Philippines</b><br><span class="big b">PROVINCE OF CAMARINES NORTE</span></td></tr>' +
+    '<tr class="h"><td colspan="4" class="title">OBLIGATION REQUEST</td><td class="sm">No.<br>Date:</td></tr>' +
+    '<tr><td class="lbl b">Payee</td><td colspan="4" class="b">' + E(payee) + '</td></tr>' +
+    '<tr><td class="lbl b">Office</td><td colspan="4">' + E(cd.office) + '</td></tr>' +
+    '<tr><td class="lbl b">Address</td><td colspan="4">Daet Camarines Norte</td></tr>' +
+    '<tr><th class="xs" style="width:13%">Responsibility<br>Center</th><th style="width:35%">Particulars</th><th style="width:24%">F.P.P</th><th style="width:12%">Account<br>Code</th><th style="width:16%">Amount</th></tr>' +
+    '<tr class="tallx"><td class="c top">' + E(cd.rc) + '</td><td class="c top">Travelling Expenses incurred on<br><b>' + E(period) + ' at ' + E(dest) + '.</b></td><td class="c top xs2">' + E(cd.fpp) + '</td><td class="c top">' + E(cd.acct) + '</td><td class="r top b">' + money(sum.total) + '</td></tr>' +
+    '<tr><td colspan="3" style="border-right:0"></td><td>Total</td><td class="r b">' + money(sum.total) + '</td></tr>' +
+    '<tr><td colspan="2" class="cA"><i>A. Certified</i><div class="ck"><span class="bx"></span>Charges to budget necessary,<br>lawful and under my direct<br>supervision</div><div class="ck"><span class="bx"></span>Supporting documents valid,<br>proper and legal</div></td><td colspan="3" class="cA"><i>B. Certified</i><div class="c fa">Existence of Available Appropriation</div></td></tr>' +
+    '<tr class="sigrow2"><td colspan="2" class="c">' + sig(sg.pio, 'ul') + '<div class="dl">Date : <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></div></td><td colspan="3" class="c">' + sig(sg.budget, 'ul') + '<div class="dl">Date : <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></div></td></tr></table></section>';
+
+  /* ---- Certificate of Travel Completed (one per person) ---- */
   if (forms.cert) calcs.forEach(function(x){
-    html += '<section class="page">' + head('') + '<p style="margin-top:18px">Appendix B</p><h1>CERTIFICATE OF TRAVEL COMPLETED</h1>' +
-      '<div class="cols"><div>' + sig(sg.payroll) + '</div><div class="r">' + E(fDate(dCert, o)) + '<br><span class="small">Date</span></div></div>' +
-      '<p class="body">I hereby certify that I have completed the travel authorized in Itinerary of Travel to ' + E(dest) + ' dated ' + E(period) + ' under conditions indicated below:</p>' +
-      '<p class="opt"><span class="bx">X</span> Strictly in accordance with the approved Itinerary.</p><p class="opt"><span class="bx"></span> Cut short as explained below. Additional itinerary submitted.</p><p class="opt"><span class="bx"></span> Extended as explained below. Additional itinerary submitted.</p><p class="opt"><span class="bx"></span> Other deviations explained below.</p>' +
-      '<p>Explanations/Justifications:</p><p class="line"></p><p>Evidence of travel hereto attached: Approved Travel Order dated ' + E(period) + ' with Certificate of Appearance and approved itinerary of travel.</p>' +
-      '<div class="cols"><div></div><div>' + sig([x.v.name, x.r.pos || x.r.et], 'Respectfully submitted:') + '</div></div>' +
-      '<p class="small">On evidence and information of which I have knowledge, the travel was actually undertaken.</p><div class="cols"><div></div><div>' + sig(sg.gov) + '</div></div></section>';
+    html += '<section class="pg ct"><div class="hd sans"><div>Republic of &nbsp;the Philippines</div><div>Province of Camarines Norte</div><div class="sp">D a e t</div><div class="off">PROVINCIAL INFORMATION OFFICE</div></div>' +
+      '<div class="ct-t"><div>Appendix &nbsp;B</div><b>CERTIFICATE OF TRAVEL COMPLETED</b></div>' +
+      '<div class="ct-top"><div>' + sig(sg.gov, 'ul') + '</div><div class="r2"><div class="ol">' + E(sg.gov[1]) + '</div><div class="c">Station &nbsp;Head</div><div class="ol dt2">' + E(day(dCert)) + '</div><div class="c">Date</div></div></div>' +
+      '<p class="ct-body">I &nbsp;hereby certify that I have completed the travel authorized in Itinerary of Travel to<br>' + E(dest) + ' on ' + E(period) + ' under conditions indicated below:</p>' +
+      '<table class="ct-opts"><tr><td class="ln2">✓</td><td>Strictly in accordance with the approved Itinerary.</td></tr><tr><td class="ln2"></td><td>Cut short as explained below. &nbsp;Additional itinerary submitted.</td></tr>' +
+      '<tr><td class="ln2"></td><td>Extended as explained below, &nbsp;Additional itinerary submitted.</td></tr><tr><td class="ln2"></td><td>Other deviations explained below.</td></tr></table>' +
+      '<table class="ct-ex"><tr><td class="k">Explanations/Justifications:</td><td><div class="ul2"></div><div class="ul2"></div><div class="ul2"></div></td></tr>' +
+      '<tr><td class="k">Evidence of travel hereto attached:</td><td><div class="ul2 tx">Approved Travel Order dated ' + E(period) + ' with Certificate of Appearance</div><div class="ul2 tx">and approved itinerary &nbsp;of travel below dated ' + E(day(dPrep)) + '</div><div class="ul2"></div><div class="ul2"></div></td></tr></table>' +
+      '<div class="ct-sub"><div class="lab">Respectfully submitted:</div>' + sig([x.v.name, x.r.pos || x.r.et], 'ul') + '</div>' +
+      '<p class="ct-ev">On evidence and &nbsp;information of which I have knowledge, the travel was actually undertaken.</p>' +
+      '<div class="ct-gov">' + sig([sg.gov[0].replace(/^HON\.\s*/, ''), sg.gov[1]], 'ul') + '</div></section>';
   });
+
   return '<!doctype html><html><head><meta charset="utf-8"><title>TEV · ' + E(t.event) + '</title><style>' +
-    '@page{size:A4 portrait;margin:14mm 14mm}@page land{size:A4 landscape;margin:10mm 10mm}' +
-    'body{font:11pt/1.35 "Times New Roman",serif;color:#000;margin:0}.page{page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}.land{page:land}' +
-    '.hd{text-align:center;line-height:1.3}.hd .off{font-weight:bold;margin-top:10px}h1{text-align:center;font-size:13pt;margin:14px 0 10px;letter-spacing:.04em}' +
-    '.no{text-align:right;margin:0 0 4px}table{border-collapse:collapse;width:100%}.kv td{padding:2px 4px;vertical-align:top}.r{text-align:right}.c{text-align:center}.top{vertical-align:top}' +
-    '.grid td,.grid th{border:1px solid #000;padding:4px 6px;vertical-align:top}.grid th{font-weight:bold;text-align:center}.grid .tot td{border-top:2px solid #000}.small{font-size:9pt}.grid.small td,.grid.small th{font-size:9pt;padding:3px 4px}' +
-    '.cols{display:flex;gap:30px;margin-top:22px}.cols>div{flex:1}.cols.three{gap:18px}.sig{text-align:center;margin-top:26px}.sig .lab{text-align:left;margin-bottom:26px}.sig b{display:block;text-decoration:underline}.sig span{display:block}' +
-    '.bx{display:inline-block;width:18px;height:14px;border:1px solid #000;text-align:center;font-size:9pt;line-height:14px;margin-right:4px;vertical-align:middle}' +
-    '.allow{width:auto;margin:10px 0 10px 30px}.allow td{padding:1px 10px 1px 0;border:0}.exp{line-height:1.5}.tall td{height:180px}.body{margin-top:24px;text-indent:30px}.opt{margin:6px 0 6px 40px}.line{border-bottom:1px solid #000;height:22px}' +
+    '@page{size:A4 portrait;margin:12mm 14mm}@page land{size:A4 landscape;margin:10mm 10mm}' +
+    'html,body{margin:0}body{font-family:Cambria,"Cambria Math",Georgia,"Times New Roman",serif;font-size:11pt;color:#000;line-height:1.3}' +
+    '.pg{page-break-after:always;break-after:page}.pg:last-child{page-break-after:auto;break-after:auto}.land{page:land}' +
+    'table{border-collapse:collapse}.r{text-align:right}.c{text-align:center}.b{font-weight:bold}.top{vertical-align:top}.xs{font-size:7.5pt}.xs2{font-size:8pt}' +
+    '.sig{text-align:center;line-height:1.25}.sig b{display:block}.sig span{display:block}.sig.ul b{text-decoration:underline}.sig.ov b{border-top:1.5px solid #000;padding-top:2px;text-decoration:none}' +
+    'u.dbl{text-decoration:underline double}' +
+    '.hd{text-align:center;line-height:1.25;font-size:10.5pt}.hd .sp{letter-spacing:.05em}.hd .off{font-weight:bold;font-size:12pt;margin-top:8mm}.hd.sans{font-family:Arial,Helvetica,sans-serif}' +
+    /* itinerary */
+    '.it .no{width:62mm;margin:6mm 0 0 auto;font-size:10.5pt}.it h1{font-size:12pt;text-align:center;margin:7mm 0 6mm}' +
+    '.kv{width:100%;font-size:10.5pt}.kv td{padding:0 2px;vertical-align:top}.kv .k{width:22mm}.kv .c1{width:6mm}.kv .sal{text-align:left;width:60mm}' +
+    '.purp{margin:4mm 0 1mm;font-size:10.5pt}' +
+    '.itin{width:100%;font-size:10pt}.itin th,.itin td{border:1px solid #000;padding:3px 5px;font-weight:normal;vertical-align:middle}' +
+    '.itin thead th{text-align:center}.itin .bt{vertical-align:bottom;text-align:left}.itin .bodyrow td{vertical-align:top;height:78mm;padding-top:8px}.itin .ln{min-height:16mm}.itin td.mid{vertical-align:top}.itin .mid>div:nth-child(2){margin-top:4mm}' +
+    '.itin .tot td{border-top:1px solid #000}' +
+    '.it-foot{display:flex;justify-content:space-between;margin-top:5mm;font-size:10pt}.it-foot .cert{line-height:1.35}.prep{width:72mm}.prep .lab{margin-bottom:9mm}.prep .ap{margin:7mm 0 0}' +
+    '.it-sigs{display:flex;justify-content:space-between;margin-top:12mm;font-size:10pt}.it-sigs .sig{width:80mm}' +
+    /* payroll */
+    '.pr{border:1px solid #000;padding:2mm 3mm 0;font-family:Calibri,Carlito,Arial,sans-serif;font-size:9pt}.pr-top{display:flex;justify-content:center;position:relative}.pr-t{font-weight:bold;text-decoration:underline;font-size:12pt}.pr-per{position:absolute;right:4mm;top:3mm;font-size:11pt}' +
+    '.pr-ag{margin-top:3mm;font-size:9.5pt}.pr-ag .rev{font-size:8pt}.pr .purp{font-size:10pt;margin:2mm 0}' +
+    '.pay{width:100%;font-size:8.5pt}.pay th,.pay td{border:1px solid #000;padding:2px 3px;font-weight:bold}.pay td{font-weight:normal;height:5mm}.pay th.xs{font-size:6pt;font-weight:normal}' +
+    '.pay-foot{width:calc(100% + 6mm);margin:0 -3mm;font-size:8pt}.pay-foot td{border-top:1px solid #000;border-right:1px solid #000;vertical-align:top;padding:2mm 3mm;height:34mm}.pay-foot td:last-child{border-right:0}.pay-foot .ind{margin:2mm 0 0 8mm;line-height:1.6}.pay-foot .sig{margin-top:8mm;font-family:Cambria,Georgia,serif;font-size:9.5pt}' +
+    '.pay-foot .dis{margin-top:12mm;border-top:1px solid #000;text-align:center;padding-top:1mm}' +
+    /* voucher and obligation request */
+    '.box{width:100%;border:1.5px solid #000}.box td,.box th{border:1px solid #000;padding:3px 6px;vertical-align:middle}.box th{font-weight:bold}' +
+    '.hd2{line-height:1.3;padding:6px}.hd2 .big{font-size:13pt}.box .h td{height:13mm}.box .title{font-size:14pt;padding-left:12mm}.box .sm{font-size:9.5pt;width:24%}.box .lbl{width:20%;text-align:center}.box .sm2{font-size:10pt}' +
+    '.mop .bx{margin:0 3mm 0 6mm}.mop .bx.gap{margin-left:24mm}' +
+    '.bx{display:inline-block;width:12mm;height:6mm;border:1px solid #000;text-align:center;line-height:6mm;vertical-align:middle}.bx.tall{height:10mm}' +
+    '.exp{text-align:center;vertical-align:top;padding:4mm 6mm;line-height:1.45}.tallx td{height:64mm}.amt{padding-top:16mm}' +
+    '.allow{margin:6mm auto 0 18mm;text-align:left}.allow td{border:0;padding:0 8px 0 0}' +
+    '.cA{vertical-align:top;height:36mm}.ck{display:flex;gap:4mm;align-items:flex-start;margin:6mm 0 0 8mm}.ck .bx{flex:none;width:8mm;height:5mm}.fa{margin-top:6mm}' +
+    '.sigrow td{height:17mm;vertical-align:bottom;border-top:0}.dt{font-size:10pt;padding:1px 6px}.cC{vertical-align:top;height:44mm}.cC .gsig{margin-top:20mm}.cD{vertical-align:top;padding:0}.cD i{display:block;padding:3px 6px}' +
+    '.rp{width:100%;font-size:10pt}.rp td{border:1px solid #000;height:7.5mm;vertical-align:top;padding:2px 4px}.rp tr:first-child td{border-top:1px solid #000}' +
+    '.orq .tallx td{height:92mm}.sigrow2 td{height:40mm;vertical-align:bottom}.sigrow2 .sig{margin-bottom:10mm}.dl{text-align:left;margin:0 0 4mm 4mm;font-size:10pt}' +
+    /* certificate */
+    '.ct{font-family:Arial,Helvetica,sans-serif;font-size:10.5pt}.ct-t{text-align:center;margin-top:9mm;line-height:1.35}' +
+    '.ct-top{display:flex;justify-content:space-between;margin:11mm 6mm 0 10mm}.ct-top .r2{width:62mm}.ct .ol{border-bottom:1px solid #000;text-align:center}.ct .dt2{margin-top:9mm}' +
+    '.ct-body{text-align:center;margin:8mm 0 4mm}.ct-opts{margin-left:42mm}.ct-opts td{padding:2mm 0}.ct-opts .ln2{width:20mm;border-bottom:1px solid #000;text-align:center;color:#1d4ed8}.ct-opts td+td{padding-left:20mm}' +
+    '.ct-ex{width:100%;margin-top:6mm}.ct-ex td{vertical-align:top;padding:0}.ct-ex .k{width:72mm;padding:3mm 0 0 8mm}.ul2{border-bottom:1px solid #000;min-height:5.5mm;font-size:8.5pt;white-space:nowrap}.ul2.tx{padding-top:1mm}' +
+    '.ct-sub{width:80mm;margin:9mm 0 0 auto;text-align:center}.ct-sub .lab{margin-bottom:8mm}.ct-ev{margin:9mm 0 0 30mm}.ct-gov{width:70mm;margin:9mm 0 0 auto}' +
     '</style></head><body>' + html + '</body></html>';
 }
 function printHtml(html){
@@ -2557,6 +2637,9 @@ document.addEventListener('click', function(ev){
       '<div class="label">Signatories on the forms</div>' + who('pio', 'Provincial Information Officer') + who('gov', 'Governor (approves TO, itinerary, voucher)') + who('payroll', 'Payroll (plantilla) certified by') + who('padmin', 'Travel order: by authority of the Governor') + who('acct', 'Accountant') + who('treas', 'Treasurer') + who('budget', 'Budget Officer') +
       '<div class="label">Codes</div><div class="two"><div class="field"><label for="cRc">Responsibility center</label><input class="input" id="cRc" value="' + esc(cd.rc) + '"></div><div class="field"><label for="cAc">Account code</label><input class="input" id="cAc" value="' + esc(cd.acct) + '"></div></div>' +
       '<div class="field"><label for="cFp">F.P.P</label><input class="input" id="cFp" value="' + esc(cd.fpp) + '"></div>' +
+      '<div class="field"><label for="cOf">Office (Obligation Request)</label><input class="input" id="cOf" value="' + esc(cd.office) + '"></div>' +
+      '<div class="field"><label for="cSt">Official station (Itinerary)</label><input class="input" id="cSt" value="' + esc(cd.station) + '"></div>' +
+      '<div class="field"><label for="cAd">Address (Voucher)</label><input class="input" id="cAd" value="' + esc(cd.address) + '"></div>' +
       '<p class="error" id="terr" role="alert"></p><div><button class="btn btn-primary" type="submit">Save TEV settings</button></div></div></form>';
     v.body = v.body.replace(/<\/div>$/, panelHtml + '</div>');
     return v;
@@ -2568,7 +2651,7 @@ document.addEventListener('submit', function(ev){
   function n(id){ return Number(document.getElementById(id).value) || 0; } function s(id){ return document.getElementById(id).value.trim(); }
   var sign = {}; ['pio', 'gov', 'payroll', 'padmin', 'acct', 'treas', 'budget'].forEach(function(k){ sign[k] = [s('sg_' + k + '0'), s('sg_' + k + '1')]; });
   var tev = { bicol: { daily: n('rBd'), transpo: n('rBt') }, outside: { daily: n('rOd'), transpo: n('rOt') }, province: { meals: n('rPm'), inc: n('rPi') }, sign: sign,
-              codes: Object.assign({}, tevCfg().codes, { rc: s('cRc'), acct: s('cAc'), fpp: s('cFp') }) };
+              codes: Object.assign({}, tevCfg().codes, { rc: s('cRc'), acct: s('cAc'), fpp: s('cFp'), office: s('cOf'), station: s('cSt'), address: s('cAd') }) };
   if (!tev.bicol.daily || !tev.outside.daily) return bad('terr', 'Enter the daily rates.');
   busy(f.querySelector('[type=submit]'), act('saveTevSetup', { tev: tev }, 'TEV settings saved'), 'terr');
 }, true);
