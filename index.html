@@ -220,7 +220,8 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .panel-h select.input{height:36px;width:auto;max-width:100%}
 .panel-b{padding:18px}
 .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:20px;align-items:start}
-.span-12{grid-column:span 12}.span-7{grid-column:span 7}.span-5{grid-column:span 5}.span-6{grid-column:span 6}.span-8{grid-column:span 8}.span-4{grid-column:span 4}
+.grid.dash{align-items:stretch}.grid.dash>section.panel{display:flex;flex-direction:column}.grid.dash>section.panel>.list,.grid.dash>section.panel>.empty,.grid.dash>section.panel>.table-wrap{flex:1}
+.span-3{grid-column:span 3}.span-9{grid-column:span 9}.span-10{grid-column:span 10}.span-11{grid-column:span 11}.span-12{grid-column:span 12}.span-7{grid-column:span 7}.span-5{grid-column:span 5}.span-6{grid-column:span 6}.span-8{grid-column:span 8}.span-4{grid-column:span 4}
 .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
 .tiles.three{grid-template-columns:repeat(3,minmax(0,1fr))}
 .tile{padding:16px 18px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
@@ -365,7 +366,7 @@ tr.total td{border-top:2px solid var(--line-strong);background:var(--surface-2);
 
 /* ---------- responsive ---------- */
 @media (max-width:1100px){
-  .span-7,.span-5,.span-6,.span-8,.span-4{grid-column:span 12}
+  .span-3,.span-4,.span-5,.span-6,.span-7,.span-8,.span-9,.span-10,.span-11{grid-column:span 12}
   .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
   .shell{grid-template-columns:minmax(0,1fr)}
   .side{display:none}
@@ -1072,14 +1073,21 @@ function viewDashboard(){
   var adm = isAdmin(), P = widgetPrefs(), html = '';
   var staff = S.users.filter(function(u){ return u.active && (!adm || S.dashDiv === 'all' || u.division === S.dashDiv); });
   var W = adm ? adminWidgets(staff) : empWidgets();
-  P.order.forEach(function(id){ if (P.hidden.indexOf(id) < 0 && W[id]) html += W[id](widgetDef(id)[2]); });
+  // Pack widgets into full rows of 12 so side-by-side boxes always line up:
+  // a box that would leave a gap at the end of its row is widened to fill it.
+  var items = P.order.filter(function(id){ return P.hidden.indexOf(id) < 0 && W[id] && W[id](widgetDef(id)[2]); }).map(function(id){ return { id: id, n: widgetDef(id)[2] }; });
+  var row = [], used = 0;
+  function closeRow(){ if (row.length && used < 12){ var grow = 12 - used, k = row.length; row.forEach(function(it, i){ var add = Math.floor(grow / k) + (i < grow % k ? 1 : 0); it.n += add; }); } row = []; used = 0; }
+  items.forEach(function(it){ if (used + it.n > 12) closeRow(); row.push(it); used += it.n; if (used === 12) closeRow(); });
+  closeRow();
+  items.forEach(function(it){ html += W[it.id](it.n); });
   var actions = (adm
       ? '<button class="btn btn-glass hide-sm" data-act="customize">' + ic('sliders') + 'Customize</button><button class="btn btn-glass" data-go="log">' + ic('plus') + 'Add offset</button><button class="btn btn-sun" data-act="useModal">' + ic('minus') + 'Record use</button>'
       : '<button class="btn btn-glass hide-sm" data-act="customize">' + ic('sliders') + 'Customize</button>' + (hasLeaves() ? '<button class="btn btn-glass" data-go="leaves">' + ic('plane') + 'My leaves</button><button class="btn btn-sun" data-go="log">' + ic('plus') + 'Log offset</button>' : '<button class="btn btn-sun" data-go="log">' + ic('plus') + 'Log offset</button>'));
   return { eyebrow: fDate(today(), { weekday:'long', month:'long', day:'numeric', year:'numeric' }),
     title: greeting() + ', ' + esc(S.me.name.split(' ')[0]) + '!',
     sub: (adm ? 'Offsets across the office' + (S.dashDiv === 'all' ? '' : ' · ' + esc(divOf(S.dashDiv).short)) + '.' : (S.me.division ? divChip(S.me.division) + ' · ' : '') + (hasLeaves() ? esc(S.me.empType) + ' · vacation and sick leave grow by 1.25 days a month.' : esc(S.me.empType || 'JO') + ' · unused offsets carry over every month.')) + '<span class="quip">' + ic('star') + '<span>' + esc(quip()) + '</span></span>',
-    actions: actions, body: '<div class="grid">' + (html || '<div class="span-12 panel">' + empty('sliders', 'Your dashboard is empty', 'Turn widgets back on to see your numbers.', '<button class="btn btn-primary" data-act="customize">Customize</button>') + '</div>') + '</div>' };
+    actions: actions, body: '<div class="grid dash">' + (html || '<div class="span-12 panel">' + empty('sliders', 'Your dashboard is empty', 'Turn widgets back on to see your numbers.', '<button class="btn btn-primary" data-act="customize">Customize</button>') + '</div>') + '</div>' };
 }
 function span(n){ return 'span-' + n; }
 function adminWidgets(staff){
@@ -2636,33 +2644,49 @@ function toPrintDialog(id){
     (others.length ? '<div class="label">Also print</div><div class="wlist">' + others.map(function(x){ return '<label class="check" style="padding:10px 12px"><input type="checkbox" data-to-pick="' + x.id + '"><span><b>' + esc(x.event) + '</b><br><span class="hint">' + esc(fRange(x.dateFrom, x.dateTo, { month:'short', day:'numeric' })) + ' · ' + esc(x.destination || '') + '</span></span></label>'; }).join('') + '</div>' : ''),
     '<button type="button" class="btn btn-ghost" data-act="toDocx" style="margin-right:auto">' + ic('download') + 'Word file</button><button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button type="button" class="btn btn-primary" data-act="toPrintGo">' + ic('print') + 'Print</button>');
 }
+/* Laid out from to-template.docx: A4, 1-inch margins, the same tab stops, line spacing and empty lines as the Word file. */
 function toPageHtml(t, prepared){
   var o = { month:'long', day:'numeric', year:'numeric' }, sg = tevCfg().sign, names = sortNames(t.names), rec = !selfRecommend(t);
+  var pad = sg.padmin || TEV_DEF.sign.padmin;
   function E(x){ return esc(x == null ? '' : x); }
-  return '<section class="to"><img class="hdr" src="to-header.png" alt=""><img class="wm" src="to-watermark.jpg" alt=""><img class="ftr" src="to-footer.png" alt="">' +
-    '<div class="body"><h1>TRAVEL ORDER</h1><p class="dp">' + E(fDate(prepared || today(), o)) + '</p>' +
-    '<table class="to-names"><tr><td class="k">TO:</td><td>' + names.map(function(n){ return '<b>' + E(n) + '</b>'; }).join('<br>') + '</td></tr></table>' +
-    '<p>You are hereby directed to undertake the following Itinerary of Travel:</p>' +
-    '<table class="kv"><tr><td>Place of Destination</td><td>:</td><td>' + E(t.destination) + '</td></tr><tr><td>Date/Time of Departure</td><td>:</td><td>' + E(fDate(t.dateFrom, o)) + '</td></tr>' +
-    '<tr><td>Date/Time of Arrival</td><td>:</td><td>' + E(fDate(t.dateTo || t.dateFrom, o)) + '</td></tr><tr><td>Purpose</td><td>:</td><td>' + E(String(t.event || '').replace(/[.\s]+$/, '') + (t.destination ? ' at ' + t.destination : '')) + '</td></tr></table>' +
-    '<div class="opt"><span class="bx">' + (t.tev === 'No' ? 'X' : '') + '</span><span>This order allows official time only.</span></div>' +
-    '<div class="opt"><span class="bx">' + (t.tev === 'Yes' ? 'X' : '') + '</span><span>By way of this directive, you are entitled to collect traveling expenses subject to the usual accounting and auditing rules and regulations.</span></div>' +
-    '<div class="sigs">' + (rec ? '<div class="s rec"><div>RECOMMENDING APPROVAL:</div><b>' + E(sg.pio[0]) + '</b><span>' + E(sg.pio[1]) + '</span></div>' : '<div class="s rec"></div>') +
-    '<div class="s app"><div>APPROVED BY:</div><b>' + E(sg.gov[0].replace(/^HON\.\s*/, '')) + '</b><span>' + E(sg.gov[1]) + '</span></div>' +
-    '<div class="s auth"><div>By Authority of the Governor:</div><b>' + E((sg.padmin || TEV_DEF.sign.padmin)[0]) + '</b><span>' + E((sg.padmin || TEV_DEF.sign.padmin)[1]) + '</span></div></div></div></section>';
+  function P(cls, html){ return '<div class="p ' + cls + '">' + (html || '') + '</div>'; }
+  var purpose = String(t.event || '').replace(/[.\s]+$/, '') + (t.destination ? ' at ' + t.destination : '');
+  var h = '';
+  h += P('title', 'TRAVEL ORDER') + P('e9') + P('date', E(fDate(prepared || today(), o))) + P('e9');
+  names.forEach(function(n, i){ h += P('name', (i === 0 ? '<span class="to">TO</span><span class="tc">:</span>' : '') + '<b>' + E(n) + '</b>'); });
+  if (names.length < 2) h += P('e');
+  h += P('e') + P('', 'You are hereby directed to undertake the following Itinerary of Travel:');
+  function row(label, value){ return P('row', '<span class="lb">' + label + '</span><span class="cl">:</span><span class="vl">' + E(value) + '</span>'); }
+  h += row('Place of Destination', t.destination) + row('Date/Time of Departure', fDate(t.dateFrom, o)) + row('Date/Time of Arrival', fDate(t.dateTo || t.dateFrom, o));
+  h += P('purpose', '<span class="lb">Purpose</span><span class="cl">:</span>' + E(purpose));
+  h += P('e') + P('opt1', '<span class="bx b1">' + (t.tev === 'No' ? 'X' : '') + '</span>This order allows official time only.') + P('e');
+  h += P('opt2', '<span class="bx b2">' + (t.tev === 'Yes' ? 'X' : '') + '</span>By way of this directive, you are entitled to collect traveling expenses subject to the usual accounting and auditing rules and regulations.') + P('e') + P('e');
+  h += P('rec', rec ? 'RECOMMENDING APPROVAL:' : '') + P('e7') + P('e7') + P('e7');
+  h += P('sig', rec ? '       ' + E(sg.pio[0]) : '') + P('sig', rec ? '         ' + E(sg.pio[1]) : '');
+  h += P('e') + P('e') + P('c', 'APPROVED BY:') + P('e') + P('e') + P('e') + P('c', E(sg.gov[0].replace(/^HON\.\s*/, ''))) + P('c s9', E(sg.gov[1]));
+  h += P('e') + P('e') + P('e') + P('c', 'By Authority of the Governor:') + P('e') + P('e') + P('e') + P('e') + P('e') + P('c', E(pad[0])) + P('c s9', E(pad[1]));
+  return '<section class="to"><img class="hdr" src="to-header.png" alt=""><img class="wm" src="to-watermark.jpg" alt=""><img class="ftr" src="to-footer.png" alt=""><div class="body">' + h + '</div></section>';
 }
 function toDocHtml(list, prepared){
   var base = location.href.replace(/[#?].*$/, '').replace(/[^\/]*$/, '');
+  // measurements in mm, taken from the Word template (margins 25.4, default tabs every 12.7)
   return '<!doctype html><html><head><meta charset="utf-8"><base href="' + base + '"><title>Travel Order</title><style>' +
-    '@page{size:A4 portrait;margin:0}html,body{margin:0;padding:0}body{font:11pt/1.35 "Maiandra GD","Century Gothic","Segoe UI",Arial,sans-serif;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+    '@page{size:A4 portrait;margin:0}html,body{margin:0;padding:0}' +
+    'body{font-family:"Maiandra GD","Century Gothic","Segoe UI",Arial,sans-serif;font-size:11pt;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
     '.to{position:relative;width:210mm;height:297mm;overflow:hidden;page-break-after:always;break-after:page}.to:last-child{page-break-after:auto;break-after:auto}' +
-    '.hdr{position:absolute;left:1.6mm;top:0;width:216mm}.wm{position:absolute;left:4.5mm;top:20mm;width:201mm;opacity:.07}.ftr{position:absolute;left:1.2mm;top:258.8mm;width:207mm}' +
-    '.body{position:absolute;left:25.4mm;right:25.4mm;top:37mm;bottom:42mm}h1{font-size:13pt;text-align:center;margin:0 0 6mm}.dp{text-align:right;margin:0 0 5mm}' +
-    '.to-names{border-collapse:collapse;margin-bottom:6mm}.to-names td{vertical-align:top;padding:0}.to-names .k{width:24mm;font-weight:bold}' +
-    'p{margin:0 0 2mm}.kv{border-collapse:collapse;margin-bottom:6mm}.kv td{padding:0 2mm 0 0;vertical-align:top}.kv td:first-child{width:43mm;white-space:nowrap}.kv td:nth-child(2){width:4mm}' +
-    '.opt{display:flex;gap:6mm;align-items:flex-start;margin:0 0 4mm 2mm}.bx{flex:none;width:13mm;height:6mm;border:1px solid #000;text-align:center;font-weight:bold;line-height:6mm;background:#fff}' +
-    '.sigs{position:relative;margin-top:8mm}.s div{margin-bottom:9mm}.s b{display:block}.s span{display:block;font-size:10pt}.rec{margin-left:78mm;min-height:24mm}' +
-    '.app{margin:8mm 0 0 48mm}.auth{margin:10mm 0 0 38mm;text-align:left}.auth b,.auth span{margin-left:25mm}' +
+    '.hdr{position:absolute;left:1.59mm;top:0;width:216mm;height:48.47mm}.wm{position:absolute;left:4.25mm;top:19.5mm;width:201.5mm;height:201.6mm;opacity:.05}' +
+    '.ftr{position:absolute;left:1.21mm;top:258.8mm;width:206.9mm;height:37.73mm}' +
+    '.body{position:absolute;left:25.4mm;top:36.6mm;width:159.2mm}' +
+    '.p{position:relative;line-height:4.7mm;min-height:4.7mm;white-space:pre-wrap}.e9{min-height:3.9mm;line-height:3.9mm}.e7{min-height:3mm;line-height:3mm}' +
+    '.title{font-family:Calibri,Carlito,Arial,sans-serif;font-weight:bold;font-size:13pt;text-align:center;line-height:5.6mm;min-height:6.8mm}' +
+    '.date{padding-left:114.3mm}' +
+    '.name{padding-left:25.4mm}.name .to{position:absolute;left:0}.name .tc{position:absolute;left:12.7mm}' +
+    '.row{padding-left:50.8mm}.row .lb{position:absolute;left:0}.row .cl{position:absolute;left:45mm}' +
+    '.purpose{padding-left:25.4mm;text-indent:25.4mm;text-align:justify}.purpose .lb{position:absolute;left:0;text-indent:0}.purpose .cl{position:absolute;left:44.7mm;text-indent:0}' +
+    '.opt1,.opt2,.opt2b{padding-left:25.4mm}' +
+    '.bx{position:absolute;width:13.49mm;height:6.61mm;box-sizing:border-box;border:1px solid #000;background:#fff;text-align:center;font-weight:bold;line-height:6.4mm;text-indent:0}' +
+    '.b1{left:4.76mm;top:.19mm}.b2{left:4.87mm;top:1.39mm}' +
+    '.rec{margin-left:88.9mm;text-align:center}.sig{padding-left:88.9mm}.c{text-align:center}.s9{font-size:9pt;line-height:3.8mm;min-height:3.8mm}' +
     '</style></head><body>' + list.map(function(t){ return toPageHtml(t, t.id === M.printTO ? prepared : t.datePrepared); }).join('') + '</body></html>';
 }
 document.addEventListener('click', function(ev){
