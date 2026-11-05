@@ -2428,16 +2428,18 @@ function pesoWords(n){
 
 /* ---------- printable TEV forms ---------- */
 var TEV_FORMS = [['itin', 'Itinerary of Travel', 'One page per person'], ['payroll', 'Payroll', 'Prints by itself on long bond paper (8.5 × 13 in)'], ['dv', 'Disbursement Voucher', 'Amount in words filled in'],
-                 ['or', 'Obligation Request', ''], ['cert', 'Certificate of Travel Completed', 'One page per person']];
+                 ['or', 'Obligation Request', ''], ['cert', 'Certificate of Travel Completed', 'One page per person'], ['jocert', 'Certification for Job Order staff', 'One page for all JO staff picked below']];
 function tevPrintDialog(toId){
   var t = toOf(toId); if (!t) return;
   var list = (S.tevs || []).filter(function(v){ return v.toId === toId && !tevRule(v).none; });
   if (!list.length) return toast('No TEVs to print for this travel order.');
   M = { printTo: toId };
+  var jo = list.filter(function(v){ return tevRule(v).et === 'JO'; });
   modal('Print TEV forms', '<div class="sumbox"><b>' + esc(t.event) + '</b><span>' + esc(t.destination || '') + ' · ' + fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric', year:'numeric' }) + '</span></div>' +
     (tripOf(t).scope ? '' : '<div class="warn-note">' + ic('flag') + '<span>Open a TEV and pick where the travel is first, so the amounts are right.</span></div>') +
-    '<div class="label">Forms (printed in this order)</div><div class="wlist">' + TEV_FORMS.map(function(f){ return '<label class="check" style="padding:10px 12px"><input type="checkbox" data-form-pick="' + f[0] + '" checked><span><b>' + f[1] + '</b>' + (f[2] ? '<br><span class="hint">' + f[2] + '</span>' : '') + '</span></label>'; }).join('') + '</div>' +
+    '<div class="label">Forms (printed in this order)</div><div class="wlist">' + TEV_FORMS.filter(function(f){ return f[0] !== 'jocert' || jo.length; }).map(function(f){ return '<label class="check" style="padding:10px 12px"><input type="checkbox" data-form-pick="' + f[0] + '" checked><span><b>' + f[1] + '</b>' + (f[2] ? '<br><span class="hint">' + f[2] + '</span>' : '') + '</span></label>'; }).join('') + '</div>' +
     '<div class="label">People</div><div class="wlist">' + list.map(function(v){ return '<label class="check" style="padding:10px 12px"><input type="checkbox" data-person-pick="' + v.id + '" checked><span><b>' + esc(v.name) + '</b><br><span class="hint">' + peso(tevCalc(t, v).total) + '</span></span></label>'; }).join('') + '</div>' +
+    (jo.length === 1 ? '<div class="field"><label for="pPron">Job Order certification says</label><select class="input" id="pPron"><option value="he">he is allowed…</option><option value="she">she is allowed…</option></select></div>' : '') +
     '<div class="two"><div class="field"><label for="pDate">Date on the itinerary</label><input class="input" type="date" id="pDate" value="' + esc(t.datePrepared || today()) + '"></div><div class="field"><label for="pCert">Date of the certificate</label><input class="input" type="date" id="pCert" value="' + esc(addDays(t.dateTo || t.dateFrom, 3)) + '"></div></div>',
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button type="button" class="btn btn-primary" data-act="tevPrintGo">' + ic('print') + 'Print</button>');
 }
@@ -2613,7 +2615,10 @@ function printHtml(html){
   var f = document.createElement('iframe'); f.setAttribute('aria-hidden', 'true'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
   document.body.appendChild(f);
   var w = f.contentWindow; w.document.open(); w.document.write(html); w.document.close();
-  setTimeout(function(){ try { w.focus(); w.print(); } catch(e){ toast('Printing is blocked in this browser.'); } setTimeout(function(){ f.remove(); }, 60000); }, 400);
+  var imgs = Array.prototype.slice.call(w.document.images), done = false;
+  function go(){ if (done) return; done = true; try { w.focus(); w.print(); } catch(e){ toast('Printing is blocked in this browser.'); } setTimeout(function(){ f.remove(); }, 60000); }
+  Promise.all(imgs.map(function(i){ return i.complete ? 0 : new Promise(function(r){ i.onload = i.onerror = r; }); })).then(function(){ setTimeout(go, 300); });
+  setTimeout(go, 5000);
 }
 document.addEventListener('click', function(ev){
   var t = ev.target.closest('[data-act]'); if (!t) return;
@@ -2628,9 +2633,10 @@ document.addEventListener('click', function(ev){
     var people = (S.tevs || []).filter(function(v){ return ids.indexOf(v.id) >= 0; });
     var dP = document.getElementById('pDate').value || today(), dC = document.getElementById('pCert').value || today();
     var a4 = Object.assign({}, forms); delete a4.payroll;
+    var opts = { pron: (document.getElementById('pPron') || {}).value || '' };
     M.payJob = forms.payroll ? { to: to.id, ids: ids, dP: dP, dC: dC } : null;
     if (Object.keys(a4).length){
-      printHtml(tevDocHtml(to, people, a4, dP, dC));
+      printHtml(tevDocHtml(to, people, a4, dP, dC, opts));
       if (M.payJob){ var pj = M.payJob; closeModal(); M = { payJob: pj };
         modal('Print the payroll', '<p style="margin:0">The other forms went to the printer on A4. Load <b>long bond paper (8.5 × 13 in)</b>, then print the payroll.</p>',
           '<button type="button" class="btn btn-ghost" data-act="close">Skip</button><button type="button" class="btn btn-primary" data-act="tevPrintPay">' + ic('print') + 'Print payroll</button>'); }
@@ -2773,7 +2779,7 @@ function toDocHtml(list, prepared){
     'body{font-family:"Maiandra GD","Century Gothic","Segoe UI",Arial,sans-serif;font-size:11pt;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
     '.to{position:relative;width:210mm;height:297mm;overflow:hidden;page-break-after:always;break-after:page}.to:last-child{page-break-after:auto;break-after:auto}' +
     '.hdr{position:absolute;left:1.59mm;top:0;width:216mm;height:48.47mm}.wm{position:absolute;left:4.25mm;top:19.5mm;width:201.5mm;height:201.6mm;opacity:.05}' +
-    '.ftr{position:absolute;left:1.21mm;top:258.8mm;width:206.9mm;height:37.73mm}' +
+    '.ftr{position:absolute;left:3.35mm;top:266.9mm;width:203.3mm;height:29.11mm}' +
     '.body{position:absolute;left:25.4mm;top:36.6mm;width:159.2mm}' +
     '.p{position:relative;line-height:4.7mm;min-height:4.7mm;white-space:pre-wrap}.e9{min-height:3.9mm;line-height:3.9mm}.e7{min-height:3mm;line-height:3mm}' +
     '.title{font-family:Calibri,Carlito,Arial,sans-serif;font-weight:bold;font-size:13pt;text-align:center;line-height:5.6mm;min-height:6.8mm}' +
@@ -2868,7 +2874,8 @@ function xlSheet(name, T, rep){
   shapes.forEach(function(x){ h += '<div class="xs" style="left:' + x[0] + 'px;top:' + x[1] + 'px;width:' + x[2] + 'px;height:' + x[3] + 'px">' + esc(x[4]) + '</div>'; });
   return '<div class="xlw" style="width:' + W + 'px;min-height:' + H + 'px">' + h + '</div>';
 }
-tevDocHtml = function(t, people, forms, dPrep, dCert){
+tevDocHtml = function(t, people, forms, dPrep, dCert, opts){
+  opts = opts || {};
   var cfg = tevCfg(), sg = cfg.sign, cd = cfg.codes, tr = tripOf(t), dest = t.destination || '';
   var MON = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var ABB = ['Jan.','Feb.','Mar.','Apr.','May','June','July','Aug.','Sept.','Oct.','Nov.','Dec.'];
@@ -2921,17 +2928,47 @@ tevDocHtml = function(t, people, forms, dPrep, dCert){
   if (forms.cert) calcs.forEach(function(x){
     page('Travel Completed Cert', { SH: sg.gov[0], SHT: sg.gov[1], SHT2: sg.gov[1], CDATE: rng(dCert, dCert), IDATE: rng(dPrep, dPrep), NAME: x.v.name, POS: x.r.pos || x.r.et, GOV: sg.gov[0] });
   });
-  return '<!doctype html><html><head><meta charset="utf-8"><title>TEV · ' + esc(t.event) + '</title><style>' +
+  if (forms.jocert){ var jo = calcs.filter(function(x){ return x.r.et === 'JO'; }); if (jo.length) pages.push(joCertHtml(t, jo.map(function(x){ return x.v.name; }), opts.pron, sg)); }
+  var base = location.href.replace(/[#?].*$/, '').replace(/[^\/]*$/, '');
+  return '<!doctype html><html><head><meta charset="utf-8"><base href="' + base + '"><title>TEV · ' + esc(t.event) + '</title><style>' +
     (forms.payroll && Object.keys(forms).length === 1 ? '@page{size:13in 8.5in;margin:10mm 8mm}' : '@page{size:A4 portrait;margin:10mm 15mm 12mm}') + '@page land{size:A4 landscape;margin:12mm 8mm 10mm}@page long{size:13in 8.5in;margin:10mm 8mm}' +
     'html,body{margin:0}body{color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
     '.pg{page-break-after:always;break-after:page;break-inside:avoid;position:relative}.pg:last-child{page-break-after:auto;break-after:auto}' +
-    '.pg.land{page:land}.pg.long{page:long}' +
+    '.pg.land{page:land}.pg.long{page:long}@page cot{size:A4 portrait;margin:0}.pg.cot{page:cot}' + JO_CERT_CSS +
     '.xlw{position:relative;margin:0 auto}.xl{border-collapse:collapse;table-layout:fixed}.xl td{padding:0 3px;line-height:1.15;overflow:visible}.xl td>.v{display:block}' +
     '.xs{position:absolute;border:1px solid #000;background:#fff;box-sizing:border-box;text-align:center;font:10pt Arial,sans-serif;display:flex;align-items:center;justify-content:center}' +
     '</style></head><body>' + pages.join('') +
     // scale each form to fill the printable width of A4, like Excel's "fit to page"
-    '<script>(function(){var mm=96/25.4;document.querySelectorAll(".pg").forEach(function(p){var k=p.classList.contains("long")?[314,195]:p.classList.contains("land")?[279,184]:[178,270],w=p.firstChild,z=Math.min(k[0]*mm/w.offsetWidth,k[1]*mm/w.offsetHeight);w.style.zoom=z;});document.querySelectorAll("td.fit").forEach(function(td){var f=parseFloat(getComputedStyle(td).fontSize),n=0;var r=+td.dataset.room||0,sp=td.firstChild;while(sp.scrollWidth>sp.clientWidth+r+1&&n++<20){f*=0.95;td.style.fontSize=f+"px";}});})();<\/script></body></html>';
+    '<script>(function(){var mm=96/25.4;document.querySelectorAll(".pg:not(.cot)").forEach(function(p){var k=p.classList.contains("long")?[314,195]:p.classList.contains("land")?[279,184]:[178,270],w=p.firstChild,z=Math.min(k[0]*mm/w.offsetWidth,k[1]*mm/w.offsetHeight);w.style.zoom=z;});document.querySelectorAll("td.fit").forEach(function(td){var f=parseFloat(getComputedStyle(td).fontSize),n=0;var r=+td.dataset.room||0,sp=td.firstChild;while(sp.scrollWidth>sp.clientWidth+r+1&&n++<20){f*=0.95;td.style.fontSize=f+"px";}});})();<\/script></body></html>';
 };
+
+/* Certification for Job Order staff (cot-template.docx): letterhead like the travel order, Maiandra GD 12 pt, 1.15 lines, 1-inch margins */
+var JO_CERT_CSS = '.cotw{position:relative;width:210mm;height:296mm;overflow:hidden;font-family:"Maiandra GD","Century Gothic","Segoe UI",Arial,sans-serif;font-size:12pt}' +
+  '.cotw .hdr{position:absolute;left:1.59mm;top:0;width:216mm;height:48.47mm}.cotw .wm{position:absolute;left:4.25mm;top:19.5mm;width:201.5mm;height:201.6mm;opacity:.05}' +
+  '.cotw .ftr{position:absolute;left:3.35mm;top:266.9mm;width:203.3mm;height:29.11mm}' +
+  '.cotw .body{position:absolute;left:25.4mm;top:36.6mm;width:159.2mm}' +
+  '.cotw p{margin:0 0 2.82mm;line-height:5.85mm}.cotw .t{font-size:14pt;font-weight:bold;text-align:center;line-height:6.3mm}.cotw .e{min-height:5.85mm}' +
+  '.cotw .j{text-align:justify;text-indent:12.7mm}.cotw .sg{margin:0;text-align:center;font-size:13pt;line-height:6.3mm}';
+function sentenceName(n){
+  return String(n).toLowerCase().replace(/(^|[\s\-.'(])([a-z\u00f1])/g, function(m, a, b){ return a + b.toUpperCase(); }).replace(/\b(Ii|Iii|Iv)\b/g, function(m){ return m.toUpperCase(); });
+}
+function joinNames(a){ return a.length < 2 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
+function ordinal(d){ var v = d % 100; return d + ((v > 10 && v < 14) ? 'th' : ['th', 'st', 'nd', 'rd'][d % 10] || 'th'); }
+function joCertHtml(t, names, pron, sg){
+  var MON = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var many = names.length > 1; pron = many ? 'they' : (pron || 'he');
+  var ev = String(t.event || '').replace(/[.\s]+$/, ''); ev = ev.replace(/^To\b/, 'to');
+  var what = ev + (t.destination && ev.toLowerCase().indexOf(String(t.destination).split(',')[0].trim().toLowerCase()) < 0 ? ' at ' + t.destination : '');
+  var a = t.dateFrom, b = t.dateTo || t.dateFrom, x = { y: +a.slice(0, 4), m: +a.slice(5, 7) - 1, d: +a.slice(8, 10) }, y = { y: +b.slice(0, 4), m: +b.slice(5, 7) - 1, d: +b.slice(8, 10) };
+  var when = a === b ? MON[x.m] + ' ' + x.d + ', ' + x.y : (x.y === y.y && x.m === y.m) ? MON[x.m] + ' ' + x.d + '-' + y.d + ', ' + x.y : (x.y === y.y) ? MON[x.m] + ' ' + x.d + '-' + MON[y.m] + ' ' + y.d + ', ' + x.y : MON[x.m] + ' ' + x.d + ', ' + x.y + '-' + MON[y.m] + ' ' + y.d + ', ' + y.y;
+  var body = '<p class="t">CERTIFICATION</p><p class="e" style="line-height:5.3mm;min-height:5.3mm"></p>' +
+    '<p>TO WHOM IT MAY CONCERN:</p><p class="e"></p>' +
+    '<p class="j">THIS IS TO CERTIFY that due to non-availability of regular/permanent employee <b>' + esc(what) + '</b> on <b>' + esc(when) + '</b>, <b>' + esc(joinNames(names.map(sentenceName))) + ',</b> Job Order' + (many ? 's' : '') + ' of this office ' + (many ? 'were' : 'was') + ' allowed to undertake said tasks.</p>' +
+    '<p class="j">Certifying further that ' + pron + ' ' + (pron === 'they' ? 'are' : 'is') + ' allowed for reimbursable expenses covering meal allowance to the usual accounting and auditing rules and regulations chargeable to Travelling Expenses.</p>' +
+    '<p class="j">Issued this ' + ordinal(x.d) + ' day of ' + MON[x.m] + ' ' + x.y + ' at Daet, Camarines Norte.</p>' +
+    '<p class="e"></p><p class="e"></p><p class="sg"><b>' + esc(sg.pio[0]) + '</b></p><p class="sg">' + esc(sg.pio[1]) + '</p>';
+  return '<section class="pg cot"><div class="cotw"><img class="hdr" src="to-header.png" alt=""><img class="wm" src="to-watermark.jpg" alt=""><img class="ftr" src="to-footer.png" alt=""><div class="body">' + body + '</div></div></section>';
+}
 
 /* =====================================================================
    Instant saving. Forms close and the new item shows right away, marked
