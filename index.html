@@ -1082,24 +1082,25 @@ function viewDashboard(){
   closeRow();
   items.forEach(function(it){ html += W[it.id](it.n); });
   var actions = (adm
-      ? '<button class="btn btn-glass hide-sm" data-act="customize">' + ic('sliders') + 'Customize</button><button class="btn btn-glass" data-go="log">' + ic('plus') + 'Add offset</button><button class="btn btn-glass" data-act="requestModal">' + ic('plane') + 'Use my offset</button><button class="btn btn-sun" data-act="useModal">' + ic('minus') + 'Record use</button>'
-      : '<button class="btn btn-glass hide-sm" data-act="customize">' + ic('sliders') + 'Customize</button>' + (hasLeaves() ? '<button class="btn btn-glass" data-go="leaves">' + ic('plane') + 'My leaves</button>' : '') + '<button class="btn btn-glass" data-act="requestModal">' + ic('minus') + 'Use offset</button><button class="btn btn-sun" data-go="log">' + ic('plus') + 'Log offset</button>');
+      ? '<button class="btn btn-sun" data-go="log">' + ic('plus') + 'Add offset</button>'
+      : (hasLeaves() ? '<button class="btn btn-glass" data-go="leaves">' + ic('plane') + 'My leaves</button>' : '') + '<button class="btn btn-sun" data-go="log">' + ic('plus') + 'Log offset</button>');
   return { eyebrow: fDate(today(), { weekday:'long', month:'long', day:'numeric', year:'numeric' }),
     title: greeting() + ', ' + esc(S.me.name.split(' ')[0]) + '!',
     sub: (adm ? 'Offsets across the office' + (S.dashDiv === 'all' ? '' : ' · ' + esc(divOf(S.dashDiv).short)) + '.' : (S.me.division ? divChip(S.me.division) + ' · ' : '') + (hasLeaves() ? esc(S.me.empType) + ' · vacation and sick leave grow by 1.25 days a month.' : esc(S.me.empType || 'JO') + ' · unused offsets carry over every month.')) + '<span class="quip">' + ic('star') + '<span>' + esc(quip()) + '</span></span>',
-    actions: actions, body: '<div class="grid dash">' + (html || '<div class="span-12 panel">' + empty('sliders', 'Your dashboard is empty', 'Turn widgets back on to see your numbers.', '<button class="btn btn-primary" data-act="customize">Customize</button>') + '</div>') + '</div>' };
+    actions: actions, body: '<div class="grid dash">' + (html || '<div class="span-12 panel">' + empty('sliders', 'Your dashboard is empty', 'Turn widgets back on to see your numbers.', '<button class="btn btn-primary" data-act="customize">Customize</button>') + '</div>') + '</div>' +
+      (html ? '<div class="dash-foot"><button class="btn btn-sm btn-ghost" data-act="customize">' + ic('sliders') + 'Customize dashboard</button></div>' : '') };
 }
 function span(n){ return 'span-' + n; }
 function adminWidgets(staff){
   var all = sumStats(staff), pend = pending(), m = curMonth(), td = today(), mine = stats(S.me.username);
   var rows = staff.map(function(u){ return { u: u, s: stats(u.username) }; }).sort(function(a,b){ return byDiv(a.u, b.u); });
   return {
-    mine: function(n){ return '<button class="mine ' + span(n) + '" data-person="' + esc(S.me.username) + '"><span class="k">Your offset</span><b>' + fD(mine.avail) + ' available</b><span class="hint">' + (mine.month ? '+' + fD(mine.month) + ' this month · ' : '') + (mine.pendN + mine.reqN ? (mine.pendN + mine.reqN) + ' waiting for another admin' : 'Nothing waiting') + '</span><span class="go">' + ic('right') + '</span></button>'; },
+    mine: function(n){ return '<button class="mine ' + span(n) + '" data-act="requestModal"><span class="k">Your offset</span><b>' + fD(mine.avail) + ' available</b><span class="hint">' + (mine.month ? '+' + fD(mine.month) + ' this month · ' : '') + (mine.pendN + mine.reqN ? (mine.pendN + mine.reqN) + ' waiting for another admin' : 'Nothing waiting') + '</span><span class="go">Use offset' + ic('right') + '</span></button>'; },
     kpis: function(n){ return '<div class="tiles ' + span(n) + '">' +
-      tile('Waiting for review', pend.length, pending('USE').length + ' day-off ' + (pending('USE').length === 1 ? 'request' : 'requests') + ' · ' + pending('EARN').length + ' offsets', pend.length ? 'warn' : '', 'clock', 'data-go="approvals"') +
-      tile('Total available', fD(all.avail), 'Usable now · ' + staff.length + ' active staff', '', 'shield', 'data-go="staff"') +
+      tile('To review', pend.length, pending('USE').length + ' day-off ' + (pending('USE').length === 1 ? 'request' : 'requests') + ' · ' + pending('EARN').length + ' offsets', pend.length ? 'warn' : '', 'clock', 'data-go="approvals"') +
+      tile('Available', fD(all.avail), 'Usable now · ' + staff.length + ' active staff', '', 'shield', 'data-go="staff"') +
       tile(mShort(m) + ' so far', '+' + fD(all.month), 'Usable on ' + closesOn(m), '', 'month', 'data-go="monthly"') +
-      tile('Used this month', fD(all.usedM), 'Days off taken in ' + mShort(m), '', 'plane', 'data-rec="type:USE"') + '</div>'; },
+      tile('Used in ' + mShort(m), fD(all.usedM), 'Days off taken in ' + mShort(m), '', 'plane', 'data-rec="type:USE"') + '</div>'; },
     balances: function(n){ return panel('Staff balances', 'users', rows.length ? '<div class="table-wrap"><table><thead><tr><th>Employee</th><th class="r">Available</th><th class="r">This month</th><th></th></tr></thead><tbody>' +
         rows.map(function(r){ return '<tr class="tap" data-grp="' + esc(r.u.division) + '" data-person="' + esc(r.u.username) + '" tabindex="0"><td><b>' + esc(r.u.name) + '</b><div class="hint">' + esc(r.u.empType) + '</div></td><td class="r num"><b>' + fD(r.s.avail) + '</b>' + (r.s.reqDays ? '<div class="hint">' + fD(r.s.reqDays) + ' requested</div>' : '') + '</td><td class="r num">' + (r.s.month ? '+' + fD(r.s.month) : '—') + '</td>' +
           '<td class="r"><button class="btn btn-sm btn-ghost" data-act="useModal" data-u="' + esc(r.u.username) + '"' + (r.s.avail > 0 && r.u.username !== S.me.username ? '' : ' disabled') + ' aria-label="Record offset use for ' + esc(r.u.name) + '">' + ic('minus') + 'Use</button></td></tr>'; }).join('') + '</tbody></table></div>'
@@ -1125,16 +1126,16 @@ function empWidgets(){
     hero: function(n){ return '<section class="hero ' + span(n) + '"><button class="hero-main" data-go="monthly"><span class="k">Available offset</span><span class="big">' + fD(st.avail) + '</span>' +
       '<span class="sub">' + (st.reqDays ? fD(st.reqDays) + ' requested · ' + fD(Math.max(st.free, 0)) + ' free to request' : 'Tap to see each month') + '</span></button>' +
       '<div class="hero-r"><button class="box" data-go="monthly"><span>' + fMonth(m) + ' so far</span><b>+' + fD(st.month) + '</b><span>Usable on ' + closesOn(m) + '</span></button>' +
-      '<button class="btn btn-sun" data-act="requestModal"' + (st.free > 0 ? '' : ' disabled') + '>' + ic('plane') + 'Request day off</button></div></section>'; },
+      '<button class="btn btn-sun" data-act="requestModal"' + (st.free > 0 ? '' : ' disabled') + '>' + ic('plane') + 'Use offset</button></div></section>'; },
     kpis: function(n){ return '<div class="tiles three ' + span(n) + '">' +
-      tile('Waiting for review', fD(st.pending + st.reqDays), (st.pendN + st.reqN) + ' not yet reviewed', st.pendN + st.reqN ? 'warn' : '', 'clock', 'data-rec="status:Pending"') +
+      tile('To review', fD(st.pending + st.reqDays), (st.pendN + st.reqN) + ' not yet reviewed', st.pendN + st.reqN ? 'warn' : '', 'clock', 'data-rec="status:Pending"') +
       tile('Earned this year', fD(st.earnedY), 'Confirmed in ' + td.slice(0,4), '', 'plus', 'data-rec="type:EARN"') +
       tile('Used this year', fD(st.usedY), st.lastUse ? 'Last day off ' + fDate(st.lastUse) : 'No days off yet', '', 'plane', 'data-rec="type:USE"') + '</div>'; },
     recent: function(n){ var list = sorted(S.entries.filter(function(e){ return e.type === 'EARN'; })).slice(0, 6);
       return panel('Recent offsets', 'list', list.length ? '<ul class="list">' + list.map(function(e){ return entryRow(e); }).join('') + '</ul>' : empty('plus', 'No offsets logged yet', 'When you work beyond the ' + S.settings.workdays + '-day schedule, log it with the event and venue.', '<button class="btn btn-primary" data-go="log">' + ic('plus') + 'Log your first offset</button>'),
         '<button class="btn btn-sm btn-ghost" data-go="records">See all</button>', span(n)); },
     requests: function(n){ var list = S.entries.filter(function(e){ return e.type === 'USE' && (e.date >= td || e.status === 'Pending'); }).sort(function(a,b){ return a.date < b.date ? -1 : 1; });
-      return panel('My days off', 'plane', list.length ? '<ul class="list">' + list.map(function(e){ return entryRow(e); }).join('') + '</ul>' : empty('plane', 'No days off planned', 'Request a day off and an admin will approve it.', st.free > 0 ? '<button class="btn btn-ghost" data-act="requestModal">' + ic('plane') + 'Request day off</button>' : ''), '', span(n)); },
+      return panel('My days off', 'plane', list.length ? '<ul class="list">' + list.map(function(e){ return entryRow(e); }).join('') + '</ul>' : empty('plane', 'No days off planned', 'Use offset on your balance card. An admin approves it.'), '', span(n)); },
     trend: function(n){ return panel('My last 6 months', 'chart', trendChart(trendData([S.me.username], 6)), '', span(n)); },
     holidays: function(n){ return holidayWidget(n); }
   };
@@ -1206,7 +1207,7 @@ function checkEarnForm(root, auto){
 function viewLog(){
   var adm = isAdmin(), pre = S.prefill || {}; S.prefill = null;
   return { eyebrow: 'Offsets', title: adm ? 'Add an offset' : 'Log an offset', sub: adm ? 'Log your own extra work, or add one for a staff member who forgot.' : 'Log extra work beyond the ' + S.settings.workdays + '-day schedule. An admin confirms it before it counts.',
-    actions: '<button class="btn btn-glass" data-act="requestModal">' + ic('plane') + 'Request day off</button>',
+    actions: '<button class="btn btn-glass" data-act="requestModal">' + ic('plane') + 'Use offset</button>',
     body: '<div class="grid"><form class="panel panel-b stack span-7" data-form="earn" id="earnForm">' + earnFields({ username: pre.username }, adm) +
       '<p class="error" id="err" role="alert"></p><div><button class="btn btn-primary btn-lg" type="submit">' + ic('plus') + (adm ? 'Save offset' : 'Submit for confirmation') + '</button></div></form>' +
       panel('How offsets are counted', 'shield', '<div class="panel-b stack" style="font-size:14px;color:var(--ink-2)">' +
@@ -1311,7 +1312,7 @@ function viewRecords(){
   if (adm && S.recTab === 'activity'){
     return { eyebrow: 'Records', title: 'Activity log', sub: 'Every change made in the app: who did it, what changed and when. Nobody can edit or delete this log in the app.',
       actions: '<button class="btn btn-glass" data-act="exportActivity">' + ic('download') + 'Download CSV</button>',
-      body: '<section class="panel"><div class="panel-h">' + tabs + '<span class="hint">' + S.activity.length + ' most recent actions</span></div><div style="padding:0 18px">' + actLegend() + '</div>' + (S.activity.length ? '<ul class="list">' + S.activity.map(activityRow).join('') + '</ul>' : empty('history', 'No activity yet', 'Changes will appear here.')) + '</section>' };
+      body: '<section class="panel"><div class="panel-h">' + tabs + '<span class="hint">' + S.activity.length + ' most recent actions</span></div><div style="padding:0 18px">' + actLegend() + '</div>' + (actList().length ? '<ul class="list">' + actList().map(activityRow).join('') + '</ul>' : empty('history', 'No activity yet', 'Changes will appear here.')) + '</section>' };
   }
   var list = filteredRecords();
   var net = list.reduce(function(s, e){ return e.status === 'Confirmed' ? s + (e.type === 'USE' ? -e.days : e.days) : s; }, 0);
@@ -1350,15 +1351,19 @@ function viewStaff(){
   return { eyebrow: 'People', title: 'Staff', sub: 'Tap a person to change their division or employment type, reset their PIN, or manage their account.',
     actions: '<button class="btn btn-sun" data-act="focusAdd">' + ic('plus') + 'Add staff</button>',
     body: '<div class="grid">' + panel('Accounts', 'users', '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Employment</th><th>Status</th><th class="r">Offsets</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>', (function(){ var np = S.users.filter(function(u){ return u.noPin; }).length; return np ? '<button class="btn btn-sm btn-primary" data-act="setPins">' + ic('key') + 'Set PINs for ' + np + '</button>' : '<span class="hint num">' + S.users.length + ' total</span>'; })(), 'span-12') +
-      panel('Divisions', 'pie', (divs ? '<ul class="list">' + divs + '</ul>' : empty('pie', 'No divisions', 'Add the PIO divisions so staff can choose theirs at sign-in.')) + '<div class="panel-b hint" style="border-top:1px solid var(--line)">Staff pick their division on the sign-in page. To change someone’s division or employment type, tap Manage.</div>', '<button class="btn btn-sm btn-primary" data-act="divModal">' + ic('plus') + 'Add division</button>', 'span-6') +
-      '<form class="panel span-6" data-form="addUser" autocomplete="off" id="addUser"><div class="panel-h"><h2>' + ic('plus') + 'Add staff</h2></div><div class="panel-b stack">' +
-        '<div class="field"><label for="an">Full name</label><input class="input" id="an" name="name" required></div>' +
-        '<div class="two"><div class="field"><label for="au">Username</label><input class="input" id="au" name="username" autocapitalize="none" spellcheck="false" placeholder="e.g. jdelacruz" required></div><div class="field"><label for="ap">Starting PIN</label><input class="input pin" id="ap" name="pin" inputmode="numeric" maxlength="6" placeholder="4–6 digits" required></div></div>' +
-        '<div class="two"><div class="field"><label for="ad">Division</label>' + divSelect('ad', '', 'Division', false, true) + '</div><div class="field"><label for="ar">Role</label><select class="input" id="ar" name="role"><option value="employee">Employee</option><option value="admin">Admin</option></select></div></div>' +
-        '<div class="field"><label for="aet">Employment</label><select class="input" id="aet" name="empType"><option value="JO">JO (Job order)</option><option value="COS">COS (Contract of service)</option><option>Casual</option><option>Regular</option></select><span class="hint">Regular and casual employees get CSC leave credits. Everyone can log offsets.</span></div>' +
-        '<span class="hint">Give the PIN to the employee in person. They can change it after signing in.</span><p class="error" id="err" role="alert"></p><div><button class="btn btn-primary" type="submit">' + ic('plus') + 'Add staff</button></div></div></form></div>' };
+      panel('Divisions', 'pie', (divs ? '<ul class="list">' + divs + '</ul>' : empty('pie', 'No divisions', 'Add the PIO divisions so staff can choose theirs at sign-in.')) + '<div class="panel-b hint" style="border-top:1px solid var(--line)">Staff pick their division on the sign-in page. To change someone’s division or employment type, tap Manage.</div>', '<button class="btn btn-sm btn-primary" data-act="divModal">' + ic('plus') + 'Add division</button>', 'span-12') +
+'</div>' };
 }
 
+function addStaffModal(){
+  modal('Add staff', '<div class="field"><label for="an">Full name</label><input class="input" id="an" name="name" required></div>' +
+    '<div class="two"><div class="field"><label for="au">Username</label><input class="input" id="au" name="username" autocapitalize="none" spellcheck="false" placeholder="e.g. jdelacruz" required></div><div class="field"><label for="ap">Starting PIN</label><input class="input pin" id="ap" name="pin" inputmode="numeric" maxlength="6" placeholder="4–6 digits" required></div></div>' +
+    '<div class="two"><div class="field"><label for="ad">Division</label>' + divSelect('ad', '', 'Division', false, true) + '</div><div class="field"><label for="ar">Role</label><select class="input" id="ar" name="role"><option value="employee">Employee</option><option value="admin">Admin</option></select></div></div>' +
+    '<div class="field"><label for="aet">Employment</label><select class="input" id="aet" name="empType"><option value="JO">JO (Job order)</option><option value="COS">COS (Contract of service)</option><option>Casual</option><option>Regular</option></select><span class="hint">Regular and casual get CSC leave credits. JO and COS get wellness leave. Everyone can log offsets.</span></div>' +
+    '<span class="hint">Give the PIN to the employee in person. They can change it after signing in.</span>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">' + ic('plus') + 'Add staff</button>', 'addUser');
+  setTimeout(function(){ var an = document.getElementById('an'); if (an) an.focus(); }, 30);
+}
 /* ----- settings: rules, holidays, backup ----- */
 function viewSettings(){
   var yr = S.holYear || today().slice(0,4);
@@ -1439,7 +1444,7 @@ function daysFields(date, days){
 }
 function requestModal(date){
   var st = stats(S.me.username);
-  modal('Request a day off', '<div class="mini-tiles"><div><span>Available</span><b>' + fD(st.avail) + '</b></div><div><span>Free to request</span><b>' + fD(Math.max(st.free, 0)) + '</b></div></div>' + daysFields(date) +
+  modal('Use offset', '<div class="mini-tiles"><div><span>Available</span><b>' + fD(st.avail) + '</b></div><div><span>Free to request</span><b>' + fD(Math.max(st.free, 0)) + '</b></div></div>' + daysFields(date) +
     '<span class="hint">' + (isAdmin() && otherAdmins() ? 'Another admin approves your request.' : isAdmin() ? 'You are the only admin, so this is approved right away.' : 'An admin approves it, then the days are deducted.') + '</span>',
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit"' + (st.free > 0 ? '' : ' disabled') + '>' + ic('plane') + 'Send request</button>', 'requestUse');
 }
@@ -1477,7 +1482,7 @@ function personModal(username){
       '<p class="hint" style="margin:0">Deactivate blocks sign-in but keeps them on the lists. Remove deletes the account; their past entries stay in the records and the activity log.</p>' : '') +
     (recent.length ? '<div class="label" style="display:flex;justify-content:space-between;align-items:center">Recent<button type="button" class="btn btn-sm btn-ghost" data-act="personRecords" data-u="' + esc(username) + '">' + ic('list') + 'All records</button></div><ul class="list boxed">' + recent.map(function(e){ return entryRow(e); }).join('') + '</ul>' : '<p class="hint">No offsets yet.</p>'),
     isAdmin() ? '<button type="button" class="btn btn-ghost" data-act="personAdd" data-u="' + esc(username) + '">' + ic('plus') + 'Add offset</button>' +
-      (self ? '<button type="button" class="btn btn-primary" data-act="requestModal">' + ic('plane') + 'Request day off</button>' : '<button type="button" class="btn btn-primary" data-act="useModal" data-u="' + esc(username) + '"' + (st.avail > 0 ? '' : ' disabled') + '>' + ic('minus') + 'Record use</button>') : '');
+      (self ? '<button type="button" class="btn btn-primary" data-act="requestModal">' + ic('plane') + 'Use offset</button>' : '<button type="button" class="btn btn-primary" data-act="useModal" data-u="' + esc(username) + '"' + (st.avail > 0 ? '' : ' disabled') + '>' + ic('minus') + 'Record use</button>') : '');
 }
 function customizeModal(){
   var role = wRole(), P = widgetPrefs();
@@ -1553,7 +1558,7 @@ document.addEventListener('click', function(ev){
   if (a === 'openActivity'){ S.recTab = 'activity'; S.view = 'records'; render(); window.scrollTo(0,0); return; }
   if (a === 'clearFilters'){ goRecords({}); return; }
   if (a === 'logOn'){ S.prefill = {}; S.view = 'log'; render(); var fd = document.getElementById('fd'); if (fd){ fd.value = t.dataset.date; checkEarnForm(document, true); } window.scrollTo(0,0); return; }
-  if (a === 'focusAdd'){ var an = document.getElementById('an'); if (an){ an.scrollIntoView({ behavior: 'smooth', block: 'center' }); an.focus({ preventScroll: true }); } return; }
+  if (a === 'focusAdd') return addStaffModal();
   if (a === 'print'){ window.print(); return; }
   if (a === 'exportMonth'){
     var mm = S.mon || curMonth();
@@ -1771,14 +1776,23 @@ function toText(t){
   var p = String(t.event || '').trim().replace(/[.\s]+$/, '');
   return [fDate(t.dateFrom, { month:'long', day:'numeric', year:'numeric' }), p + (t.destination ? ' in ' + t.destination : '') + ' ' + toWhen(t), ''].concat(sortNames(t.names)).join('\n');
 }
+/* names are kept in capitals for the printed forms; on screen they read normally */
+function dispName(n){ var u = S.users.filter(function(x){ return x.name.toUpperCase() === n; })[0]; return u ? u.name : sentenceName(n); }
+/* dashboard version: a summary that opens the Travel orders page; only "Prepare" stays as a shortcut */
+function toMini(t){
+  var prep = isAdmin() && t.status === 'Filed' && !t._saving;
+  return '<li class="row tap to-mini" data-go="travel" tabindex="0"><div class="to-date"><b>' + fDate(t.dateFrom, { month:'short' }).toUpperCase() + '</b><span class="num">' + pd(t.dateFrom).getDate() + (t.dateTo !== t.dateFrom ? '–' + pd(t.dateTo).getDate() : '') + '</span></div>' +
+    '<div class="body"><div class="t">' + esc(t.event) + '</div><div class="m">' + (t.destination ? esc(t.destination) + ' · ' : '') + esc(sortNames(t.names).map(dispName).join(', ')) + '</div></div>' +
+    (prep ? '<button class="btn btn-sm btn-primary" data-act="toManage" data-id="' + t.id + '">' + ic('shield') + 'Prepare</button>' : '<span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + t.status + '</span>') + '</li>';
+}
 function toRow(t){
   var adm = isAdmin(), mine = t.createdBy === S.me.username, canEdit = adm || (mine && t.status === 'Filed');
   return '<li class="to-card"><div class="to-date"><b>' + fDate(t.dateFrom, { month:'short' }).toUpperCase() + '</b><span class="num">' + pd(t.dateFrom).getDate() + (t.dateTo !== t.dateFrom ? '–' + pd(t.dateTo).getDate() : '') + '</span></div>' +
     '<div class="to-body"><div class="t">' + esc(t.event) + '</div><div class="m">' + fRange(t.dateFrom, t.dateTo, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') + '</div>' +
-      '<div class="to-names">' + sortNames(t.names).map(function(n){ return '<span>' + esc(n) + '</span>'; }).join('') + '</div>' +
+      '<div class="to-names">' + sortNames(t.names).map(function(n){ return '<span>' + esc(dispName(n)) + '</span>'; }).join('') + '</div>' +
       '<div class="row-btns"><span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + t.status + '</span>' + (adm || t.tev ? '<span class="pill ' + (t.tev === 'Yes' ? 'hol' : 'off') + '">TEV: ' + (t.tev || 'not set') + '</span>' : '') + '<span class="hint">Filed by ' + esc(userName(t.createdBy)) + ' · ' + ago(t.createdAt) + '</span></div></div>' +
     (t._saving ? '<div class="to-acts"><span class="pill off">Saving…</span></div>' : '<div class="to-acts">' + (adm ? '<button class="btn btn-sm ' + (t.status === 'Filed' ? 'btn-primary' : 'btn-ghost') + '" data-act="toManage" data-id="' + t.id + '">' + ic('shield') + (t.status === 'Filed' ? 'Prepare' : 'Update') + '</button>' : '') +
-      '<div class="to-icons"><button class="icon-btn" data-act="toCopy" data-id="' + t.id + '" aria-label="Copy text" title="Copy text">' + ic('list') + '</button>' + (canEdit ? '<button class="icon-btn" data-act="toEdit" data-id="' + t.id + '" aria-label="Edit" title="Edit">' + ic('edit') + '</button>' : '') + '</div></div>') + '</li>';
+      '<div class="to-icons"><button class="btn btn-sm btn-ghost" data-act="toCopy" data-id="' + t.id + '" title="Copy the text for the document">' + ic('list') + 'Copy</button>' + (canEdit ? '<button class="btn btn-sm btn-ghost" data-act="toEdit" data-id="' + t.id + '">' + ic('edit') + 'Edit</button>' : '') + '</div></div>') + '</li>';
 }
 function viewTravel(){
   var f = S.toFilter || 'upcoming', td = today(), mine = S.toMine;
@@ -1938,7 +1952,7 @@ function outWidget(n){
 }
 function tosWidget(n, mine){
   var td = today(), list = activeTOs().filter(function(t){ return t.dateTo >= td && (!mine || t.usernames.indexOf(S.me.username) >= 0 || t.createdBy === S.me.username); }).sort(function(a,b){ return a.dateFrom < b.dateFrom ? -1 : 1; }).slice(0, 4);
-  return panel(mine ? 'My travel orders' : 'Upcoming travel orders', 'route', list.length ? '<ul class="list">' + list.map(toRow).join('') + '</ul>' : empty('route', 'No travel orders coming up', 'File one when the team is sent to the field.', '<button class="btn btn-ghost" data-act="toNew">' + ic('plus') + 'New travel order</button>'), '<button class="btn btn-sm btn-ghost" data-go="travel">All</button>', span(n));
+  return panel(mine ? 'My travel orders' : 'Upcoming travel orders', 'route', list.length ? '<ul class="list">' + list.map(function(t){ return toMini(t); }).join('') + '</ul>' : empty('route', 'No travel orders coming up', 'File one when the team is sent to the field.', '<button class="btn btn-ghost" data-act="toNew">' + ic('plus') + 'New travel order</button>'), '<button class="btn btn-sm btn-ghost" data-go="travel">All</button>', span(n));
 }
 function leaveWidget(n){
   if (!hasLeaves()) return '';
@@ -2129,7 +2143,8 @@ function myLeavesWidget(n){
 }
 (function(){
   var A = adminWidgets, E = empWidgets;
-  adminWidgets = function(staff){ var w = A(staff); w.tevsum = function(n){ var yr = today().slice(0, 4); return '<h2 class="sec-label span-12">' + ic('peso') + 'TEVs in ' + yr + '</h2>' + tevTiles((S.tevs || []).filter(function(v){ return tevYear(v) === yr; }), Number(S.settings.tevBudget) || 0, span(n)).replace(/data-act="tevTab"/g, 'data-act="tevOpen"'); }; return w; };
+  adminWidgets = function(staff){ var w = A(staff); w.tevsum = function(n){ var yr = today().slice(0, 4), s = tevSums((S.tevs || []).filter(function(v){ return tevYear(v) === yr; })), bud = Number(S.settings.tevBudget) || 0;
+      return '<button class="mine ' + span(n) + '" data-go="tev"><span class="k">' + ic('peso') + 'TEVs ' + yr + '</span><b>' + peso(s.pending) + ' pending</b><span class="hint">' + s.prepN + ' to prepare · ' + peso(s.released) + ' released' + (bud ? ' · ' + peso(bud - s.released - s.pending) + ' left' : '') + '</span><span class="go">TEVs' + ic('right') + '</span></button>'; }; return w; };
   empWidgets = function(){ var w = E(); w.mytev = myTevWidget; w.myleaves = myLeavesWidget; return w; };
   // Regular and casual staff: lines about leaves instead of offsets.
   var Q0 = quip;
@@ -2186,7 +2201,7 @@ function printTO(t, btn){
   var R = toRow;
   toRow = function(t){
     var h = R(t);
-    if (t.status === 'Prepared' && isAdmin() && !t._saving) h = h.replace('<div class="to-icons">', '<div class="to-icons"><button class="icon-btn" data-act="toPrint" data-id="' + t.id + '" aria-label="Print travel order" title="Print travel order">' + ic('print') + '</button>');
+    if (t.status === 'Prepared' && isAdmin() && !t._saving) h = h.replace('<div class="to-icons">', '<div class="to-icons"><button class="btn btn-sm btn-ghost" data-act="toPrint" data-id="' + t.id + '">' + ic('print') + 'Print</button>');
     if (t.tev === 'Yes' && !t._saving){ var n = (S.tevs || []).filter(function(v){ return v.toId === t.id; }); if (n.length) h = h.replace(/(<span class="pill hol">TEV: Yes<\/span>)/, '<button class="pill hol" data-act="tevGo" data-id="' + t.id + '" style="border:0;cursor:pointer">TEV: Yes · ' + n.filter(function(v){ return v.status === 'Claimed'; }).length + '/' + n.length + ' claimed</button>'); }
     return h;
   };
@@ -3016,78 +3031,55 @@ function actKind(a){
   if (/^(Added|Logged|Filed|Recorded|Requested)/i.test(s)) return 'add';
   return 'edit';
 }
-/* The process each kind of record goes through. The step this action belongs to is highlighted. */
-function actFlow(a){
-  var s = String(a.action || ''), d = String(a.details || ''), k = actKind(a);
-  function F(title, steps, at, bad){ return { title: title, steps: steps, at: at, bad: !!bad }; }
-  if (/day-off|day off|offset use/i.test(s))
-    return F('Day off using offsets', ['Requested', /Rejected/.test(s) ? 'Rejected' : 'Approved', 'Taken from the balance'],
-      /^Requested/.test(s) ? 0 : /^(Approved|Rejected)/.test(s) ? 1 : /Recorded offset use/.test(s) ? 2 : 0, /Rejected/.test(s));
-  if (/offset|entry/i.test(s))
-    return F('Offset', ['Logged', /Rejected/.test(s) ? 'Rejected' : 'Approved', 'Added to the balance'],
-      /Added a confirmed/.test(s) ? 2 : /^(Approved|Rejected)/.test(s) ? 1 : 0, /Rejected|Removed/.test(s));
-  if (/travel order/i.test(s)){
-    var cancel = /Status: Cancelled/.test(d) || /^Deleted/.test(s), tev = /TEV: Yes/.test(d);
-    return F('Travel order', ['Filed', cancel ? 'Cancelled' : 'Prepared', tev ? 'TEVs made' : 'Done'],
-      /^Filed|^Edited/.test(s) ? 0 : /Status: Prepared/.test(d) ? (tev ? 2 : 1) : 1, cancel);
-  }
-  if (/TEV/.test(s))
-    return F('Travel expense voucher', ['To prepare', 'Worksheet filled', 'Submitted', 'Claimed'],
-      /^Claimed/.test(s) ? 3 : /Submitted/.test(d) ? 2 : /Pending/.test(d) ? 2 : /^Deleted/.test(s) ? 0 : 1, /^Deleted/.test(s));
-  if (/leave/i.test(s))
-    return F('Leave', ['Filed on paper (CS Form 6)', /Removed/.test(s) ? 'Record removed' : 'Recorded here', 'Credits updated'],
-      /Removed/.test(s) ? 1 : 2, /Removed/.test(s));
-  if (/account|PIN|role|employee|employment|position|division/i.test(s) && !/^(Added|Deleted|Edited) a division/.test(s))
-    return F('Staff account', ['Account added', 'PIN set', 'Details kept up to date', /Deactivated|Removed/.test(s) ? 'Closed' : 'Active'],
-      /^Added an account/.test(s) ? 0 : /PIN/.test(s) ? 1 : /Deactivated|Removed|Activated/.test(s) ? 3 : 2, /Deactivated|Removed/.test(s));
-  return F('Change', ['Requested', 'Saved', 'Everyone sees it'], 1, k === 'del');
-}
 activityRow = function(a){
   var tgt = a.target && userOf(a.target) ? userName(a.target) : a.target, k = actKind(a);
-  return '<li class="row tap" data-act="actDetail" data-at="' + esc(a.at) + '" data-who="' + esc(a.actor) + '" tabindex="0"><span class="mark ak-' + k + '" title="' + esc(ACT_KINDS[k].label) + '">' + ic(ACT_KINDS[k].ic) + '</span><div class="body"><div class="t">' + esc(userName(a.actor)) + ' · ' + esc(String(a.action || '').toLowerCase()) + (tgt && a.target !== a.actor ? ' · ' + esc(tgt) : '') + '</div><div class="m">' + esc(a.details) + '</div></div><span class="hint" title="' + esc(when(a.at)) + '">' + ago(a.at) + '</span></li>';
+  return '<li class="row tap" data-act="actDetail" tabindex="0" title="Tap to show the full text"><span class="mark ak-' + k + '" title="' + esc(ACT_KINDS[k].label) + '">' + ic(ACT_KINDS[k].ic) + '</span><div class="body"><div class="t">' + esc(userName(a.actor)) + ' · ' + esc(String(a.action || '').toLowerCase()) + (tgt && a.target !== a.actor ? ' · ' + esc(tgt) : '') + '</div><div class="m">' + esc(a.details) + '</div></div><span class="hint" title="' + esc(when(a.at)) + '">' + ago(a.at) + '</span></li>';
 };
 function actLegend(){
-  return '<div class="ak-legend">' + Object.keys(ACT_KINDS).map(function(k){ return '<span><i class="ak-dot ak-' + k + '"></i>' + ACT_KINDS[k].label + '</span>'; }).join('') + '</div>';
+  var cur = S.actKind || '', n = {}; S.activity.forEach(function(a){ var k = actKind(a); n[k] = (n[k] || 0) + 1; });
+  return '<div class="ak-chips" role="group" aria-label="Show">' + '<button class="chip" data-act="actKind" data-k="" aria-pressed="' + !cur + '">All</button>' +
+    Object.keys(ACT_KINDS).map(function(k){ return '<button class="chip" data-act="actKind" data-k="' + k + '" aria-pressed="' + (cur === k) + '"><i class="ak-dot ak-' + k + '"></i>' + ACT_KINDS[k].label + (n[k] ? ' · ' + n[k] : '') + '</button>'; }).join('') + '</div>';
 }
-function actDetail(at, who){
-  var a = S.activity.filter(function(x){ return x.at === at && x.actor === who; })[0]; if (!a) return;
-  var k = actKind(a), fl = actFlow(a), tgt = a.target && userOf(a.target) ? userName(a.target) : a.target;
-  var chain = [['Who', userName(a.actor), 'users'], ['Did', a.action, ACT_KINDS[k].ic]].concat(tgt ? [['About', tgt, 'list']] : []).concat(a.details ? [['Details', a.details, 'flag']] : []);
-  var top = '<div class="fc fc-chain">' + chain.map(function(c, i){
-    return (i ? '<span class="fc-arrow" aria-hidden="true"></span>' : '') + '<div class="fc-node' + (i === 1 ? ' ak-' + k + ' on' : '') + '"><span class="fc-k">' + ic(c[2]) + c[0] + '</span><b>' + esc(c[1]) + '</b></div>'; }).join('') + '</div>';
-  var steps = '<div class="fc fc-steps">' + fl.steps.map(function(st, i){
-    var cls = i < fl.at ? 'done' : i === fl.at ? 'on ak-' + (fl.bad ? 'del' : k) : 'next';
-    return (i ? '<span class="fc-arrow' + (i <= fl.at ? ' done' : '') + '" aria-hidden="true"></span>' : '') + '<div class="fc-node ' + cls + '"><span class="fc-n">' + (i < fl.at ? ic('check') : i + 1) + '</span><b>' + esc(st) + '</b>' + (i === fl.at ? '<span class="fc-k">This action</span>' : '') + '</div>'; }).join('') + '</div>';
-  var related = S.activity.filter(function(x){ return x !== a && a.target && x.target === a.target; }).slice(0, 5);
-  modal('Activity details',
-    '<div class="detail-top"><span class="mark ak-' + k + '">' + ic(ACT_KINDS[k].ic) + '</span><div><b>' + esc(a.action) + '</b><div class="hint">' + esc(when(a.at)) + ' · ' + esc(ACT_KINDS[k].label) + '</div></div></div>' +
-    '<div class="label">What happened</div>' + top +
-    '<div class="label">Where it is in the process · ' + esc(fl.title) + '</div>' + steps +
-    (related.length ? '<div class="label">Other activity about ' + esc(tgt) + '</div><ul class="list">' + related.map(activityRow).join('') + '</ul>' : '') + actLegend(),
-    '<button type="button" class="btn btn-primary" data-act="close">Done</button>');
-}
+function actList(){ var k = S.actKind || ''; return S.activity.filter(function(a){ return !k || actKind(a) === k; }); }
 document.addEventListener('click', function(ev){
-  var r = ev.target.closest('[data-act="actDetail"]'); if (!r) return;
-  actDetail(r.dataset.at, r.dataset.who);
-});
-document.addEventListener('keydown', function(ev){
-  if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.dataset && ev.target.dataset.act === 'actDetail'){ ev.preventDefault(); actDetail(ev.target.dataset.at, ev.target.dataset.who); }
+  var c = ev.target.closest('[data-act="actKind"]'); if (c){ S.actKind = c.dataset.k; render(); return; }
+  var r = ev.target.closest('[data-act="actDetail"]'); if (r) r.classList.toggle('open');
 });
 (function(){
   var css = '.mark.ak-add,.ak-dot.ak-add{background:var(--brand-soft);color:var(--brand-strong)}.mark.ak-ok,.ak-dot.ak-ok{background:var(--navy-soft);color:var(--navy)}' +
     '.mark.ak-edit,.ak-dot.ak-edit{background:var(--gold-soft);color:var(--gold)}.mark.ak-del,.ak-dot.ak-del{background:var(--red-soft);color:var(--red)}.mark.ak-acct,.ak-dot.ak-acct{background:var(--violet-soft);color:var(--violet)}' +
     '.ak-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:14px;font-size:12px;color:var(--muted)}.ak-legend span{display:inline-flex;align-items:center;gap:6px}.ak-dot{width:10px;height:10px;border-radius:50%;display:inline-block;box-shadow:inset 0 0 0 2px currentColor}' +
-    '.fc{display:flex;align-items:stretch;gap:0;margin:6px 0 14px;flex-wrap:nowrap}' +
-    '.fc-node{flex:1 1 0;min-width:0;border:1px solid var(--line-strong);border-radius:12px;padding:10px 12px;background:var(--surface);display:flex;flex-direction:column;gap:4px;font-size:13px;overflow-wrap:anywhere}' +
-    '.fc-node b{font-weight:600;color:var(--ink)}.fc-k{display:flex;align-items:center;gap:5px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}.fc-k svg{width:13px;height:13px}' +
-    '.fc-node.on{border-width:2px}.fc-node.on.ak-add{border-color:var(--brand-strong);background:var(--brand-soft)}.fc-node.on.ak-ok{border-color:var(--navy);background:var(--navy-soft)}' +
-    '.fc-node.on.ak-edit{border-color:var(--gold);background:var(--gold-soft)}.fc-node.on.ak-del{border-color:var(--red);background:var(--red-soft)}.fc-node.on.ak-acct{border-color:var(--violet);background:var(--violet-soft)}' +
-    '.fc-node.done{border-color:var(--brand-strong)}.fc-node.next{border-style:dashed;opacity:.6}' +
-    '.fc-n{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:var(--surface-2);color:var(--ink-2)}.fc-n svg{width:14px;height:14px}.fc-node.done .fc-n{background:var(--brand-strong);color:#fff}' +
-    '.fc-arrow{flex:0 0 22px;position:relative;align-self:center;height:2px;background:var(--line-strong)}.fc-arrow::after{content:"";position:absolute;right:-1px;top:-4px;border:5px solid transparent;border-left:7px solid var(--line-strong);border-right:0}' +
-    '.fc-arrow.done,.fc-arrow.done::after{background:var(--brand-strong)}.fc-arrow.done::after{background:none;border-left-color:var(--brand-strong)}' +
-    '@media (max-width:560px){.fc{flex-direction:column}.fc-arrow{flex:0 0 18px;width:2px;height:18px;align-self:center}.fc-arrow::after{right:auto;left:-4px;top:auto;bottom:-1px;border:5px solid transparent;border-top:7px solid var(--line-strong);border-bottom:0}.fc-arrow.done::after{border-top-color:var(--brand-strong);border-left-color:transparent}}';
+    '.ak-chips{display:flex;flex-wrap:wrap;gap:6px;padding:12px 0 4px}.ak-chips .chip{display:inline-flex;align-items:center;gap:6px}.ak-chips .chip[aria-pressed=true]{background:var(--ink);color:var(--surface);border-color:var(--ink)}' +
+    '.row[data-act=actDetail] .m,.row[data-act=actDetail] .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.row[data-act=actDetail].open .m,.row[data-act=actDetail].open .t{white-space:normal;overflow:visible}' +
+    '.to-icons{flex-wrap:wrap}.to-icons .btn{flex:0 0 auto}.dash-foot{display:flex;justify-content:center;margin:18px 0 4px}.mine .go{display:inline-flex;align-items:center;gap:4px;font-weight:600;font-size:13px}.mine .k{display:inline-flex;align-items:center;gap:6px}' +
+    '@media (max-width:560px){.tile .k{white-space:nowrap;letter-spacing:.02em;font-size:11px;gap:6px}.tile .k .ib{width:22px;height:22px}.tile .k .go{margin-left:auto}}' + '.to-mini .to-date{flex:none}.to-mini .m{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}';
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+})();
+
+/* ---------- Settings in tabs instead of one long page ---------- */
+var SET_TABS = [['rules', 'Office rules'], ['holidays', 'Holidays'], ['tev', 'TEV forms'], ['backup', 'Backup']];
+(function(){
+  var V = viewSettings;
+  viewSettings = function(){
+    var v = V(), cur = S.setTab || 'rules', b = v.body, re = /<(section|form) class="panel /g, idx = [], m;
+    while ((m = re.exec(b))) idx.push(m.index);
+    if (!idx.length) return v;
+    var out = b.slice(0, idx[0]);
+    idx.forEach(function(st, i){
+      var seg = b.slice(st, i + 1 < idx.length ? idx[i + 1] : b.length);
+      var tab = /data-form="settings"/.test(seg) ? 'rules' : /data-form="tevSetup"/.test(seg) ? 'tev' : /data-form="holiday"/.test(seg) ? 'holidays' : /exportJson|Backup/.test(seg) ? 'backup' : 'rules';
+      out += seg.replace(/^<(section|form) class="panel span-6/, '<$1 class="panel span-12').replace(/^<(section|form) /, '<$1 data-tab="' + tab + '" ');
+    });
+    v.body = out.replace('<div class="grid">', '<div class="grid settabs st-' + cur + '"><div class="tabs span-12" role="group" aria-label="Settings sections">' +
+      SET_TABS.map(function(t){ return '<button data-act="setTab" data-t="' + t[0] + '" aria-pressed="' + (cur === t[0]) + '">' + t[1] + '</button>'; }).join('') + '</div>');
+    return v;
+  };
+})();
+document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="setTab"]'); if (!t) return; S.setTab = t.dataset.t; render(); });
+(function(){
+  var st = document.createElement('style');
+  st.textContent = '.settabs>[data-tab]{display:none}' + SET_TABS.map(function(t){ return '.settabs.st-' + t[0] + '>[data-tab=' + t[0] + ']{display:block}'; }).join('') + '.settabs>.tabs{justify-self:start;width:max-content;max-width:100%;overflow-x:auto}';
+  document.head.appendChild(st);
 })();
 
 /* =====================================================================
@@ -3227,7 +3219,7 @@ document.addEventListener('submit', function(ev){
     if (!/^\d{4,6}$/.test(d.pin || '')) return bad(errId, 'PIN must be 4 to 6 digits.');
     if (!String(d.name || '').trim()) return bad(errId, 'Full name is required.');
     var nu = { username: un, name: d.name.trim(), role: d.role === 'admin' ? 'admin' : 'employee', division: d.division || '', active: true, empType: d.empType || 'JO', _saving: true };
-    f.reset();
+    f.reset(); if (errId === 'merr') closeModal();
     return bg('addUser', d, { arr: 'users', key: 'username', item: nu }, nu.name + ' added', 'The account for ' + nu.name);
   }
   if (kind === 'saveTO'){

@@ -120,7 +120,8 @@ In the current app (still on the Google Sheet): Settings > **Backup (.json)**. K
 - **Job order and COS staff** get wellness leave only (5 days a year, up to 3 in a row; CSC MC No. 1, s. 2026). Admins see them in their own table under Leaves; JO/COS staff see it under **Wellness leave**.
 
 ### Availability and calendar
-- **Use an offset**: the dashboard has **Use offset** (staff) or **Use my offset** (admins) to request a day off from your own balance. An admin's own request goes to another admin.
+- **Use offset**: staff use the button on their balance card; admins tap the **Your offset** bar. An admin's own request goes to another admin. To record a day off for someone else, use **Use** in Staff balances.
+- **Settings** is in tabs: Office rules, Holidays, TEV forms, Backup. **Customize dashboard** is at the bottom of the dashboard.
 - Availability shows who is in the office, in the field, on leave or on a day off, for any date and week. Staff see "On leave" without the leave type.
 - The calendar shows holidays, travel orders, leaves, offsets and days off, plus an **Events in [month]** list.
 
@@ -132,7 +133,7 @@ In the current app (still on the Google Sheet): Settings > **Backup (.json)**. K
 
 - Firestore collections: `users`, `entries`, `travelOrders`, `tevs`, `leaves`, `credits`, `divisions`, `holidays`, `settings`, `board` (who is out), `activity`, plus `members` and `logins` (sign-in). Don't edit them by hand unless you know what you're doing; use the app.
 - Deleted records are kept with a `_del` mark so every device knows they were removed.
-- **Activity** is the audit trail: every change with who, what and when. It can only be added to. Admins see it under Records > Activity log. Colours: green = added or filed, blue = approved or done, gold = changed, red = removed or rejected, violet = account and security. Tap a row for the details as a flowchart: who did what to which record, and where that record is in its process (for example Filed → Prepared → TEVs made).
+- **Activity** is the audit trail: every change with who, what and when. It can only be added to. Admins see it under Records > Activity log. Colours: green = added or filed, blue = approved or done, gold = changed, red = removed or rejected, violet = account and security. Use the colour chips to show one kind only; tap a row to see its full text.
 - Saves show on screen right away and reach Firebase in under a second. Offline, they wait on the device and send by themselves.
 - Changes made by others appear on your screen by themselves. What you're typing is kept.
 - Backups: Settings > **Backup (.json)** and **All entries (.csv)**. Do it monthly and before big changes.
