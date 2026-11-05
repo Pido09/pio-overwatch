@@ -81,7 +81,7 @@ In the current app (still on the Google Sheet): Settings > **Backup (.json)**. K
 
 ### Travel orders
 1. Any staff member files it: date(s), purpose, **location** (required) and the people (saved in capital letters).
-2. An admin opens **Prepare**: TO number, **date prepared**, TEV Yes/No/Not yet, status.
+2. An admin opens **Prepare**: TO number, **date prepared**, TEV Yes/No/Not yet. Saving marks it **Prepared** (or pick Cancelled).
 3. Prepared travel orders get a **print button**. It opens a print dialog: check the date prepared, tick other prepared travel orders to print together, then **Print** (straight from the browser, or Save as PDF). **Word file** downloads the same thing as a .docx made from `to-template.docx`. The letterhead is `to-header.png`, `to-footer.png` and `to-watermark.jpg`:
    - Date prepared at the top, one name per line, destination, purpose "… at [location]".
    - Departure and arrival are the travel order's start and end dates.
@@ -112,12 +112,15 @@ In the current app (still on the Google Sheet): Settings > **Backup (.json)**. K
 - Rates, signatories and codes can be changed in Settings > TEV rates and signatories.
 - **Print** (printer icon on each travel order in TEVs, or in the TEV): Itinerary of Travel (per person), Payroll, Disbursement Voucher (amount in words filled in), Obligation Request, Certificate of Travel Completed (per person). Pick forms and people, then print or Save as PDF. When the travel order has Job Order staff, a **Certification for Job Order staff** (meal allowance, from COT_TEMPLATE) is also offered: one page naming all JO staff picked, signed by the PIO, on the same letterhead as the travel order. With one JO person, pick he or she in the dialog; with more it says they. The other forms print on A4; the Payroll prints as its own job on long bond paper (8.5 × 13 in). After the A4 forms, the app asks you to load long bond and print the payroll.
 - Positions printed on the forms: Staff > Manage > Position.
+- **Fix a name**: Staff > open the person > Name > Rename. The new spelling also replaces the old one on their travel orders and TEVs.
 
 ### Leaves (Regular and Casual)
 - Admins enter starting VL/SL balances from the leave card. The app adds 1.25 days of each per month.
 - Leaves are filed on CS Form No. 6 as usual and recorded here by an admin. Covers VL, forced, SL, SPL, wellness, solo parent, calamity, maternity, paternity, VAWC, special leave for women, rehabilitation, study, adoption and leave without pay.
+- **Job order and COS staff** get wellness leave only (5 days a year, up to 3 in a row; CSC MC No. 1, s. 2026). Admins see them in their own table under Leaves; JO/COS staff see it under **Wellness leave**.
 
 ### Availability and calendar
+- **Use an offset**: the dashboard has **Use offset** (staff) or **Use my offset** (admins) to request a day off from your own balance. An admin's own request goes to another admin.
 - Availability shows who is in the office, in the field, on leave or on a day off, for any date and week. Staff see "On leave" without the leave type.
 - The calendar shows holidays, travel orders, leaves, offsets and days off, plus an **Events in [month]** list.
 
@@ -129,7 +132,7 @@ In the current app (still on the Google Sheet): Settings > **Backup (.json)**. K
 
 - Firestore collections: `users`, `entries`, `travelOrders`, `tevs`, `leaves`, `credits`, `divisions`, `holidays`, `settings`, `board` (who is out), `activity`, plus `members` and `logins` (sign-in). Don't edit them by hand unless you know what you're doing; use the app.
 - Deleted records are kept with a `_del` mark so every device knows they were removed.
-- **Activity** is the audit trail: every change with who, what and when. It can only be added to. Admins see it under Records > Activity log.
+- **Activity** is the audit trail: every change with who, what and when. It can only be added to. Admins see it under Records > Activity log. Colours: green = added or filed, blue = approved or done, gold = changed, red = removed or rejected, violet = account and security. Tap a row for the details as a flowchart: who did what to which record, and where that record is in its process (for example Filed → Prepared → TEVs made).
 - Saves show on screen right away and reach Firebase in under a second. Offline, they wait on the device and send by themselves.
 - Changes made by others appear on your screen by themselves. What you're typing is kept.
 - Backups: Settings > **Backup (.json)** and **All entries (.csv)**. Do it monthly and before big changes.
