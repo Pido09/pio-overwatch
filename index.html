@@ -882,9 +882,9 @@ function render(){
   var views = { dashboard: viewDashboard, log: viewLog, approvals: viewApprovals, calendar: viewCalendar, monthly: viewMonthly, records: viewRecords, staff: viewStaff, settings: viewSettings, availability: viewAvailability, travel: viewTravel, leaves: viewLeaves, tev: viewTEV };
   if (!views[S.view] || (['staff','approvals','settings'].indexOf(S.view) >= 0 && !isAdmin())) S.view = 'dashboard';
   var v = views[S.view]();
-  var myDiv = divOf(S.me.division), y = window.scrollY, kept = S.view === S.lastView ? keepForm(app) : null;
+  var myDiv = divOf(S.me.division), y = window.scrollY, same = S.view === S.lastView && !!app.querySelector('.shell'), kept = same ? keepForm(app) : null;
   S.lastView = S.view;
-  app.innerHTML = banner + '<a class="skip" href="#main">Skip to content</a>' +
+  var html = banner + '<a class="skip" href="#main">Skip to content</a>' +
     '<div class="shell">' +
       '<div class="drawer-scrim" data-act="drawerClose"></div><aside class="side" id="sidenav"><div class="brand"><img src="' + LOGO + '" alt="Provincial Information Office seal"><div><b>PIO Overwatch</b><small>Camarines Norte</small></div></div>' +
         '<nav class="nav" aria-label="Main">' + sideNav(nav, navBtn) + '</nav>' +
@@ -901,11 +901,59 @@ function render(){
       '</div>' +
       '<nav class="tabbar" aria-label="Main">' + tabs.map(function(n){ return navBtn([n[0], n[1], SHORT[n[0]] || n[2]]); }).join('') + '</nav>' +
     '</div>';
-  document.body.classList.remove('drawer-open');
-  if (kept) restoreForm(kept);
-  window.scrollTo(0, y);
-  groupify(app);
+  if (same){
+    // same page: change only what changed, so background updates do not flash or jump
+    var tpl = document.createElement('div'); tpl.innerHTML = html; groupify(tpl);
+    morphKids(app, tpl); resetControls(app, kept);
+    if (kept) restoreForm(kept);
+    var dr = app.querySelector('[data-act="drawer"]'), ex = String(document.body.classList.contains('drawer-open')); if (dr && dr.getAttribute('aria-expanded') !== ex) dr.setAttribute('aria-expanded', ex);
+  } else {
+    app.innerHTML = html;
+    document.body.classList.remove('drawer-open');
+    window.scrollTo(0, y);
+    groupify(app);
+  }
   if (S.view === 'log') checkEarnForm(document, true);
+}
+
+/* ----- update the page in place (a small DOM morph) ----- */
+function sameNode(a, b){
+  if (a.nodeType !== b.nodeType) return false;
+  if (a.nodeType !== 1) return true;
+  if (a.tagName !== b.tagName) return false;
+  var k = ['id', 'data-id', 'data-person', 'data-u', 'data-at', 'data-date', 'data-tab', 'data-form'];
+  for (var i = 0; i < k.length; i++) if (a.getAttribute(k[i]) !== b.getAttribute(k[i])) return false;
+  return true;
+}
+function morphAttrs(a, b){
+  var i, n;
+  for (i = a.attributes.length - 1; i >= 0; i--){ n = a.attributes[i].name; if (!b.hasAttribute(n)) a.removeAttribute(n); }
+  for (i = 0; i < b.attributes.length; i++){ n = b.attributes[i]; if (a.getAttribute(n.name) !== n.value) a.setAttribute(n.name, n.value); }
+}
+function morphKids(from, to){
+  var a = from.firstChild, b = to.firstChild;
+  while (b){
+    var nb = b.nextSibling;
+    if (!a){ from.appendChild(b); }
+    else if (sameNode(a, b)){
+      if (a.nodeType === 1){ morphAttrs(a, b); morphKids(a, b); } else if (a.nodeValue !== b.nodeValue) a.nodeValue = b.nodeValue;
+      a = a.nextSibling;
+    }
+    else if (a.nextSibling && sameNode(a.nextSibling, b) && !(nb && sameNode(a, nb))){ var gone = a; a = a.nextSibling; from.removeChild(gone); continue; }
+    else if (nb && sameNode(a, nb)){ from.insertBefore(b, a); }
+    else { var nx = a.nextSibling; from.replaceChild(b, a); a = nx; }
+    b = nb;
+  }
+  while (a){ var r = a; a = a.nextSibling; from.removeChild(r); }
+}
+// typed values live in properties, not attributes: bring them back to what the markup says, then keepForm/restoreForm puts back what the person is typing
+function resetControls(root, kept){
+  root.querySelectorAll('input,textarea,select').forEach(function(el){
+    if (el.type === 'file' || (kept && el.id && kept.f[el.id])) return;
+    if (el.type === 'checkbox' || el.type === 'radio'){ if (el.checked !== el.defaultChecked) el.checked = el.defaultChecked; return; }
+    if (el.tagName === 'SELECT'){ var o = el.querySelector('option[selected]') || el.options[0]; if (o && el.value !== o.value) el.value = o.value; return; }
+    if (el.value !== el.defaultValue) el.value = el.defaultValue;
+  });
 }
 
 /* ----- auth ----- */
@@ -1022,7 +1070,8 @@ function greeting(){
   return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
 }
 /* A light, friendly line under the greeting, picked from what is going on. */
-function pick(list){ return list[Math.floor(Math.random() * list.length)]; }
+// the same line all day (per person), so it does not change every time the page updates
+function pick(list){ var k = today() + (S.me ? S.me.username : '') + list[0], h = 0; for (var i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) | 0; return list[Math.abs(h) % list.length]; }
 function offDay(d){ return isWeekend(d) || !!holidayOn(d); }
 function nextLongWeekend(){
   var td = today();
@@ -1790,9 +1839,9 @@ function toRow(t){
   return '<li class="to-card"><div class="to-date"><b>' + fDate(t.dateFrom, { month:'short' }).toUpperCase() + '</b><span class="num">' + pd(t.dateFrom).getDate() + (t.dateTo !== t.dateFrom ? '–' + pd(t.dateTo).getDate() : '') + '</span></div>' +
     '<div class="to-body"><div class="t">' + esc(t.event) + '</div><div class="m">' + fRange(t.dateFrom, t.dateTo, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') + '</div>' +
       '<div class="to-names">' + sortNames(t.names).map(function(n){ return '<span>' + esc(dispName(n)) + '</span>'; }).join('') + '</div>' +
-      '<div class="row-btns"><span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + t.status + '</span>' + (adm || t.tev ? '<span class="pill ' + (t.tev === 'Yes' ? 'hol' : 'off') + '">TEV: ' + (t.tev || 'not set') + '</span>' : '') + '<span class="hint">Filed by ' + esc(userName(t.createdBy)) + ' · ' + ago(t.createdAt) + '</span></div></div>' +
-    (t._saving ? '<div class="to-acts"><span class="pill off">Saving…</span></div>' : '<div class="to-acts">' + (adm ? '<button class="btn btn-sm ' + (t.status === 'Filed' ? 'btn-primary' : 'btn-ghost') + '" data-act="toManage" data-id="' + t.id + '">' + ic('shield') + (t.status === 'Filed' ? 'Prepare' : 'Update') + '</button>' : '') +
-      '<div class="to-icons"><button class="btn btn-sm btn-ghost" data-act="toCopy" data-id="' + t.id + '" title="Copy the text for the document">' + ic('list') + 'Copy</button>' + (canEdit ? '<button class="btn btn-sm btn-ghost" data-act="toEdit" data-id="' + t.id + '">' + ic('edit') + 'Edit</button>' : '') + '</div></div>') + '</li>';
+      '<div class="row-btns"><span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + t.status + '</span>' + (adm || t.tev ? '<span class="pill ' + (t.tev === 'Yes' ? 'hol' : 'off') + '">TEV: ' + (t.tev || 'not set') + '</span>' : '') + (t._saving ? '<span class="pill off">Saving…</span>' : '') + '<span class="hint">Filed by ' + esc(userName(t.createdBy)) + ' · ' + ago(t.createdAt) + '</span></div></div>' +
+    '<div class="to-acts' + (t._saving ? ' is-saving' : '') + '">' + (adm ? '<button class="btn btn-sm ' + (t.status === 'Filed' ? 'btn-primary' : 'btn-ghost') + '" data-act="toManage" data-id="' + t.id + '">' + ic('shield') + (t.status === 'Filed' ? 'Prepare' : 'Update') + '</button>' : '') +
+      '<div class="to-icons"><button class="btn btn-sm btn-ghost" data-act="toCopy" data-id="' + t.id + '" title="Copy the text for the document">' + ic('list') + 'Copy</button>' + (canEdit ? '<button class="btn btn-sm btn-ghost" data-act="toEdit" data-id="' + t.id + '">' + ic('edit') + 'Edit</button>' : '') + '</div></div>' + '</li>';
 }
 function viewTravel(){
   var f = S.toFilter || 'upcoming', td = today(), mine = S.toMine;
@@ -2045,10 +2094,10 @@ function tevTiles(list, budget, cls){
 }
 function tevRow(v){
   var adm = isAdmin(), st = TEV_ST[v.status] || TEV_ST['To prepare'], cov = COVER.filter(function(c){ return v[c[0]] > 0; });
-  return '<li class="row' + (adm && !v._saving ? ' tap" data-act="tevEdit" data-id="' + v.id + '" tabindex="0' : '') + '"><span class="avatar">' + esc(initials(v.name)) + '</span><div class="body"><div class="t">' + esc(v.name) + '</div>' +
+  return '<li class="row' + (adm && !v._saving ? ' tap" data-act="tevEdit" data-id="' + v.id + '" tabindex="0' : v._saving ? ' is-saving' : '') + '"><span class="avatar">' + esc(initials(v.name)) + '</span><div class="body"><div class="t">' + esc(v.name) + '</div>' +
     '<div class="m">' + (cov.length ? cov.map(function(c){ return c[1] + ' ' + peso(v[c[0]]); }).join(' · ') : 'No amounts yet') +
       (v.chequeNo ? ' · Cheque ' + esc(v.chequeNo) : '') + (v.releasedOn ? ' · Released ' + fDate(v.releasedOn) : v.submittedOn ? ' · Submitted ' + fDate(v.submittedOn) : '') + '</div></div>' +
-    '<span class="amt">' + peso(v.total) + '</span>' + (adm && !v._saving ? tevQuick(v) : '<span class="pill ' + st[1] + '">' + (v._saving ? 'Saving…' : st[0]) + '</span>') + '</li>';
+    '<span class="amt">' + peso(v.total) + '</span>' + (adm ? tevQuick(v) : '<span class="pill ' + st[1] + '">' + st[0] + '</span>') + '</li>';
 }
 /* One-tap next step: Submit (to prepare > pending) and Claim (pending > claimed). */
 function tevQuick(v){
@@ -2201,7 +2250,7 @@ function printTO(t, btn){
   var R = toRow;
   toRow = function(t){
     var h = R(t);
-    if (t.status === 'Prepared' && isAdmin() && !t._saving) h = h.replace('<div class="to-icons">', '<div class="to-icons"><button class="btn btn-sm btn-ghost" data-act="toPrint" data-id="' + t.id + '">' + ic('print') + 'Print</button>');
+    if (t.status === 'Prepared' && isAdmin()) h = h.replace('<div class="to-icons">', '<div class="to-icons"><button class="btn btn-sm btn-ghost" data-act="toPrint" data-id="' + t.id + '">' + ic('print') + 'Print</button>');
     if (t.tev === 'Yes' && !t._saving){ var n = (S.tevs || []).filter(function(v){ return v.toId === t.id; }); if (n.length) h = h.replace(/(<span class="pill hol">TEV: Yes<\/span>)/, '<button class="pill hol" data-act="tevGo" data-id="' + t.id + '" style="border:0;cursor:pointer">TEV: Yes · ' + n.filter(function(v){ return v.status === 'Claimed'; }).length + '/' + n.length + ' claimed</button>'); }
     return h;
   };
@@ -3052,7 +3101,7 @@ document.addEventListener('click', function(ev){
     '.ak-chips{display:flex;flex-wrap:wrap;gap:6px;padding:12px 0 4px}.ak-chips .chip{display:inline-flex;align-items:center;gap:6px}.ak-chips .chip[aria-pressed=true]{background:var(--ink);color:var(--surface);border-color:var(--ink)}' +
     '.row[data-act=actDetail] .m,.row[data-act=actDetail] .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.row[data-act=actDetail].open .m,.row[data-act=actDetail].open .t{white-space:normal;overflow:visible}' +
     '.to-icons{flex-wrap:wrap}.to-icons .btn{flex:0 0 auto}.dash-foot{display:flex;justify-content:center;margin:18px 0 4px}.mine .go{display:inline-flex;align-items:center;gap:4px;font-weight:600;font-size:13px}.mine .k{display:inline-flex;align-items:center;gap:6px}' +
-    '@media (max-width:560px){.tile .k{white-space:nowrap;letter-spacing:.02em;font-size:11px;gap:6px}.tile .k .ib{width:22px;height:22px}.tile .k .go{margin-left:auto}}' + '.to-mini .to-date{flex:none}.to-mini .m{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}';
+    '@media (max-width:560px){.tile .k{white-space:nowrap;letter-spacing:.02em;font-size:11px;gap:6px}.tile .k .ib{width:22px;height:22px}.tile .k .go{margin-left:auto}}' + '.is-saving .btn,.is-saving .icon-btn,.row.is-saving .tevq{opacity:.55;pointer-events:none}.sync-pill.done{background:var(--brand-strong);color:#fff}' + '.to-mini .to-date{flex:none}.to-mini .m{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}';
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 })();
 
@@ -3101,10 +3150,15 @@ function applySpec(sp){
 function reapply(){ Q.ops.forEach(function(op){ try { applySpec(op.spec); } catch(e){} }); }
 function qKey(){ return S.me ? 'pio_q_' + S.me.username : null; }
 function persist(){ var k = qKey(); if (k) lSet(k, Q.ops.length ? JSON.stringify(Q.ops) : null); }
+function savedBadge(){
+  var b = document.getElementById('syncPill'); if (!b) return;
+  b.innerHTML = ic('check') + 'Saved'; b.className = 'sync-pill done'; b.hidden = false;
+  clearTimeout(Q.doneT); Q.doneT = setTimeout(function(){ if (!Q.ops.length) b.hidden = true; }, 1400);
+}
 function syncBadge(){
   var b = document.getElementById('syncPill');
   if (!b){ b = document.createElement('div'); b.id = 'syncPill'; b.className = 'sync-pill'; b.setAttribute('role', 'status'); document.body.appendChild(b); }
-  var n = Q.ops.length;
+  var n = Q.ops.length; if (n) clearTimeout(Q.doneT);
   b.innerHTML = !n ? '' : Q.offline ? ic('clock') + 'No connection · ' + n + ' waiting, will send automatically' : '<span class="spin" aria-hidden="true"></span>Saving ' + n + '…';
   b.className = 'sync-pill' + (Q.offline ? ' off' : '');
   b.hidden = !n;
@@ -3120,7 +3174,7 @@ window.addEventListener('beforeunload', function(e){ if (Q.ops.length && !Q.offl
 window.addEventListener('online', function(){ Q.wait = 0; pump(); });
 
 function cleanup(op){
-  ['entries','travelOrders','leaves'].forEach(function(k){ S[k] = S[k].filter(function(x){ return x.id !== op.tmp; }); S[k].forEach(function(x){ delete x._saving; }); });
+  ['entries','travelOrders','leaves','tevs'].forEach(function(k){ if (!S[k]) return; S[k] = S[k].filter(function(x){ return x.id !== op.tmp; }); S[k].forEach(function(x){ delete x._saving; }); });
   S.users.forEach(function(x){ delete x._saving; });
 }
 /* Problems worth retrying: no signal, or Google being busy. Anything else is a real refusal. */
@@ -3129,7 +3183,7 @@ function transient(err){ return err.net || /lock|timed? ?out|too many|try again 
 function bg(action, payload, spec, done, label, tmp){
   var op = { action: action, payload: payload, spec: spec, label: label, tmp: tmp || tmpId() };
   Q.ops.push(op); persist(); applySpec(spec); closeModal(); render(); syncBadge();
-  toast(done + (navigator.onLine === false ? ' · will send when back online' : ' · saving in the background'));
+  toast(done + (navigator.onLine === false ? ' · will send when back online' : ''));
   pump();
 }
 function pump(){
@@ -3138,7 +3192,7 @@ function pump(){
   call(op.action, Object.assign({}, op.payload, { _op: op.tmp })).then(function(){
     Q.busy = false; Q.wait = 0; Q.offline = false;
     Q.ops.shift(); persist(); cleanup(op); reapply(); render(); syncBadge();
-    if (!Q.ops.length) toast('All changes saved'); pump();
+    if (!Q.ops.length) savedBadge(); pump();
   }, function(err){
     Q.busy = false;
     if (!S.me) return;                                     // signed out: the queue waits for the next sign-in
