@@ -121,6 +121,12 @@ In the current app (still on the Google Sheet): Settings > **Backup (.json)**. K
 
 ### Availability and calendar
 - **Use offset**: staff use the button on their balance card; admins tap the **Your offset** bar. An admin's own request goes to another admin. To record a day off for someone else, use **Use** in Staff balances.
+- **Since your last visit** (top of the dashboard): what changed for you while you were away: offsets confirmed or rejected, day off approved, travel order prepared, TEV submitted or released, leave recorded. Admins also see how many new entries and travel orders came in. **Got it** clears it. It is kept per device.
+- **Waiting tags** show how long something has waited, and turn amber, then red:
+  - Offsets and day-off requests waiting for review: amber at 3 days, red at 7.
+  - Travel orders waiting to be prepared: amber at 2 days, red at 5.
+  - TEVs not yet submitted, counted from the end of the trip: amber at 14 days, red at 25 (check your office's filing deadline).
+  - TEVs waiting for the cheque: amber at 14 days, red at 30.
 - **Settings** is in tabs: Office rules, Holidays, TEV forms, Backup. **Customize dashboard** is at the bottom of the dashboard.
 - Availability shows who is in the office, in the field, on leave or on a day off, for any date and week. Staff see "On leave" without the leave type.
 - The calendar shows holidays, travel orders, leaves, offsets and days off, plus an **Events in [month]** list.
