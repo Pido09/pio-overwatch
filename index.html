@@ -1839,25 +1839,50 @@ function toRow(t){
   return '<li class="to-card"><div class="to-date"><b>' + fDate(t.dateFrom, { month:'short' }).toUpperCase() + '</b><span class="num">' + pd(t.dateFrom).getDate() + (t.dateTo !== t.dateFrom ? '–' + pd(t.dateTo).getDate() : '') + '</span></div>' +
     '<div class="to-body"><div class="t">' + esc(t.event) + '</div><div class="m">' + fRange(t.dateFrom, t.dateTo, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') + '</div>' +
       '<div class="to-names">' + sortNames(t.names).map(function(n){ return '<span>' + esc(dispName(n)) + '</span>'; }).join('') + '</div>' +
-      '<div class="row-btns"><span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + t.status + '</span>' + (adm || t.tev ? '<span class="pill ' + (t.tev === 'Yes' ? 'hol' : 'off') + '">TEV: ' + (t.tev || 'not set') + '</span>' : '') + (t._saving ? '<span class="pill off">Saving…</span>' : '') + '<span class="hint">Filed by ' + esc(userName(t.createdBy)) + ' · ' + ago(t.createdAt) + '</span></div></div>' +
+      '<div class="row-btns"><span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + t.status + '</span>' + (adm || t.tev ? '<span class="pill ' + (t.tev === 'Yes' ? 'hol' : 'off') + '">TEV: ' + (t.tev || 'not set') + '</span>' : '') + (t._saving ? '<span class="pill off">Saving…</span>' : '') + (t.toType === 'dayoff' ? '<span class="pill off">Day off · uses offset</span>' : '') + (t.printedAt ? '<span class="pill Confirmed">Printed ' + fDate(String(t.printedAt).slice(0, 10), { month:'short', day:'numeric' }) + '</span>' : '') + '<span class="hint">Filed by ' + esc(userName(t.createdBy)) + ' · ' + ago(t.createdAt) + '</span></div></div>' +
     '<div class="to-acts' + (t._saving ? ' is-saving' : '') + '">' + (adm ? '<button class="btn btn-sm ' + (t.status === 'Filed' ? 'btn-primary' : 'btn-ghost') + '" data-act="toManage" data-id="' + t.id + '">' + ic('shield') + (t.status === 'Filed' ? 'Prepare' : 'Update') + '</button>' : '') +
-      '<div class="to-icons"><button class="btn btn-sm btn-ghost" data-act="toCopy" data-id="' + t.id + '" title="Copy the text for the document">' + ic('list') + 'Copy</button>' + (canEdit ? '<button class="btn btn-sm btn-ghost" data-act="toEdit" data-id="' + t.id + '">' + ic('edit') + 'Edit</button>' : '') + '</div></div>' + '</li>';
+      '<div class="to-icons"><button class="btn btn-sm btn-ghost" data-act="toCopy" data-id="' + t.id + '" title="Copy the text for the document">' + ic('list') + 'Copy</button>' + (adm && t.status === 'Prepared' && !t.printedAt ? '<button class="btn btn-sm btn-ghost" data-act="toMarkPrinted" data-id="' + t.id + '">' + ic('check') + 'Mark printed</button>' : '') + (canEdit ? '<button class="btn btn-sm btn-ghost" data-act="toEdit" data-id="' + t.id + '">' + ic('edit') + 'Edit</button>' : '') + '</div></div>' + '</li>';
+}
+function dayoffHint(t){
+  if (t.toType !== 'dayoff') return '';
+  var n = 0, d0 = t.dateFrom; for (; d0 <= t.dateTo; d0 = addDays(d0, 1)) n++;
+  var low = (t.names || []).map(function(nm){ var u = S.users.filter(function(x){ return x.name.toUpperCase() === nm; })[0]; return u && stats(u.username).avail < n - 1e-9 ? dispName(nm) + ' has only ' + fD(stats(u.username).avail) : ''; }).filter(Boolean);
+  return '<div class="warn-note">' + ic('clock') + '<span>Day-off travel order: preparing it deducts ' + fD(n) + ' of offset from each person.' + (low.length ? ' Not enough offset: ' + low.map(esc).join('; ') + '. Those days are skipped.' : '') + '</span></div>';
+}
+function markPrinted(list){
+  var ids = list.filter(function(t){ return t && t.status === 'Prepared' && !t.printedAt; }).map(function(t){ return t.id; });
+  if (ids.length) bg('markTOPrinted', { ids: ids }, { arr: 'travelOrders', ids: ids, patch: { printedAt: new Date().toISOString() } }, 'Moved to Printed', 'Marked as printed');
+}
+function toRange(){
+  var p = S.toPer || 'all', a = S.toAnchor || today();
+  if (p === 'week'){ var s0 = addDays(a, -((pd(a).getDay() + 6) % 7)); return { s: s0, e: addDays(s0, 6), p: p }; }
+  if (p === 'month'){ var d0 = pd(a); return { s: ymd(new Date(d0.getFullYear(), d0.getMonth(), 1)), e: ymd(new Date(d0.getFullYear(), d0.getMonth() + 1, 0)), p: p }; }
+  return null;
 }
 function viewTravel(){
-  var f = S.toFilter || 'upcoming', td = today(), mine = S.toMine;
+  var f = S.toFilter || 'upcoming', td = today(), mine = S.toMine, rg = toRange();
+  var dir = S.toSort || (f === 'past' || f === 'Printed' ? 'desc' : 'asc');
   var list = S.travelOrders.filter(function(t){
     if (mine && t.createdBy !== S.me.username && t.usernames.indexOf(S.me.username) < 0) return false;
+    if (rg && !(t.dateTo >= rg.s && t.dateFrom <= rg.e)) return false;
     if (f === 'upcoming') return t.dateTo >= td && t.status !== 'Cancelled';
     if (f === 'past') return t.dateTo < td && t.status !== 'Cancelled';
+    if (f === 'Prepared') return t.status === 'Prepared' && !t.printedAt;
+    if (f === 'Printed') return t.status === 'Prepared' && !!t.printedAt;
     return t.status === f;
-  }).sort(function(a,b){ return f === 'past' ? (a.dateFrom < b.dateFrom ? 1 : -1) : (a.dateFrom < b.dateFrom ? -1 : 1); });
-  var toPrep = S.travelOrders.filter(function(t){ return t.status === 'Filed'; }).length;
-  var tabs = [['upcoming','Upcoming'],['Filed','To prepare' + (isAdmin() && toPrep ? ' (' + toPrep + ')' : '')],['Prepared','Prepared'],['past','Past'],['Cancelled','Cancelled']];
-  return { eyebrow: 'Field work', title: 'Travel orders', sub: 'File the date, purpose and people here instead of on paper. Admins prepare the document and mark if a TEV is needed.',
+  }).sort(function(a,b){ var r = a.dateFrom < b.dateFrom ? -1 : a.dateFrom > b.dateFrom ? 1 : 0; return dir === 'desc' ? -r : r; });
+  var toPrep = S.travelOrders.filter(function(t){ return t.status === 'Filed'; }).length, toPrint = S.travelOrders.filter(function(t){ return t.status === 'Prepared' && !t.printedAt; }).length;
+  var tabs = [['upcoming','Upcoming'],['Filed','To prepare' + (isAdmin() && toPrep ? ' (' + toPrep + ')' : '')],['Prepared','Prepared' + (isAdmin() && toPrint ? ' (' + toPrint + ')' : '')],['Printed','Printed'],['past','Past'],['Cancelled','Cancelled']];
+  var per = [['all','All'],['week','Week'],['month','Month']];
+  var lab = !rg ? 'All dates' : rg.p === 'month' ? fDate(rg.s, { month:'long', year:'numeric' }) : fRange(rg.s, rg.e, { month:'short', day:'numeric', year:'numeric' });
+  return { eyebrow: 'Field work', title: 'Travel orders', sub: 'File the date, purpose and people here instead of on paper. Admins prepare the document, then print it. Day-off travel orders deduct offset.',
     actions: '<button class="btn btn-sun" data-act="toNew">' + ic('plus') + 'New travel order</button>',
     body: '<section class="panel"><div class="panel-h"><div class="tabs" role="group" aria-label="Show">' + tabs.map(function(x){ return '<button data-act="toTab" data-t="' + x[0] + '" aria-pressed="' + (f === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
       '<label class="keep" style="font-size:13.5px"><input type="checkbox" id="toMine"' + (mine ? ' checked' : '') + '>Only mine</label></div>' +
-      (list.length ? '<ul class="list">' + list.map(toRow).join('') + '</ul>' : empty('route', 'No travel orders here', 'File one when the team is sent to cover an event.', '<button class="btn btn-primary" data-act="toNew">' + ic('plus') + 'New travel order</button>')) + '</section>' };
+      '<div class="panel-h"><div class="tabs" role="group" aria-label="Period">' + per.map(function(x){ return '<button data-act="toPer" data-p="' + x[0] + '" aria-pressed="' + ((S.toPer || 'all') === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+      (rg ? '<div class="row-btns"><button class="btn btn-sm btn-ghost" data-act="toNav" data-d="-1" aria-label="Previous ' + rg.p + '">‹</button><b>' + esc(lab) + '</b><button class="btn btn-sm btn-ghost" data-act="toNav" data-d="1" aria-label="Next ' + rg.p + '">›</button></div>' : '') +
+      '<button class="btn btn-sm btn-ghost" data-act="toSort" aria-label="Change order">' + (dir === 'desc' ? 'Newest first' : 'Oldest first') + '</button></div>' +
+      (list.length ? '<ul class="list">' + list.map(toRow).join('') + '</ul>' : empty('route', 'No travel orders here', f === 'Printed' ? 'Travel orders move here once they are printed.' : 'Try another period or tab.', '<button class="btn btn-primary" data-act="toNew">' + ic('plus') + 'New travel order</button>')) + '</section>' };
 }
 var TO = { names: [] };
 function toModal(id){
@@ -1865,6 +1890,7 @@ function toModal(id){
   TO = { id: t.id || '', names: t.names.slice() };
   modal(t.id ? 'Edit travel order' : 'New travel order',
     '<div class="two"><div class="field"><label for="tf">Date</label><input class="input" id="tf" name="dateFrom" type="date" value="' + t.dateFrom + '" required></div><div class="field"><label for="tt">Until <span class="hint">(if more than one day)</span></label><input class="input" id="tt" name="dateTo" type="date" value="' + (t.dateTo !== t.dateFrom ? t.dateTo : '') + '"></div></div>' +
+    '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">Type of travel order</legend><div class="seg">' + [['regular','Regular','Official work or event'],['dayoff','Day off','Uses offset']].map(function(o, i){ return '<input type="radio" name="toType" id="tty' + i + '" value="' + o[0] + '"' + ((t.toType || 'regular') === o[0] ? ' checked' : '') + '><label for="tty' + i + '"><b>' + o[1] + '</b><small>' + o[2] + '</small></label>'; }).join('') + '</div><span class="hint">A day-off travel order is the paper for using offset. Preparing it deducts 1 day per person for each date.</span></fieldset>' +
     '<div class="field"><label for="te">Purpose</label><input class="input" id="te" name="event" maxlength="200" value="' + esc(t.event) + '" placeholder="e.g. To cover the Provincial Board regular session" required><span class="hint">Copied exactly as you type it.</span></div>' +
     '<div class="field"><label for="tdst">Location</label><input class="input" id="tdst" name="destination" maxlength="120" value="' + esc(t.destination) + '" placeholder="e.g. Brgy. Gubat, Daet, Camarines Norte" required><span class="hint">Copied as: Purpose in Location on Date.</span></div>' +
     '<div class="field"><label for="tp">People to be dispatched</label><div class="picker"><div class="chips" id="toChips"></div><input class="input" id="tp" autocomplete="off" placeholder="Type a name, then pick or press Enter" aria-autocomplete="list" aria-controls="toSug"><ul class="sug" id="toSug" role="listbox" hidden></ul></div>' +
@@ -1892,11 +1918,11 @@ function showSug(q){
 function toManageModal(id){
   var t = S.travelOrders.filter(function(x){ return x.id === id; })[0]; if (!t) return;
   M = { id: id };
-  modal('Prepare travel order', '<div class="copybox" id="toCopyText">' + esc(toText(t)).replace(/\n/g, '<br>') + '</div><button type="button" class="btn btn-sm btn-ghost" data-act="toCopy" data-id="' + id + '">' + ic('list') + 'Copy for the document</button>' +
+  modal('Prepare travel order', '<div class="copybox" id="toCopyText">' + esc(toText(t)).replace(/\n/g, '<br>') + '</div><button type="button" class="btn btn-sm btn-ghost" data-act="toCopy" data-id="' + id + '">' + ic('list') + 'Copy for the document</button>' + dayoffHint(t) +
     '<div class="field"><label for="tno">TO number <span class="hint">(optional)</span></label><input class="input" id="tno" name="toNo" value="' + esc(t.toNo) + '" maxlength="40" placeholder="e.g. PIO-2026-11-014"></div>' +
     '<div class="field"><label for="tdp">Date prepared</label><input class="input" id="tdp" name="datePrepared" type="date" value="' + esc(t.datePrepared || today()) + '"><span class="hint">Printed at the top of the travel order.</span></div>' +
     '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">Will a TEV (Travel Expense Voucher) be made?</legend><div class="seg">' +
-      [['Yes','Yes','Prepare a TEV'],['No','No','No TEV needed'],['','Not yet','Decide later']].map(function(o, i){ return '<input type="radio" name="tev" id="tv' + i + '" value="' + o[0] + '"' + (t.tev === o[0] ? ' checked' : '') + '><label for="tv' + i + '"><b>' + o[1] + '</b><small>' + o[2] + '</small></label>'; }).join('') + '</div></fieldset>' +
+      [['Yes','Yes','Prepare a TEV'],['No','No','No TEV needed'],['','Not yet','Decide later']].map(function(o, i){ return '<input type="radio" name="tev" id="tv' + i + '" value="' + o[0] + '"' + ((t.toType === 'dayoff' && !t.tev ? 'No' : t.tev) === o[0] ? ' checked' : '') + '><label for="tv' + i + '"><b>' + o[1] + '</b><small>' + o[2] + '</small></label>'; }).join('') + '</div></fieldset>' +
     '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">Status</legend><div class="seg">' +
       [['Prepared','Prepared','Document is done'],['Cancelled','Cancelled','Event dropped']].map(function(o, i){ return '<input type="radio" name="status" id="ts' + i + '" value="' + o[0] + '"' + ((t.status === 'Cancelled' ? 'Cancelled' : 'Prepared') === o[0] ? ' checked' : '') + '><label for="ts' + i + '"><b>' + o[1] + '</b><small>' + o[2] + '</small></label>'; }).join('') + '</div></fieldset>',
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">' + (t.status === 'Filed' ? ic('check') + 'Prepare' : 'Save') + '</button>', 'toStatus');
@@ -2022,6 +2048,10 @@ document.addEventListener('click', function(ev){
   if (a === 'avPrev' || a === 'avNext'){ S.availDate = addDays(S.availDate || today(), a === 'avNext' ? 1 : -1); render(); }
   else if (a === 'avToday'){ S.availDate = today(); render(); }
   else if (a === 'toTab'){ S.toFilter = t.dataset.t; render(); }
+  else if (a === 'toPer'){ S.toPer = t.dataset.p; if (!S.toAnchor) S.toAnchor = today(); render(); }
+  else if (a === 'toNav'){ var dv = Number(t.dataset.d), an = S.toAnchor || today(); if (S.toPer === 'week') S.toAnchor = addDays(an, 7 * dv); else { var dm = pd(an); S.toAnchor = ymd(new Date(dm.getFullYear(), dm.getMonth() + dv, 1)); } render(); }
+  else if (a === 'toSort'){ var cur = S.toSort || (S.toFilter === 'past' || S.toFilter === 'Printed' ? 'desc' : 'asc'); S.toSort = cur === 'desc' ? 'asc' : 'desc'; render(); }
+  else if (a === 'toMarkPrinted'){ var mp = S.travelOrders.filter(function(x){ return x.id === t.dataset.id; })[0]; if (mp) markPrinted([mp]); }
   else if (a === 'toNew') toModal();
   else if (a === 'toEdit') toModal(t.dataset.id);
   else if (a === 'toManage') toManageModal(t.dataset.id);
@@ -2172,7 +2202,7 @@ function tevTotal(){
 /* Asked after a travel order is marked "TEV: Yes". */
 function tevPrompt(t){
   modal('Make the TEVs now?', '<p style="margin:0">A TEV was started for each of the ' + t.names.length + ' ' + (t.names.length === 1 ? 'person' : 'people') + ' on <b>' + esc(t.event) + '</b> in ' + esc(t.destination || '—') + '. You can fill in the amounts now or later from <b>TEVs</b> under Field work.</p>',
-    '<button type="button" class="btn btn-ghost" data-act="close">Later</button><button type="button" class="btn btn-primary" data-act="tevGo" data-id="' + t.id + '">' + ic('peso') + 'Make them now</button>');
+    '<button type="button" class="btn btn-ghost" data-act="close">Later</button><button type="button" class="btn btn-primary" data-act="tevGo" data-id="' + t.id + '">' + ic('peso') + 'Make them now</button><button type="button" class="btn btn-ghost" data-act="toPrint" data-id="' + t.id + '">Print travel order</button>');
 }
 
 /* ---------- dashboards ---------- */
@@ -2888,12 +2918,12 @@ function toDocHtml(list, prepared){
 document.addEventListener('click', function(ev){
   var t = ev.target.closest('[data-act]'); if (!t) return;
   var a = t.dataset.act;
-  if (a === 'toDocx'){ var x = toOf(M.printTO); if (x) printTODocx(Object.assign({}, x, { datePrepared: (document.getElementById('tpDate') || {}).value || x.datePrepared }), t); }
+  if (a === 'toDocx'){ var x = toOf(M.printTO); if (x){ printTODocx(Object.assign({}, x, { datePrepared: (document.getElementById('tpDate') || {}).value || x.datePrepared }), t); setTimeout(function(){ markPrinted([x]); }, 1500); } }
   else if (a === 'toPrintGo'){
     var main = toOf(M.printTO); if (!main) return;
     var list = [main].concat(Array.prototype.slice.call(document.querySelectorAll('#modal [data-to-pick]:checked')).map(function(c){ return toOf(c.dataset.toPick); }).filter(Boolean));
     var prep = (document.getElementById('tpDate') || {}).value || today();
-    var html = toDocHtml(list, prep);
+    var html = toDocHtml(list, prep); markPrinted(list);
     // wait for the letterhead images before opening the print window
     var f = document.createElement('iframe'); f.setAttribute('aria-hidden', 'true'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
     document.body.appendChild(f);
@@ -3383,7 +3413,7 @@ document.addEventListener('submit', function(ev){
     if (!String(d.destination || '').trim()) return bad(errId, 'Location is required.');
     if (!TO.names.length) return bad(errId, 'Add at least one person.');
     var names = TO.names.slice(), usernames = names.map(function(n){ var x = S.users.filter(function(u){ return u.name.toUpperCase() === n; })[0]; return x ? x.username : null; }).filter(Boolean);
-    var fields = { dateFrom: d.dateFrom, dateTo: d.dateTo || d.dateFrom, event: d.event.trim(), destination: (d.destination || '').trim(), names: names, usernames: usernames, updatedBy: me, updatedAt: now, _saving: true };
+    var fields = { dateFrom: d.dateFrom, dateTo: d.dateTo || d.dateFrom, event: d.event.trim(), destination: (d.destination || '').trim(), names: names, usernames: usernames, toType: d.toType === 'dayoff' ? 'dayoff' : 'regular', updatedBy: me, updatedAt: now, _saving: true };
     if (TO.id){ return bg('saveTO', d, { arr: 'travelOrders', id: TO.id, patch: fields }, 'Travel order saved', 'The travel order “' + fields.event + '”'); }
     var nt = Object.assign({ id: id, toNo: '', status: 'Filed', tev: '', createdBy: me, createdAt: now }, fields);
     return bg('saveTO', d, { arr: 'travelOrders', item: nt }, 'Travel order filed', 'The travel order “' + fields.event + '”', id);
@@ -3392,6 +3422,7 @@ document.addEventListener('submit', function(ev){
     var tid = M.id; d.id = tid;
     var tOld = S.travelOrders.filter(function(x){ return x.id === tid; })[0] || {}, startTev = d.tev === 'Yes' && d.status !== 'Cancelled';
     bg('setTOStatus', d, { arr: 'travelOrders', id: tid, patch: { status: d.status, tev: d.tev || '', toNo: d.toNo || '', datePrepared: d.datePrepared || tOld.datePrepared || '' } }, 'Travel order updated', 'The travel order update');
+    if (!startTev && d.status === 'Prepared' && tOld.status === 'Filed') setTimeout(function(){ toPrintDialog(tid); }, 300);
     if (startTev){
       // Show the new TEVs right away; the server makes the real ones.
       var have = (S.tevs || []).filter(function(v){ return v.toId === tid; }).map(function(v){ return v.name; }), made = 0;
@@ -4031,16 +4062,22 @@ var Mock = (function(){
     if (a === 'deleteEntry'){ var i = entries.findIndex(function(e){ return e.id === p.id; }); if (i < 0) return fail('Entry not found.'); var e = entries[i]; if (!adm && !(e.username === me.username && e.status === 'Pending')) return fail('You can only remove your own pending entries.'); entries.splice(i,1); log(me, 'Removed an entry', e.username, e.date + ' · ' + e.days + ' day(s)'); return ok(me); }
     if (a === 'changePin'){ if (p.oldPin !== me.pin) return fail('Current PIN is wrong.'); if (!/^\d{4,6}$/.test(p.newPin)) return fail('PIN must be 4 to 6 digits.'); me.pin = p.newPin; log(me, 'Changed own PIN', me.username); return ok(me); }
     if (a === 'saveTO'){ var nm = String(p.names||'').split('\n').map(function(s){ return s.trim().toUpperCase(); }).filter(Boolean); if (!nm.length) return fail('Add at least one person.'); if (!String(p.event||'').trim()) return fail('Purpose is required.'); if (!String(p.destination||'').trim()) return fail('Location is required.'); if (!p.dateFrom) return fail('Pick a valid date.');
-      var tf = { dateFrom:p.dateFrom, dateTo:p.dateTo || p.dateFrom, event:p.event.trim(), destination:(p.destination||'').trim(), names:nm, updatedBy:me.username, updatedAt:now };
+      var tf = { dateFrom:p.dateFrom, dateTo:p.dateTo || p.dateFrom, event:p.event.trim(), destination:(p.destination||'').trim(), names:nm, toType:(p.toType === 'dayoff' ? 'dayoff' : 'regular'), updatedBy:me.username, updatedAt:now };
       if (tf.dateTo < tf.dateFrom) return fail('The end date is before the start date.');
       if (p.id){ var ex1 = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && (ex1.createdBy !== me.username || ex1.status !== 'Filed')) return fail('Only admins can edit a travel order after it is prepared.'); Object.assign(ex1, tf); log(me, 'Edited a travel order', tf.event); }
       else { tos.push(Object.assign({ id:'t' + nid(), toNo:'', status:'Filed', tev:'', createdBy:me.username, createdAt:now, usernames:[] }, tf)); log(me, 'Filed a travel order', tf.event, tf.dateFrom + ' · ' + nm.join(', ')); }
       return ok(me); }
     if (a === 'deleteTO'){ var dt = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && (dt.createdBy !== me.username || dt.status !== 'Filed')) return fail('You can only delete your own travel orders that are not yet prepared.'); tos = tos.filter(function(t){ return t !== dt; }); log(me, 'Deleted a travel order', dt.event); return ok(me); }
     if (!adm) return fail('Only admins can do that.');
+    if (a === 'markTOPrinted'){ (p.ids || []).forEach(function(i9){ var t9 = tos.filter(function(t){ return t.id === i9; })[0]; if (t9 && t9.status === 'Prepared' && !t9.printedAt){ t9.printedAt = now; t9.printedBy = me.username; } }); log(me, 'Printed travel orders', String((p.ids || []).length)); return ok(me); }
     if (a === 'setTOStatus'){ var st2 = tos.filter(function(t){ return t.id === p.id; })[0]; if (st2.status !== p.status) st2.statusAt = now; st2.status = p.status; st2.tev = p.tev; st2.toNo = p.toNo || ''; st2.datePrepared = p.datePrepared || st2.datePrepared || (p.status === 'Prepared' ? today() : ''); log(me, 'Updated a travel order', st2.event, 'Status: ' + p.status + ' · TEV: ' + (p.tev || 'not set'));
+      var cut = 0; if (p.status === 'Prepared' && st2.toType === 'dayoff' && !st2.offsetDone){
+        st2.names.forEach(function(nm3){ var u3 = users.filter(function(x){ return x.name.toUpperCase() === nm3; })[0]; if (!u3) return;
+          for (var dd = st2.dateFrom; dd <= st2.dateTo; dd = addDays(dd, 1)){ if (bal(u3.username) < 1) break;
+            entries.push({ id:'e' + nid(), username:u3.username, type:'USE', date:dd, category:'Used', days:1, event:'', venue:'', endTime:'', toId:st2.id, status:'Confirmed', note:'Day-off travel order', createdBy:me.username, createdAt:now, reviewedBy:me.username, reviewedAt:now }); cut++; } });
+        st2.offsetDone = true; log(me, 'Deducted offset for a day-off travel order', st2.event, cut + ' day(s)'); }
       var made = 0; if (p.tev === 'Yes' && p.status !== 'Cancelled') st2.names.forEach(function(nm2){ if (tevs.some(function(v){ return v.toId === st2.id && v.name === nm2; })) return; var u2 = users.filter(function(x){ return x.name.toUpperCase() === nm2; })[0]; if (u2 && u2.empType === 'COS') return; tevs.push({ id:'v' + nid(), toId:st2.id, name:nm2, username:u2 ? u2.username : '', status:'To prepare', transpo:0, food:0, lodging:0, other:0, total:0, submittedOn:'', releasedOn:'', chequeNo:'', note:'' }); made++; });
-      return ok(me, { tevsMade: made }); }
+      return ok(me, { tevsMade: made, offsetUsed: cut }); }
     if (a === 'saveTEV'){ var am = function(k){ return Math.round((Number(p[k]) || 0) * 100) / 100; }, td3 = new Date().toISOString().slice(0,10);
       var vf = { status: p.status, transpo: am('transpo'), food: am('food'), lodging: am('lodging'), other: am('other'), chequeNo: p.chequeNo || '', note: p.note || '', submittedOn: p.submittedOn || (p.status !== 'To prepare' ? td3 : ''), releasedOn: p.releasedOn || (p.status === 'Claimed' ? td3 : '') };
       vf.total = Math.round((vf.transpo + vf.food + vf.lodging + vf.other) * 100) / 100;
