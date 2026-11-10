@@ -998,6 +998,7 @@ function entryRow(e, opts){
   if (e._saving) acts = '';
   else if (opts.review && !canReview(e)) acts = '<div class="acts"><span class="pill off">Needs another admin</span></div>';
   else if (opts.review) acts = '<div class="acts"><button class="btn btn-sm btn-primary" data-act="review" data-id="' + e.id + '" data-d="Confirmed">' + (use ? 'Approve' : 'Confirm') + '</button><button class="btn btn-sm btn-danger" data-act="rejectModal" data-id="' + e.id + '">Reject</button></div>';
+  else if (use && e.status === 'Confirmed' && !e.toId && e.date >= today() && (isAdmin() || e.username === S.me.username)) acts = '<div class="acts"><button class="btn btn-sm btn-ghost" data-act="moveUse" data-id="' + e.id + '">Reschedule</button></div>';
   return '<li class="row tap' + (opts.review ? ' rv' : '') + '" data-entry="' + e.id + '" tabindex="0"><span class="mark ' + cls + '">' + ic(use ? 'plane' : (CAT_ICON[e.category] || 'plus')) + '</span>' +
     '<div class="body"><div class="t">' + title + '</div><div class="m">' + meta + '</div></div>' +
     (e.type === 'EARN' && e.category !== 'Travel order' && typeof toOn === 'function' && toOn(e.username, e.date) ? '<span class="pill Rejected" title="This person is on a travel order on this date">On TO</span>' : '') +
@@ -1628,6 +1629,7 @@ document.addEventListener('click', function(ev){
   if (a === 'requestModal') return requestModal(t.dataset.date);
   if (a === 'rejectModal') return rejectModal(t.dataset.id);
   if (a === 'editEntry') return editModal(t.dataset.id);
+  if (a === 'moveUse') return moveModal(t.dataset.id);
   if (a === 'personRecords'){ closeModal(); goRecords({ user: t.dataset.u }); return; }
   if (a === 'personAdd'){ closeModal(); S.prefill = { username: t.dataset.u }; S.view = 'log'; render(); window.scrollTo(0,0); return; }
   if (a === 'divModal') return divModal(t.dataset.id);
@@ -1699,6 +1701,7 @@ document.addEventListener('submit', function(ev){
   else if (kind === 'editEntry'){ d.id = M.id; d.noTravelOrder = d.noTravelOrder !== undefined || !f.querySelector('input[name=noTravelOrder]'); d.notInPayroll = d.notInPayroll !== undefined; p = act('editEntry', d, 'Changes saved').then(closeModal); }
   else if (kind === 'requestUse') p = act('requestUse', d, isAdmin() && !otherAdmins() ? 'Day off recorded' : 'Request sent').then(closeModal);
   else if (kind === 'recordUse') p = act('recordUse', d, 'Offset use recorded').then(closeModal);
+  else if (kind === 'moveUse'){ d.id = M.id; p = act('moveUse', d, 'Day off rescheduled').then(closeModal); }
   else if (kind === 'reject') p = act('review', { id: M.id, decision: 'Rejected', note: d.note }, 'Rejected').then(closeModal);
   else if (kind === 'addUser') p = act('addUser', d, d.name + ' can now sign in');
   else if (kind === 'resetPin') p = act('resetPin', d, 'PIN reset').then(closeModal);
@@ -1839,9 +1842,22 @@ function toRow(t){
   return '<li class="to-card"><div class="to-date"><b>' + fDate(t.dateFrom, { month:'short' }).toUpperCase() + '</b><span class="num">' + pd(t.dateFrom).getDate() + (t.dateTo !== t.dateFrom ? '–' + pd(t.dateTo).getDate() : '') + '</span></div>' +
     '<div class="to-body"><div class="t">' + esc(t.event) + '</div><div class="m">' + fRange(t.dateFrom, t.dateTo, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') + '</div>' +
       '<div class="to-names">' + sortNames(t.names).map(function(n){ return '<span>' + esc(dispName(n)) + '</span>'; }).join('') + '</div>' +
-      '<div class="row-btns"><span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + t.status + '</span>' + (adm || t.tev ? '<span class="pill ' + (t.tev === 'Yes' ? 'hol' : 'off') + '">TEV: ' + (t.tev || 'not set') + '</span>' : '') + (t._saving ? '<span class="pill off">Saving…</span>' : '') + (t.toType === 'dayoff' ? '<span class="pill off">Day off · uses offset</span>' : '') + (t.printedAt ? '<span class="pill Confirmed">Printed ' + fDate(String(t.printedAt).slice(0, 10), { month:'short', day:'numeric' }) + '</span>' : '') + '<span class="hint">Filed by ' + esc(userName(t.createdBy)) + ' · ' + ago(t.createdAt) + '</span></div></div>' +
+      '<div class="row-btns"><span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + t.status + '</span>' + (adm || t.tev ? '<span class="pill ' + (t.tev === 'Yes' ? 'hol' : 'off') + '">TEV: ' + (t.tev || 'not set') + '</span>' : '') + (t._saving ? '<span class="pill off">Saving…</span>' : '') + (t.toType === 'dayoff' ? '<span class="pill off">Day off · uses offset</span>' : '') + (adm && t.status === 'Prepared' && !t.printedAt ? '<span class="pill Pending">Not printed</span>' : '') + (t.printedAt ? '<span class="pill Confirmed">Printed ' + fDate(String(t.printedAt).slice(0, 10), { month:'short', day:'numeric' }) + '</span>' : '') + '<span class="hint">Filed by ' + esc(userName(t.createdBy)) + ' · ' + ago(t.createdAt) + '</span></div></div>' +
     '<div class="to-acts' + (t._saving ? ' is-saving' : '') + '">' + (adm ? '<button class="btn btn-sm ' + (t.status === 'Filed' ? 'btn-primary' : 'btn-ghost') + '" data-act="toManage" data-id="' + t.id + '">' + ic('shield') + (t.status === 'Filed' ? 'Prepare' : 'Update') + '</button>' : '') +
       '<div class="to-icons"><button class="btn btn-sm btn-ghost" data-act="toCopy" data-id="' + t.id + '" title="Copy the text for the document">' + ic('list') + 'Copy</button>' + (adm && t.status === 'Prepared' && !t.printedAt ? '<button class="btn btn-sm btn-ghost" data-act="toMarkPrinted" data-id="' + t.id + '">' + ic('check') + 'Mark printed</button>' : '') + (canEdit ? '<button class="btn btn-sm btn-ghost" data-act="toEdit" data-id="' + t.id + '">' + ic('edit') + 'Edit</button>' : '') + '</div></div>' + '</li>';
+}
+function moveModal(id){
+  var e = S.entries.filter(function(x){ return x.id === id; })[0]; if (!e) return;
+  M = { id: id };
+  modal('Reschedule day off', '<div class="sumbox"><b>' + esc(userName(e.username)) + '</b><span>Now on ' + fDate(e.date, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + ' · ' + fD(e.days) + '</span></div>' +
+    '<div class="field"><label for="mvd">New date</label><input class="input" id="mvd" name="date" type="date" min="' + today() + '" required><span class="hint">The approval stays and the offset balance does not change.</span></div>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Reschedule</button>', 'moveUse');
+}
+function prepPrompt(t, tev, pr){
+  if (!tev && !pr) return;
+  var n = (t.names || []).length;
+  modal('Travel order prepared', '<p style="margin:0">' + (pr ? 'Print <b>' + esc(t.event) + '</b> now so it is ready to sign. ' : '') + (tev ? 'A TEV was started for each of the ' + n + ' ' + (n === 1 ? 'person' : 'people') + '. Fill in the amounts now or later from <b>TEVs</b> under Field work.' : '') + '</p>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Later</button>' + (tev ? '<button type="button" class="btn ' + (pr ? 'btn-ghost' : 'btn-primary') + '" data-act="tevGo" data-id="' + t.id + '">' + ic('peso') + 'Make TEVs</button>' : '') + (pr ? '<button type="button" class="btn btn-primary" data-act="toPrint" data-id="' + t.id + '">' + ic('print') + 'Print now</button>' : ''));
 }
 function dayoffHint(t){
   if (t.toType !== 'dayoff') return '';
@@ -1861,18 +1877,19 @@ function toRange(){
 }
 function viewTravel(){
   var f = S.toFilter || 'upcoming', td = today(), mine = S.toMine, rg = toRange();
-  var dir = S.toSort || (f === 'past' || f === 'Printed' ? 'desc' : 'asc');
+  var dir = S.toSort || (f === 'past' ? 'desc' : 'asc');
   var list = S.travelOrders.filter(function(t){
     if (mine && t.createdBy !== S.me.username && t.usernames.indexOf(S.me.username) < 0) return false;
     if (rg && !(t.dateTo >= rg.s && t.dateFrom <= rg.e)) return false;
+    if (S.toType && S.toType !== 'all' && (t.toType || 'regular') !== S.toType) return false;
+    if (S.toQ && (t.event + ' ' + t.destination + ' ' + (t.toNo || '') + ' ' + (t.names || []).join(' ')).toLowerCase().indexOf(S.toQ.toLowerCase()) < 0) return false;
     if (f === 'upcoming') return t.dateTo >= td && t.status !== 'Cancelled';
     if (f === 'past') return t.dateTo < td && t.status !== 'Cancelled';
-    if (f === 'Prepared') return t.status === 'Prepared' && !t.printedAt;
-    if (f === 'Printed') return t.status === 'Prepared' && !!t.printedAt;
+    if (f === 'Prepared') return t.status === 'Prepared';
     return t.status === f;
   }).sort(function(a,b){ var r = a.dateFrom < b.dateFrom ? -1 : a.dateFrom > b.dateFrom ? 1 : 0; return dir === 'desc' ? -r : r; });
   var toPrep = S.travelOrders.filter(function(t){ return t.status === 'Filed'; }).length, toPrint = S.travelOrders.filter(function(t){ return t.status === 'Prepared' && !t.printedAt; }).length;
-  var tabs = [['upcoming','Upcoming'],['Filed','To prepare' + (isAdmin() && toPrep ? ' (' + toPrep + ')' : '')],['Prepared','Prepared' + (isAdmin() && toPrint ? ' (' + toPrint + ')' : '')],['Printed','Printed'],['past','Past'],['Cancelled','Cancelled']];
+  var tabs = [['upcoming','Upcoming'],['Filed','To prepare' + (isAdmin() && toPrep ? ' (' + toPrep + ')' : '')],['Prepared','Prepared' + (isAdmin() && toPrint ? ' (' + toPrint + ' to print)' : '')],['past','Past'],['Cancelled','Cancelled']];
   var per = [['all','All'],['week','Week'],['month','Month']];
   var lab = !rg ? 'All dates' : rg.p === 'month' ? fDate(rg.s, { month:'long', year:'numeric' }) : fRange(rg.s, rg.e, { month:'short', day:'numeric', year:'numeric' });
   return { eyebrow: 'Field work', title: 'Travel orders', sub: 'File the date, purpose and people here instead of on paper. Admins prepare the document, then print it. Day-off travel orders deduct offset.',
@@ -1881,8 +1898,8 @@ function viewTravel(){
       '<label class="keep" style="font-size:13.5px"><input type="checkbox" id="toMine"' + (mine ? ' checked' : '') + '>Only mine</label></div>' +
       '<div class="panel-h"><div class="tabs" role="group" aria-label="Period">' + per.map(function(x){ return '<button data-act="toPer" data-p="' + x[0] + '" aria-pressed="' + ((S.toPer || 'all') === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
       (rg ? '<div class="row-btns"><button class="btn btn-sm btn-ghost" data-act="toNav" data-d="-1" aria-label="Previous ' + rg.p + '">‹</button><b>' + esc(lab) + '</b><button class="btn btn-sm btn-ghost" data-act="toNav" data-d="1" aria-label="Next ' + rg.p + '">›</button></div>' : '') +
-      '<button class="btn btn-sm btn-ghost" data-act="toSort" aria-label="Change order">' + (dir === 'desc' ? 'Newest first' : 'Oldest first') + '</button></div>' +
-      (list.length ? '<ul class="list">' + list.map(toRow).join('') + '</ul>' : empty('route', 'No travel orders here', f === 'Printed' ? 'Travel orders move here once they are printed.' : 'Try another period or tab.', '<button class="btn btn-primary" data-act="toNew">' + ic('plus') + 'New travel order</button>')) + '</section>' };
+      '<input class="input" id="toQ" type="search" value="' + esc(S.toQ || '') + '" placeholder="Search purpose, place or name" aria-label="Search travel orders" style="max-width:240px">' + '<select class="input" id="toTy" aria-label="Type" style="max-width:150px">' + [['all','All types'],['regular','Regular'],['dayoff','Day off']].map(function(o){ return '<option value="' + o[0] + '"' + ((S.toType || 'all') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>' + '<button class="btn btn-sm btn-ghost" data-act="toSort" aria-label="Change order">' + (dir === 'desc' ? 'Newest first' : 'Oldest first') + '</button></div>' +
+      (list.length ? '<ul class="list">' + list.map(toRow).join('') + '</ul>' : empty('route', 'No travel orders here', 'Try another period, type or tab.', '<button class="btn btn-primary" data-act="toNew">' + ic('plus') + 'New travel order</button>')) + '</section>' };
 }
 var TO = { names: [] };
 function toModal(id){
@@ -2050,7 +2067,7 @@ document.addEventListener('click', function(ev){
   else if (a === 'toTab'){ S.toFilter = t.dataset.t; render(); }
   else if (a === 'toPer'){ S.toPer = t.dataset.p; if (!S.toAnchor) S.toAnchor = today(); render(); }
   else if (a === 'toNav'){ var dv = Number(t.dataset.d), an = S.toAnchor || today(); if (S.toPer === 'week') S.toAnchor = addDays(an, 7 * dv); else { var dm = pd(an); S.toAnchor = ymd(new Date(dm.getFullYear(), dm.getMonth() + dv, 1)); } render(); }
-  else if (a === 'toSort'){ var cur = S.toSort || (S.toFilter === 'past' || S.toFilter === 'Printed' ? 'desc' : 'asc'); S.toSort = cur === 'desc' ? 'asc' : 'desc'; render(); }
+  else if (a === 'toSort'){ var cur = S.toSort || (S.toFilter === 'past' ? 'desc' : 'asc'); S.toSort = cur === 'desc' ? 'asc' : 'desc'; render(); }
   else if (a === 'toMarkPrinted'){ var mp = S.travelOrders.filter(function(x){ return x.id === t.dataset.id; })[0]; if (mp) markPrinted([mp]); }
   else if (a === 'toNew') toModal();
   else if (a === 'toEdit') toModal(t.dataset.id);
@@ -2081,6 +2098,8 @@ document.addEventListener('change', function(ev){
   var id = ev.target.id;
   if (id === 'avDate' && ev.target.value){ S.availDate = ev.target.value; render(); }
   if (id === 'toMine'){ S.toMine = ev.target.checked; render(); }
+  if (id === 'toQ'){ S.toQ = ev.target.value.trim(); render(); }
+  if (id === 'toTy'){ S.toType = ev.target.value; render(); }
   if (id === 'tf' || id === 'tt') drawChips();
   if (id === 'lu2' || id === 'lt' || id === 'lf' || id === 'lto') leaveCheck(id !== 'lu2');
   if (ev.target.dataset.setemp){ var el = ev.target; el.disabled = true; act('setEmpType', { username: el.dataset.setemp, empType: el.value }, 'Employment type updated').then(function(){ if (document.getElementById('pemp')) personModal(el.dataset.setemp); }).catch(function(e){ toast(e.message); el.disabled = false; }); }
@@ -3422,13 +3441,13 @@ document.addEventListener('submit', function(ev){
     var tid = M.id; d.id = tid;
     var tOld = S.travelOrders.filter(function(x){ return x.id === tid; })[0] || {}, startTev = d.tev === 'Yes' && d.status !== 'Cancelled';
     bg('setTOStatus', d, { arr: 'travelOrders', id: tid, patch: { status: d.status, tev: d.tev || '', toNo: d.toNo || '', datePrepared: d.datePrepared || tOld.datePrepared || '' } }, 'Travel order updated', 'The travel order update');
-    if (!startTev && d.status === 'Prepared' && tOld.status === 'Filed') setTimeout(function(){ toPrintDialog(tid); }, 300);
+    if (!startTev && d.status === 'Prepared' && !tOld.printedAt) setTimeout(function(){ prepPrompt(tOld, false, true); }, 300);
     if (startTev){
       // Show the new TEVs right away; the server makes the real ones.
       var have = (S.tevs || []).filter(function(v){ return v.toId === tid; }).map(function(v){ return v.name; }), made = 0;
       (tOld.names || []).forEach(function(n){ if (have.indexOf(n) >= 0) return; var u = S.users.filter(function(x){ return x.name.toUpperCase() === n; })[0];
         S.tevs.push({ id: tmpId(), toId: tid, name: n, username: u ? u.username : '', status: 'To prepare', transpo: 0, food: 0, lodging: 0, other: 0, total: 0, _saving: true }); made++; });
-      if (made || tOld.tev !== 'Yes') tevPrompt(tOld);
+      prepPrompt(tOld, !!(made || tOld.tev !== 'Yes'), d.status === 'Prepared' && !tOld.printedAt);
     }
     return;
   }
@@ -4061,6 +4080,15 @@ var Mock = (function(){
       log(me, 'Requested a day off', me.username, p.date + ' · ' + dd + ' day(s)'); return ok(me); }
     if (a === 'deleteEntry'){ var i = entries.findIndex(function(e){ return e.id === p.id; }); if (i < 0) return fail('Entry not found.'); var e = entries[i]; if (!adm && !(e.username === me.username && e.status === 'Pending')) return fail('You can only remove your own pending entries.'); entries.splice(i,1); log(me, 'Removed an entry', e.username, e.date + ' · ' + e.days + ' day(s)'); return ok(me); }
     if (a === 'changePin'){ if (p.oldPin !== me.pin) return fail('Current PIN is wrong.'); if (!/^\d{4,6}$/.test(p.newPin)) return fail('PIN must be 4 to 6 digits.'); me.pin = p.newPin; log(me, 'Changed own PIN', me.username); return ok(me); }
+    if (a === 'moveUse'){ var mu = entries.filter(function(e){ return e.id === p.id; })[0];
+      if (!mu || mu.type !== 'USE' || mu.status !== 'Confirmed') return fail('Only approved days off can be rescheduled.');
+      if (mu.toId) return fail('This day off came from a travel order. Edit the travel order instead.');
+      if (!adm && mu.username !== me.username) return fail('You can only reschedule your own day off.');
+      if (mu.date < today()) return fail('A day off that already passed cannot be moved.');
+      if (!p.date || p.date < today()) return fail('Pick a date from today onward.');
+      if (p.date === mu.date) return fail('Pick a different date.');
+      if (entries.some(function(e){ return e !== mu && e.username === mu.username && e.type === 'USE' && e.date === p.date; })) return fail('That date already has a day off.');
+      var was = mu.date; mu.movedFrom = was; mu.movedAt = now; mu.date = p.date; log(me, 'Rescheduled a day off', mu.username, was + ' to ' + p.date); return ok(me); }
     if (a === 'saveTO'){ var nm = String(p.names||'').split('\n').map(function(s){ return s.trim().toUpperCase(); }).filter(Boolean); if (!nm.length) return fail('Add at least one person.'); if (!String(p.event||'').trim()) return fail('Purpose is required.'); if (!String(p.destination||'').trim()) return fail('Location is required.'); if (!p.dateFrom) return fail('Pick a valid date.');
       var tf = { dateFrom:p.dateFrom, dateTo:p.dateTo || p.dateFrom, event:p.event.trim(), destination:(p.destination||'').trim(), names:nm, toType:(p.toType === 'dayoff' ? 'dayoff' : 'regular'), updatedBy:me.username, updatedAt:now };
       if (tf.dateTo < tf.dateFrom) return fail('The end date is before the start date.');
