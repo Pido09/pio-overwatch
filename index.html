@@ -2916,13 +2916,12 @@ var printTODocx = printTO;
 printTO = function(t){ toPrintDialog(t.id); };
 function toPrintDialog(id){
   var t = toOf(id); if (!t) return;
-  var others = activeTOs().filter(function(x){ return x.status === 'Prepared' && x.id !== id; }).sort(function(a, b){ return a.dateFrom < b.dateFrom ? 1 : -1; }).slice(0, 12);
   M = { printTO: id };
   modal('Print travel order', '<div class="sumbox"><b>' + esc(t.event) + '</b><span>' + esc(t.destination || '') + ' · ' + fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric', year:'numeric' }) + ' · ' + t.names.length + ' ' + (t.names.length === 1 ? 'person' : 'people') + '</span></div>' +
     '<div class="two"><div class="field"><label for="tpDate">Date prepared</label><input class="input" type="date" id="tpDate" value="' + esc(t.datePrepared || today()) + '"><span class="hint">Printed at the top right.</span></div>' +
     '<div class="field"><span class="label">TEV box</span><div class="hint" style="margin-top:8px">' + (t.tev === 'Yes' ? 'X on “entitled to collect traveling expenses”' : t.tev === 'No' ? 'X on “official time only”' : 'Both boxes empty (TEV not decided yet)') + '</div></div></div>' +
     (selfRecommend(t) ? '<div class="info-note">' + ic('shield') + '<span>Sarah Marie P. Aviado is on this travel order, so Recommending Approval is left out.</span></div>' : '') +
-    (others.length ? '<div class="label">Also print</div><div class="wlist">' + others.map(function(x){ return '<label class="check" style="padding:10px 12px"><input type="checkbox" data-to-pick="' + x.id + '"><span><b>' + esc(x.event) + '</b><br><span class="hint">' + esc(fRange(x.dateFrom, x.dateTo, { month:'short', day:'numeric' })) + ' · ' + esc(x.destination || '') + '</span></span></label>'; }).join('') + '</div>' : ''),
+    '',
     '<button type="button" class="btn btn-ghost" data-act="toDocx" style="margin-right:auto">' + ic('download') + 'Word file</button><button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button type="button" class="btn btn-primary" data-act="toPrintGo">' + ic('print') + 'Print</button>');
 }
 /* Laid out from to-template.docx: A4, 1-inch margins, the same tab stops, line spacing and empty lines as the Word file. */
