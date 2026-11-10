@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PIO Overwatch</title>
 <meta name="theme-color" content="#0B4A25">
+<meta name="format-detection" content="telephone=no">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Overwatch">
@@ -600,6 +602,26 @@ table.tev-days th,table.tev-days td{padding:7px 5px}table.tev-days th{font-size:
 table.tev-days input{width:18px;height:18px;accent-color:var(--brand)}
 .wlist .w .drag{cursor:grab;color:var(--muted);display:grid;place-items:center;width:28px;touch-action:none}
 .wlist .w.dragging{box-shadow:0 8px 24px -8px rgba(14,30,51,.35);background:var(--surface);position:relative;z-index:2}
+
+/* ---- device polish: laptops, tablets, iPads and phones ---- */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+button,[role=button],a,input,select,summary,label{touch-action:manipulation}
+.modal{overscroll-behavior:contain}
+@supports (height:100dvh){
+  .auth,.shell,.loading{min-height:100dvh}
+  .side{height:100dvh}
+  .modal{max-height:calc(100dvh - 32px)}
+}
+@media (pointer:coarse){
+  input,select,textarea,.input{font-size:16px}
+  .btn{min-height:44px}
+  .btn-sm{height:auto;min-height:44px}
+  .tabs button{min-height:44px}
+  select.input,.panel-h select.input{height:44px}
+}
+@media (min-width:1600px){.wrap{max-width:1360px}}
+@media (max-width:560px){#toQ,#toTy{max-width:none!important;flex:1 1 100%}}
+@media (max-height:480px) and (orientation:landscape){.modal{max-height:calc(100dvh - 16px)}}
 </style>
 </head>
 <body>
