@@ -885,14 +885,14 @@ function entriesCsv(list){
 function navItems(){
   // The first five are the phone tab bar. Regular and casual staff get leaves up front; JO and COS get offsets.
   var tev = ['tev','peso','TEVs','Field work'];
-  if (isAdmin()) return [['dashboard','grid','Dashboard','Overview'],['availability','users','Availability','Overview'],['travel','route','Travel orders','Field work'],['events','megaphone','Events','Field work'],['approvals','check','Approvals','Offsets'],
+  if (isAdmin()) return [['dashboard','grid','Dashboard','Overview'],['availability','users','Availability','Overview'],['travel','route','Travel orders','Field work'],['approvals','check','Approvals','Offsets'],
        ['calendar','cal','Calendar','Overview'],tev,['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets'],['leaves','plane','Leaves','Leaves'],['staff','users','Staff','Admin'],['settings','cog','Settings','Admin']];
-  if (hasLeaves()) return [['dashboard','grid','Dashboard','Overview'],['leaves','plane','My leaves','Leaves'],['travel','route','Travel orders','Field work'],['events','megaphone','Events','Field work'],['availability','users','Availability','Overview'],
+  if (hasLeaves()) return [['dashboard','grid','Dashboard','Overview'],['leaves','plane','My leaves','Leaves'],['travel','route','Travel orders','Field work'],['availability','users','Availability','Overview'],
        ['calendar','cal','Calendar','Overview'],tev,['log','plus','Log offset','Offsets'],['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets']];
-  return [['dashboard','grid','Dashboard','Overview'],['log','plus','Log offset','Offsets'],['travel','route','Travel orders','Field work'],['events','megaphone','Events','Field work'],['availability','users','Availability','Overview'],
+  return [['dashboard','grid','Dashboard','Overview'],['log','plus','Log offset','Offsets'],['travel','route','Travel orders','Field work'],['availability','users','Availability','Overview'],
        ['calendar','cal','Calendar','Overview'],tev,['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets']].concat(wlOnly() ? [['leaves','plane','Wellness leave','Leaves']] : []);
 }
-var SHORT = { events: 'Events', travel: 'Travel', availability: 'Who’s in', log: 'Log', leaves: 'Leaves', approvals: 'Review' };
+var SHORT = { travel: 'Travel', availability: 'Who’s in', log: 'Log', leaves: 'Leaves', approvals: 'Review' };
 function sideNav(nav, navBtn){
   var order = ['Overview','Field work','Offsets','Leaves','Admin'], html = '';
   order.forEach(function(g){ var items = nav.filter(function(n){ return n[3] === g; }); if (items.length) html += '<div class="nav-h">' + g + '</div>' + items.map(navBtn).join(''); });
@@ -927,7 +927,7 @@ function render(){
   var nav = navItems(), pc = isAdmin() ? pending().filter(canReview).length : 0;
   function navBtn(n){ return '<button data-go="' + n[0] + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ic(n[1]) + '<span>' + n[2] + '</span>' + (n[0] === 'approvals' && pc ? '<span class="badge">' + pc + '</span>' : '') + '</button>'; }
   var tabs = nav.slice(0, 5);
-  var views = { dashboard: viewDashboard, log: viewLog, approvals: viewApprovals, calendar: viewCalendar, events: viewEvents, monthly: viewMonthly, records: viewRecords, staff: viewStaff, settings: viewSettings, availability: viewAvailability, travel: viewTravel, leaves: viewLeaves, tev: viewTEV };
+  var views = { dashboard: viewDashboard, log: viewLog, approvals: viewApprovals, calendar: viewCalendar, events: viewCalendar, monthly: viewMonthly, records: viewRecords, staff: viewStaff, settings: viewSettings, availability: viewAvailability, travel: viewTravel, leaves: viewLeaves, tev: viewTEV };
   if (!views[S.view] || (['staff','approvals','settings'].indexOf(S.view) >= 0 && !isAdmin())) S.view = 'dashboard';
   var v = views[S.view]();
   var myDiv = divOf(S.me.division), y = window.scrollY, same = S.view === S.lastView && !!app.querySelector('.shell'), kept = same ? keepForm(app) : null;
@@ -1332,43 +1332,81 @@ function viewApprovals(){
 /* ----- calendar ----- */
 function viewCalendar(){
   if (!S.cal){ var t = pd(today()); S.cal = { y: t.getFullYear(), m: t.getMonth() }; }
+  if (!S.ev) S.ev = { f: 'month', open: '' };
   var y = S.cal.y, m = S.cal.m, first = new Date(y, m, 1), start = new Date(y, m, 1 - first.getDay()), ym = ymd(first).slice(0,7);
-  var adm = isAdmin(), td = today();
+  var adm = isAdmin(), cs = canSched(), td = today(), E = S.ev, layer = S.calLayer || 'all', showEv = layer !== 'people', showPe = layer !== 'events';
+  var gs = ymd(start), ge = ymd(new Date(start.getFullYear(), start.getMonth(), start.getDate() + 41));
+  var all = S.events.slice().sort(evSort), evById = {}, evDay = {};
+  all.forEach(function(e){ evById[e.id] = e; for (var x = e.date < gs ? gs : e.date; x <= e.dateTo && x <= ge; x = addDays(x, 1)) (evDay[x] = evDay[x] || []).push(e); });
   var list = S.entries.filter(function(e){ return e.status !== 'Rejected' && (!adm || S.calUser === 'all' || e.username === S.calUser); });
   var byDay = {}; list.forEach(function(e){ (byDay[e.date] = byDay[e.date] || []).push(e); });
   var who = adm ? (S.calUser === 'all' ? null : S.calUser) : S.me.username, extra = {};
-  activeTOs().forEach(function(t){ if (who && t.usernames.indexOf(who) < 0) return; for (var x = t.dateFrom; x <= t.dateTo; x = addDays(x, 1)) (extra[x] = extra[x] || []).push({ c: 'to', t: 'TO · ' + t.event + (t.destination ? ' · ' + t.destination : '') }); });
-  S.leaves.forEach(function(l){ if (/^ADJ/.test(l.type) || (who && l.username !== who)) return; for (var x = l.dateFrom; x <= l.dateTo; x = addDays(x, 1)) (extra[x] = extra[x] || []).push({ c: 'lv', t: (adm && !who ? firstName(l.username) + ' · ' : '') + leaveName(l.type) }); });
+  var shown = function(t){ var e = t.eventId && evById[t.eventId]; return !!(showEv && e && e.status !== 'Cancelled'); };
+  if (showPe){
+    activeTOs().forEach(function(t){ if ((who && t.usernames.indexOf(who) < 0) || shown(t)) return; for (var x = t.dateFrom; x <= t.dateTo; x = addDays(x, 1)) (extra[x] = extra[x] || []).push({ c: 'to', t: 'TO · ' + t.event + (t.destination ? ' · ' + t.destination : '') }); });
+    S.leaves.forEach(function(l){ if (/^ADJ/.test(l.type) || (who && l.username !== who)) return; for (var x = l.dateFrom; x <= l.dateTo; x = addDays(x, 1)) (extra[x] = extra[x] || []).push({ c: 'lv', t: (adm && !who ? firstName(l.username) + ' · ' : '') + leaveName(l.type) }); });
+  }
   var cells = '';
   for (var i = 0; i < 42; i++){
-    var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), k = ymd(d), evs = byDay[k] || [], h = holidayOn(k);
+    var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), k = ymd(d), h = holidayOn(k), evs = showPe ? (byDay[k] || []) : [], ve = showEv ? (evDay[k] || []) : [];
     if (i >= 35 && d.getMonth() !== m) break;
     var cls = 'day' + (d.getMonth() !== m ? ' out' : '') + (d.getDay() % 6 === 0 ? ' wknd' : '') + (h ? ' isHol' : '') + (k === td ? ' today' : '') + (k === S.selDay ? ' sel' : '');
-    var chips = (h ? '<span class="hl" title="' + esc(h.name) + '">' + esc(h.name) + '</span>' : '') + (extra[k] || []).slice(0, 2).map(function(x){ return '<span class="ev ' + x.c + '" title="' + esc(x.t) + '">' + esc(x.t) + '</span>'; }).join('') + evs.slice(0, h ? 2 : 3).map(function(e){
-      var c = e.status === 'Pending' ? 'pend' : (e.type === 'USE' ? 'use' : 'earn');
-      var label = adm && S.calUser === 'all' ? firstName(e.username) : (e.type === 'USE' ? 'Day off' : e.event);
-      return '<span class="ev ' + c + '">' + fDs(e.type === 'USE' ? -e.days : e.days, true) + ' ' + esc(label) + '</span>';
-    }).join('') + (evs.length > (h ? 2 : 3) ? '<span class="more">+' + (evs.length - (h ? 2 : 3)) + ' more</span>' : '');
-    var aria = fDate(k, { weekday:'long', month:'long', day:'numeric' }) + (h ? ', ' + h.name : '') + (evs.length ? ': ' + evs.map(function(e){ return (e.type === 'USE' ? 'day off ' : (e.status === 'Pending' ? 'pending ' : 'earned ')) + fD(e.days); }).join(', ') : '');
+    var items = ve.map(function(e){ return '<span class="ev e-' + evState(e) + (e.status === 'Pending' ? ' e-un' : '') + '" title="' + esc(e.title) + '">' + esc(e.title) + '</span>'; })
+      .concat((extra[k] || []).map(function(x){ return '<span class="ev ' + x.c + '" title="' + esc(x.t) + '">' + esc(x.t) + '</span>'; }))
+      .concat(evs.map(function(e){
+        var c = e.status === 'Pending' ? 'pend' : (e.type === 'USE' ? 'use' : 'earn');
+        var label = adm && S.calUser === 'all' ? firstName(e.username) : (e.type === 'USE' ? 'Day off' : e.event);
+        return '<span class="ev ' + c + '">' + fDs(e.type === 'USE' ? -e.days : e.days, true) + ' ' + esc(label) + '</span>'; }));
+    var cap = h ? 2 : 3;
+    var chips = (h ? '<span class="hl" title="' + esc(h.name) + '">' + esc(h.name) + '</span>' : '') + items.slice(0, cap).join('') + (items.length > cap ? '<span class="more">+' + (items.length - cap) + ' more</span>' : '');
+    var aria = fDate(k, { weekday:'long', month:'long', day:'numeric' }) + (h ? ', ' + h.name : '') + (ve.length ? ': ' + ve.map(function(e){ return e.title + ', ' + EV_LABEL[evState(e)].toLowerCase(); }).join('; ') : '') + (evs.length ? (ve.length ? '; ' : ': ') + evs.map(function(e){ return (e.type === 'USE' ? 'day off ' : (e.status === 'Pending' ? 'pending ' : 'earned ')) + fD(e.days); }).join(', ') : '');
     cells += '<button class="' + cls + '" data-day="' + k + '" aria-label="' + esc(aria) + '"><span class="dn">' + d.getDate() + '</span>' + chips + '</button>';
   }
-  var filter = adm ? '<select class="input" id="calUser" aria-label="Show employee"><option value="all">All staff</option>' + S.users.map(function(u){ return '<option value="' + esc(u.username) + '"' + (S.calUser === u.username ? ' selected' : '') + '>' + esc(u.name) + '</option>'; }).join('') + '</select>' : '';
+  var filter = adm && showPe ? '<select class="input" id="calUser" aria-label="Show employee"><option value="all">All staff</option>' + S.users.map(function(u){ return '<option value="' + esc(u.username) + '"' + (S.calUser === u.username ? ' selected' : '') + '>' + esc(u.name) + '</option>'; }).join('') + '</select>' : '';
+  var layers = '<div class="tabs" role="group" aria-label="Show on the calendar">' + [['all', 'Everything'], ['events', 'Events'], ['people', 'Staff schedule']].map(function(x){ return '<button type="button" data-act="calLayer" data-l="' + x[0] + '" aria-pressed="' + (layer === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>';
+  var legend = '<div class="legend" style="padding:0"><span><i style="background:var(--navy-soft);box-shadow:inset 0 0 0 1px var(--navy)"></i>Holiday</span>' +
+    (showEv ? '<span><i class="e-need"></i>Needs dispatching</span><span><i class="e-wait"></i>Dispatch filed</span><span><i class="e-ok"></i>Dispatched</span><span><i class="e-un"></i>Unconfirmed</span>' : '') +
+    (showPe ? '<span><i class="st-to"></i>Travel order</span><span><i class="st-lv"></i>Leave</span><span><i style="background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)"></i>Earned</span><span><i style="box-shadow:inset 0 0 0 1px var(--line-strong)"></i>Waiting for review</span><span><i style="background:var(--gold-soft);box-shadow:inset 0 0 0 1px var(--gold)"></i>Day off</span>' : '') + '</div>';
   var sel = '';
   if (S.selDay){
-    var de = sorted(byDay[S.selDay] || []), hh = holidayOn(S.selDay), future = S.selDay >= td;
+    var hh = holidayOn(S.selDay), future = S.selDay >= td;
+    var dayEv = showEv ? all.filter(function(e){ return e.date <= S.selDay && e.dateTo >= S.selDay; }) : [];
+    var de = showPe ? sorted(byDay[S.selDay] || []) : [];
+    var tl = showPe ? activeTOs().filter(function(t){ return t.dateFrom <= S.selDay && t.dateTo >= S.selDay && (!who || t.usernames.indexOf(who) >= 0) && !shown(t); }) : [];
     sel = panel(fDate(S.selDay, { weekday:'long', month:'long', day:'numeric', year:'numeric' }), 'cal',
       (hh ? '<div class="panel-b" style="padding-bottom:0"><div class="info-note">' + ic('flag') + '<span>' + esc(hh.name) + ' · ' + esc(hh.kind) + ' holiday</span></div></div>' : '') +
-      (function(){ var tl = activeTOs().filter(function(t){ return t.dateFrom <= S.selDay && t.dateTo >= S.selDay && (!who || t.usernames.indexOf(who) >= 0); }); return tl.length ? '<ul class="list">' + tl.map(toRow).join('') + '</ul>' : ''; })() +
-      (de.length ? '<ul class="list">' + de.map(function(e){ return entryRow(e, { showName: adm }); }).join('') + '</ul>' : '<div class="empty">No offsets on this day.</div>'),
-      '<div class="row-btns">' + (adm ? '<button class="btn btn-sm btn-ghost" data-act="useModal" data-date="' + S.selDay + '"' + (S.calUser !== 'all' ? ' data-u="' + esc(S.calUser) + '"' : '') + '>' + ic('minus') + 'Record use</button>' : '') +
-        (future ? '<button class="btn btn-sm btn-ghost" data-act="requestModal" data-date="' + S.selDay + '">' + ic('plane') + 'Request this day off</button>' : '<button class="btn btn-sm btn-ghost" data-act="logOn" data-date="' + S.selDay + '">' + ic('plus') + 'Log offset on this day</button>') + '</div>', 'span-12" id="daypanel');
+      (dayEv.length ? '<ul class="evlist">' + dayEv.map(evRow).join('') + '</ul>' : '') +
+      (tl.length ? '<ul class="list">' + tl.map(toRow).join('') + '</ul>' : '') +
+      (de.length ? '<ul class="list">' + de.map(function(e){ return entryRow(e, { showName: adm }); }).join('') + '</ul>' : (dayEv.length || tl.length ? '' : '<div class="empty">' + (showPe ? 'Nothing on this day.' : 'No events on this day.') + '</div>')),
+      '<div class="row-btns">' + (showEv && cs ? '<button class="btn btn-sm btn-ghost" data-act="evNew">' + ic('plus') + 'Add event on this day</button>' : '') +
+        (showPe && adm ? '<button class="btn btn-sm btn-ghost" data-act="useModal" data-date="' + S.selDay + '"' + (S.calUser !== 'all' ? ' data-u="' + esc(S.calUser) + '"' : '') + '>' + ic('minus') + 'Record use</button>' : '') +
+        (showPe ? (future ? '<button class="btn btn-sm btn-ghost" data-act="requestModal" data-date="' + S.selDay + '">' + ic('plane') + 'Request this day off</button>' : '<button class="btn btn-sm btn-ghost" data-act="logOn" data-date="' + S.selDay + '">' + ic('plus') + 'Log offset on this day</button>') : '') + '</div>', 'span-12" id="daypanel');
   }
-  var mh = S.holidays.filter(function(h){ return h.date.slice(0,7) === ym; });
-  return { eyebrow: 'Calendar', title: first.toLocaleDateString('en-PH', { month:'long', year:'numeric' }), sub: 'Holidays, travel orders, leaves, offsets and days off. Tap a day for details.',
-    actions: '<button class="btn btn-glass" data-act="calPrev" aria-label="Previous month">' + ic('left') + '</button><button class="btn btn-glass" data-act="calToday">Today</button><button class="btn btn-glass" data-act="calNext" aria-label="Next month">' + ic('right') + '</button>',
-    body: '<div class="grid"><section class="panel span-12"><div class="panel-h"><div class="legend" style="padding:0"><span><i style="background:var(--navy-soft);box-shadow:inset 0 0 0 1px var(--navy)"></i>Holiday</span><span><i class="st-to"></i>Travel order</span><span><i class="st-lv"></i>Leave</span><span><i style="background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)"></i>Earned</span><span><i style="box-shadow:inset 0 0 0 1px var(--line-strong)"></i>Waiting for review</span><span><i style="background:var(--gold-soft);box-shadow:inset 0 0 0 1px var(--gold)"></i>Day off</span></div>' + filter + '</div>' +
-      '<div class="cal">' + ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(d){ return '<div class="dow">' + d + '</div>'; }).join('') + cells + '</div></section>' + sel +
-      panel('Events in ' + fMonth(ym), 'list', eventsOverview(ym, who), adm ? '<button class="btn btn-sm btn-ghost" data-go="settings">Edit holidays</button>' : '', 'span-12') + '</div>' };
+  var tiles = '', agenda = '';
+  if (showEv){
+    var up = all.filter(function(e){ return e.status !== 'Cancelled' && e.dateTo >= td; }), cnt = { need: 0, wait: 0, ok: 0 };
+    up.forEach(function(e){ cnt[evState(e)]++; });
+    var unconf = up.filter(function(e){ return e.status === 'Pending'; }).length, nx = up[0], mS = ymd(first), mE = ymd(new Date(y, m + 1, 0)), lst, title;
+    if (E.f === 'upcoming'){ lst = up; title = 'Upcoming events'; }
+    else if (E.f === 'need' || E.f === 'wait' || E.f === 'ok'){ lst = up.filter(function(e){ return evState(e) === E.f; }); title = EV_LABEL[E.f] + ' · upcoming'; }
+    else { lst = all.filter(function(e){ return e.date <= mE && e.dateTo >= mS; }); title = 'Events in ' + fMonth(ym); }
+    var rows = '', last = '';
+    lst.forEach(function(e){ if (e.date !== last){ last = e.date; rows += '<li class="evday">' + esc(fDate(e.date, { weekday:'short', month:'short', day:'numeric', year:'numeric' })) + '</li>'; } rows += evRow(e); });
+    tiles = '<div class="tiles" style="margin-bottom:16px">' + [
+      ['upcoming', 'Upcoming', 'cal', String(up.length), (nx ? 'Next: ' + fDate(nx.date, { month:'short', day:'numeric' }) : 'Nothing scheduled') + (cs && unconf ? ' · ' + unconf + ' unconfirmed' : ''), ''],
+      ['need', 'Needs dispatching', 'megaphone', String(cnt.need), cnt.need ? 'No travel order yet' : 'All covered', cnt.need ? 'bad' : ''],
+      ['wait', 'Dispatch in progress', 'clock', String(cnt.wait), 'Travel order not prepared', cnt.wait ? 'warn' : ''],
+      ['ok', 'Dispatched', 'check', String(cnt.ok), 'Travel order prepared', 'ok']
+    ].map(function(x){ return tile(x[1], x[3], x[4], x[5], x[2], 'data-act="evFilter" data-f="' + x[0] + '" aria-pressed="' + (E.f === x[0]) + '"'); }).join('') + '</div>';
+    var back = E.f !== 'month' ? '<div class="panel-b" style="padding-bottom:0"><button type="button" class="btn btn-sm btn-ghost" data-act="evFilter" data-f="' + E.f + '">Show the whole month</button></div>' : '';
+    agenda = panel(title, 'megaphone', back + (rows ? '<ul class="evlist">' + rows + '</ul>' : empty('cal', 'No events here', cs ? 'Add the events from request letters so the office can see them.' : 'Nothing is scheduled for this view.', cs ? '<button type="button" class="btn btn-primary" data-act="evNew">' + ic('plus') + 'Add event</button>' : '')), '', 'span-12" id="evagenda');
+  } else {
+    agenda = panel('Schedule for ' + fMonth(ym), 'list', eventsOverview(ym, who), adm ? '<button class="btn btn-sm btn-ghost" data-go="settings">Edit holidays</button>' : '', 'span-12');
+  }
+  return { eyebrow: 'Calendar', title: first.toLocaleDateString('en-PH', { month:'long', year:'numeric' }), sub: 'Events, holidays, travel orders, leaves and offsets in one place. Red events still need people dispatched. Tap a day for details.',
+    actions: '<button class="btn btn-glass" data-act="calPrev" aria-label="Previous month">' + ic('left') + '</button><button class="btn btn-glass" data-act="calToday">Today</button><button class="btn btn-glass" data-act="calNext" aria-label="Next month">' + ic('right') + '</button>' + (cs ? '<button type="button" class="btn btn-sun" data-act="evNew">' + ic('plus') + 'Add event</button>' : ''),
+    body: tiles + '<div class="grid"><section class="panel span-12"><div class="panel-h">' + layers + filter + '</div><div class="panel-h" style="padding-top:0">' + legend + '</div>' +
+      '<div class="cal">' + ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(d){ return '<div class="dow">' + d + '</div>'; }).join('') + cells + '</div></section>' + sel + agenda + '</div>' };
 }
 
 /* ----- monthly summary & report ----- */
@@ -1753,7 +1791,7 @@ document.addEventListener('submit', function(ev){
   else if (kind === 'moveUse'){ d.id = M.id; p = act('moveUse', d, 'Day off rescheduled').then(closeModal); }
   else if (kind === 'saveEvent'){ d.needs = [].map.call(f.querySelectorAll('input[name=need]:checked'), function(x){ return x.value; }); var wasNew = !d.id;
     p = act('saveEvent', d, wasNew ? 'Event added' : 'Event saved').then(function(r){ closeModal(); var ne = S.events.filter(function(x){ return x.id === (r && r.id); })[0];
-      if (ne){ var dd = pd(ne.date); S.ev.y = dd.getFullYear(); S.ev.m = dd.getMonth(); S.ev.f = 'month'; S.ev.day = ''; S.ev.open = ''; render(); if (wasNew) setTimeout(function(){ evPrompt(ne); }, 250); } }); }
+      if (ne){ var dd = pd(ne.date); S.cal = { y: dd.getFullYear(), m: dd.getMonth() }; S.selDay = ''; S.ev.f = 'month'; S.ev.open = ''; render(); if (wasNew) setTimeout(function(){ evPrompt(ne); }, 250); } }); }
   else if (kind === 'reject') p = act('review', { id: M.id, decision: 'Rejected', note: d.note }, 'Rejected').then(closeModal);
   else if (kind === 'addUser') p = act('addUser', d, d.name + ' can now sign in');
   else if (kind === 'resetPin') p = act('resetPin', d, 'PIN reset').then(closeModal);
@@ -1941,7 +1979,7 @@ function evPrompt(e){
     '<button type="button" class="btn btn-ghost" data-act="close">Later</button><button type="button" class="btn btn-primary" data-act="evDispatch" data-id="' + e.id + '">' + ic('route') + 'Prepare travel order</button>');
 }
 function evModal(id){
-  var e = S.events.filter(function(x){ return x.id === id; })[0] || { title: '', venue: '', date: (S.ev && S.ev.day) || today(), dateTo: '', time: '', requester: '', needs: [], note: '' }, adm = isAdmin();
+  var e = S.events.filter(function(x){ return x.id === id; })[0] || { title: '', venue: '', date: S.selDay || today(), dateTo: '', time: '', requester: '', needs: [], note: '' }, adm = isAdmin();
   modal(e.id ? 'Edit event' : 'Add an event',
     '<input type="hidden" name="id" value="' + esc(e.id || '') + '">' +
     '<div class="field"><label for="evt">Event</label><input class="input" id="evt" name="title" maxlength="160" value="' + esc(e.title) + '" placeholder="e.g. Provincial Board regular session" required></div>' +
@@ -1979,46 +2017,6 @@ function evRow(e){
   var st = evState(e), open = S.ev.open === e.id;
   return '<li class="evr ' + st + (e.dateTo < today() ? ' past' : '') + '" id="ev-' + e.id + '"><button type="button" class="evh" data-act="evToggle" data-id="' + e.id + '" aria-expanded="' + open + '" aria-controls="evd-' + e.id + '"><span class="evbar" aria-hidden="true"></span>' +
     '<span class="evm"><b>' + esc(e.title) + '</b><small>' + esc(evShort(e)) + '</small></span><span class="pills"><span class="pill e-' + st + '">' + EV_LABEL[st] + '</span>' + (e.status === 'Pending' ? '<span class="pill Pending">Unconfirmed</span>' : '') + '</span><span class="evx">' + ic('right') + '</span></button>' + (open ? evDetail(e, st) : '') + '</li>';
-}
-function viewEvents(){
-  if (!S.ev){ var t0 = pd(today()); S.ev = { y: t0.getFullYear(), m: t0.getMonth(), f: 'month', day: '', open: '' }; }
-  var E = S.ev, td = today(), cs = canSched(), all = S.events.slice();
-  var up = all.filter(function(e){ return e.status !== 'Cancelled' && e.dateTo >= td; }).sort(evSort), cnt = { need: 0, wait: 0, ok: 0 };
-  up.forEach(function(e){ cnt[evState(e)]++; });
-  var unconf = up.filter(function(e){ return e.status === 'Pending'; }).length;
-  var first = new Date(E.y, E.m, 1), start = new Date(E.y, E.m, 1 - first.getDay()), gs = ymd(start), ge = ymd(new Date(start.getFullYear(), start.getMonth(), start.getDate() + 41));
-  var mS = ymd(first), mE = ymd(new Date(E.y, E.m + 1, 0)), ym = mS.slice(0, 7), byDay = {};
-  all.sort(evSort).forEach(function(e){ for (var x = e.date < gs ? gs : e.date; x <= e.dateTo && x <= ge; x = addDays(x, 1)) (byDay[x] = byDay[x] || []).push(e); });
-  var cells = '';
-  for (var i = 0; i < 42; i++){
-    var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), k = ymd(d), evs = byDay[k] || [], h = holidayOn(k);
-    if (i >= 35 && d.getMonth() !== E.m) break;
-    var cls = 'day' + (d.getMonth() !== E.m ? ' out' : '') + (d.getDay() % 6 === 0 ? ' wknd' : '') + (h ? ' isHol' : '') + (k === td ? ' today' : '') + (k === E.day ? ' sel' : '');
-    var chips = evs.slice(0, 3).map(function(e){ return '<span class="ev e-' + evState(e) + (e.status === 'Pending' ? ' e-un' : '') + '" title="' + esc(e.title) + '">' + esc(e.title) + '</span>'; }).join('') + (evs.length > 3 ? '<span class="more">+' + (evs.length - 3) + ' more</span>' : '');
-    var aria = fDate(k, { weekday:'long', month:'long', day:'numeric' }) + (evs.length ? ': ' + evs.map(function(e){ return e.title + ', ' + EV_LABEL[evState(e)].toLowerCase(); }).join('; ') : ', no events');
-    cells += '<button type="button" class="' + cls + '" data-act="evDay" data-d="' + k + '" aria-label="' + esc(aria) + '"><span class="dn">' + d.getDate() + '</span>' + chips + '</button>';
-  }
-  var list, title;
-  if (E.f === 'upcoming'){ list = up; title = 'Upcoming events'; }
-  else if (E.f === 'need' || E.f === 'wait' || E.f === 'ok'){ list = up.filter(function(e){ return evState(e) === E.f; }); title = EV_LABEL[E.f] + ' · upcoming'; }
-  else if (E.f === 'day' && E.day){ list = all.filter(function(e){ return e.date <= E.day && e.dateTo >= E.day; }); title = fDate(E.day, { weekday:'long', month:'long', day:'numeric' }); }
-  else { list = all.filter(function(e){ return e.date <= mE && e.dateTo >= mS; }); title = 'Events in ' + fMonth(ym); }
-  list = list.slice().sort(evSort);
-  var rows = '', last = '';
-  list.forEach(function(e){ if (e.date !== last){ last = e.date; rows += '<li class="evday">' + esc(fDate(e.date, { weekday:'short', month:'short', day:'numeric', year:'numeric' })) + '</li>'; } rows += evRow(e); });
-  var nx = up[0];
-  var tiles = '<div class="tiles" style="margin-bottom:16px">' + [
-    ['upcoming', 'Upcoming', 'cal', String(up.length), (nx ? 'Next: ' + fDate(nx.date, { month:'short', day:'numeric' }) : 'Nothing scheduled') + (cs && unconf ? ' · ' + unconf + ' unconfirmed' : ''), ''],
-    ['need', 'Needs dispatching', 'megaphone', String(cnt.need), cnt.need ? 'No travel order yet' : 'All covered', cnt.need ? 'bad' : ''],
-    ['wait', 'Dispatch in progress', 'clock', String(cnt.wait), 'Travel order not prepared', cnt.wait ? 'warn' : ''],
-    ['ok', 'Dispatched', 'check', String(cnt.ok), 'Travel order prepared', 'ok']
-  ].map(function(x){ return tile(x[1], x[3], x[4], x[5], x[2], 'data-act="evFilter" data-f="' + x[0] + '" aria-pressed="' + (E.f === x[0]) + '"'); }).join('') + '</div>';
-  var legend = '<div class="legend" style="padding:0"><span><i class="e-need"></i>Needs dispatching</span><span><i class="e-wait"></i>Dispatch filed</span><span><i class="e-ok"></i>Dispatched</span><span><i class="e-off"></i>Cancelled</span><span><i class="e-un"></i>Unconfirmed</span></div>';
-  var back = E.f !== 'month' ? '<div class="panel-b" style="padding-bottom:0"><button type="button" class="btn btn-sm btn-ghost" data-act="evFilter" data-f="' + E.f + '">Show the whole month</button></div>' : '';
-  return { eyebrow: 'Field work', title: first.toLocaleDateString('en-PH', { month:'long', year:'numeric' }), sub: 'Events from request letters, so the office can see what is coming and who is still missing. Red means nobody is dispatched yet.',
-    actions: '<button type="button" class="btn btn-glass" data-act="evPrev" aria-label="Previous month">' + ic('left') + '</button><button type="button" class="btn btn-glass" data-act="evToday">Today</button><button type="button" class="btn btn-glass" data-act="evNext" aria-label="Next month">' + ic('right') + '</button>' + (cs ? '<button type="button" class="btn btn-sun" data-act="evNew">' + ic('plus') + 'Add event</button>' : ''),
-    body: tiles + '<div class="grid"><section class="panel span-12"><div class="panel-h">' + legend + '</div><div class="cal">' + ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(x){ return '<div class="dow">' + x + '</div>'; }).join('') + cells + '</div></section>' +
-      panel(title, 'megaphone', back + (rows ? '<ul class="evlist">' + rows + '</ul>' : empty('cal', 'No events here', cs ? 'Add the events from request letters so the office can see them.' : 'Nothing is scheduled for this view.', cs ? '<button type="button" class="btn btn-primary" data-act="evNew">' + ic('plus') + 'Add event</button>' : '')), '', 'span-12" id="evagenda') + '</div>' };
 }
 function dayoffHint(t){
   if (t.toType !== 'dayoff') return '';
@@ -2239,10 +2237,8 @@ document.addEventListener('click', function(ev){
   else if (a === 'toPer'){ S.toPer = t.dataset.p; if (!S.toAnchor) S.toAnchor = today(); render(); }
   else if (a === 'toNav'){ var dv = Number(t.dataset.d), an = S.toAnchor || today(); if (S.toPer === 'week') S.toAnchor = addDays(an, 7 * dv); else { var dm = pd(an); S.toAnchor = ymd(new Date(dm.getFullYear(), dm.getMonth() + dv, 1)); } render(); }
   else if (a === 'toSort'){ var cur = S.toSort || (S.toFilter === 'past' ? 'desc' : 'asc'); S.toSort = cur === 'desc' ? 'asc' : 'desc'; render(); }
-  else if (a === 'evPrev' || a === 'evNext'){ var dm2 = new Date(S.ev.y, S.ev.m + (a === 'evNext' ? 1 : -1), 1); S.ev.y = dm2.getFullYear(); S.ev.m = dm2.getMonth(); S.ev.f = 'month'; S.ev.day = ''; render(); }
-  else if (a === 'evToday'){ var t1 = pd(today()); S.ev = { y: t1.getFullYear(), m: t1.getMonth(), f: 'month', day: '', open: '' }; render(); }
-  else if (a === 'evFilter'){ S.ev.f = S.ev.f === t.dataset.f ? 'month' : t.dataset.f; S.ev.day = ''; render(); evToAgenda(); }
-  else if (a === 'evDay'){ var kd = t.dataset.d; if (S.ev.day === kd){ S.ev.day = ''; S.ev.f = 'month'; } else { S.ev.day = kd; S.ev.f = 'day'; } render(); evToAgenda(); }
+  else if (a === 'evFilter'){ S.ev.f = S.ev.f === t.dataset.f ? 'month' : t.dataset.f; render(); evToAgenda(); }
+  else if (a === 'calLayer'){ S.calLayer = t.dataset.l; render(); }
   else if (a === 'evToggle'){ var eid = t.dataset.id; S.ev.open = S.ev.open === eid ? '' : eid; render(); setTimeout(function(){ var el = document.getElementById('ev-' + eid); if (el && S.ev.open === eid) el.scrollIntoView({ block: 'nearest' }); }, 30); }
   else if (a === 'evNew') evModal();
   else if (a === 'evEdit') evModal(t.dataset.id);
@@ -2448,7 +2444,7 @@ function loadZip(){
 }
 function xmlEsc(v){ return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 /* The Provincial Information Officer does not recommend her own travel. */
-function selfRecommend(t){ return t.names.some(function(n){ return /SARAH MARIE|AVIADO/i.test(n); }); }
+function selfRecommend(t){ return t.names.some(function(n){ return /SARAH/i.test(n) && /AVIADO/i.test(n); }); }
 function toDocXml(x, t){
   var o = { month:'long', day:'numeric', year:'numeric' }, names = sortNames(t.names);
   // one line per extra person: copy the second name line
