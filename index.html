@@ -622,6 +622,27 @@ button,[role=button],a,input,select,summary,label{touch-action:manipulation}
 @media (min-width:1600px){.wrap{max-width:1360px}}
 @media (max-width:560px){#toQ,#toTy{max-width:none!important;flex:1 1 100%}}
 @media (max-height:480px) and (orientation:landscape){.modal{max-height:calc(100dvh - 16px)}}
+
+/* ---- Events: the office whiteboard ---- */
+.tile.bad .k{color:var(--red)} .tile.bad .k .ib{background:var(--red-soft);color:var(--red)}
+.tile.ok .k{color:var(--brand-strong)}
+.ev.e-need{background:var(--red-soft);color:var(--red)} .ev.e-wait{background:var(--gold-soft);color:var(--gold)} .ev.e-ok{background:var(--brand-soft);color:var(--brand-strong)} .ev.e-off{background:var(--surface-2);color:var(--muted);text-decoration:line-through}
+.ev.e-un{outline:1px dashed currentColor;outline-offset:-1px}
+.pill.e-need{background:var(--red-soft);color:var(--red)} .pill.e-wait{background:var(--gold-soft);color:var(--gold)} .pill.e-ok{background:var(--brand-soft);color:var(--brand-strong)} .pill.e-off{background:var(--surface-2);color:var(--muted)}
+.legend i.e-need{background:var(--red-soft);box-shadow:inset 0 0 0 1px var(--red)} .legend i.e-wait{background:var(--gold-soft);box-shadow:inset 0 0 0 1px var(--gold)} .legend i.e-ok{background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)} .legend i.e-off{background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line-strong)} .legend i.e-un{background:transparent;outline:1px dashed var(--muted);outline-offset:-1px}
+.evlist{list-style:none;margin:0;padding:0}
+.evday{padding:12px 16px 4px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.evr{border-top:1px solid var(--line)} .evday+.evr{border-top:0}
+.evr.need{--ec:var(--red)} .evr.wait{--ec:var(--gold)} .evr.ok{--ec:var(--brand)} .evr.off{--ec:var(--line-strong)} .evr.past .evm{opacity:.7}
+.evh{display:flex;gap:12px;align-items:center;width:100%;min-height:60px;text-align:left;padding:10px 16px;background:none;border:0;font:inherit;color:inherit;cursor:pointer}
+.evh:hover{background:var(--surface-2)}
+.evbar{width:6px;align-self:stretch;min-height:36px;border-radius:3px;flex:none;background:var(--ec)}
+.evm{flex:1;min-width:0} .evm b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .evr.off .evm b{text-decoration:line-through;color:var(--muted)} .evm small{color:var(--muted);font-size:13px}
+.evh .pills{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.evx{display:flex;color:var(--muted);transition:transform .15s} .evh[aria-expanded=true] .evx{transform:rotate(90deg)}
+.evd{padding:2px 16px 16px 34px;display:grid;gap:12px} .evd dl{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px 14px;margin:0} .evd dt{color:var(--muted);font-size:13px;font-weight:600} .evd dd{margin:0;overflow-wrap:anywhere}
+.evd .acts-row{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:560px){.evd{padding-left:28px}.evd dl{grid-template-columns:1fr;gap:2px}.evd dt{margin-top:8px}.evh .pills .pill.Pending{display:none}}
 </style>
 </head>
 <body>
@@ -635,7 +656,7 @@ var LOGO = 'pio-logo.webp';
 var API = (window.PIO_API_URL || '').trim();
 var FIRE = !!(window.PIO_FIREBASE && window.PIO_FIREBASE.apiKey && window.PIO_FIREBASE.projectId);
 var LIVE = FIRE || /^https:\/\/script\.google\.com\//.test(API);
-var S = { token: null, me: null, users: [], entries: [], divisions: [], holidays: [], activity: [], travelOrders: [], leaves: [], credits: [], board: [], availDate: null, toFilter: 'upcoming', toMine: false,
+var S = { token: null, me: null, users: [], entries: [], divisions: [], holidays: [], activity: [], travelOrders: [], events: [], leaves: [], credits: [], board: [], availDate: null, toFilter: 'upcoming', toMine: false,
           settings: { workdays: 22, carryCap: 0 }, view: 'dashboard', cal: null, mon: null, calUser: 'all', selDay: null,
           dashDiv: 'all', rf: { user: 'all', div: 'all', type: 'all', status: 'all' }, recTab: 'entries', holYear: null,
           needsSetup: false, prefill: null, loadedAt: 0 };
@@ -673,6 +694,7 @@ function userOf(u){ return S.users.filter(function(z){ return z.username === u; 
 function userName(u){ var x = userOf(u); return x ? x.name : u; }
 function firstName(u){ return userName(u).split(' ')[0]; }
 function isAdmin(){ return S.me && S.me.role === 'admin'; }
+function canSched(){ return !!S.me && (S.me.role === 'admin' || S.me.role === 'scheduler'); }
 function when(iso){ if (!iso) return ''; var d = new Date(iso); if (isNaN(d)) return ''; return d.toLocaleDateString('en-PH', { month:'short', day:'numeric', year:'numeric' }) + ', ' + d.toLocaleTimeString('en-PH', { hour:'numeric', minute:'2-digit' }); }
 function ago(iso){
   var d = new Date(iso); if (isNaN(d)) return '';
@@ -752,7 +774,7 @@ function toast(msg){ var t = document.getElementById('toast'); t.textContent = m
 function apply(d){
   S.me = d.me; S.users = d.users; S.entries = d.entries; S.divisions = d.divisions;
   S.holidays = d.holidays || []; S.settings = d.settings || S.settings; S.activity = d.activity || [];
-  S.travelOrders = d.travelOrders || []; S.tevs = d.tevs || []; S.leaves = d.leaves || []; S.credits = d.credits || []; S.board = d.board || [];
+  S.travelOrders = d.travelOrders || []; S.events = d.events || []; S.tevs = d.tevs || []; S.leaves = d.leaves || []; S.credits = d.credits || []; S.board = d.board || [];
   S.loadedAt = Date.now(); S.lastWrite = d.lastWrite || 0;
   if (remembered()) lSet('pio_cache', JSON.stringify(d));
 }
@@ -863,14 +885,14 @@ function entriesCsv(list){
 function navItems(){
   // The first five are the phone tab bar. Regular and casual staff get leaves up front; JO and COS get offsets.
   var tev = ['tev','peso','TEVs','Field work'];
-  if (isAdmin()) return [['dashboard','grid','Dashboard','Overview'],['availability','users','Availability','Overview'],['travel','route','Travel orders','Field work'],['approvals','check','Approvals','Offsets'],
+  if (isAdmin()) return [['dashboard','grid','Dashboard','Overview'],['availability','users','Availability','Overview'],['travel','route','Travel orders','Field work'],['events','megaphone','Events','Field work'],['approvals','check','Approvals','Offsets'],
        ['calendar','cal','Calendar','Overview'],tev,['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets'],['leaves','plane','Leaves','Leaves'],['staff','users','Staff','Admin'],['settings','cog','Settings','Admin']];
-  if (hasLeaves()) return [['dashboard','grid','Dashboard','Overview'],['leaves','plane','My leaves','Leaves'],['travel','route','Travel orders','Field work'],['availability','users','Availability','Overview'],
+  if (hasLeaves()) return [['dashboard','grid','Dashboard','Overview'],['leaves','plane','My leaves','Leaves'],['travel','route','Travel orders','Field work'],['events','megaphone','Events','Field work'],['availability','users','Availability','Overview'],
        ['calendar','cal','Calendar','Overview'],tev,['log','plus','Log offset','Offsets'],['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets']];
-  return [['dashboard','grid','Dashboard','Overview'],['log','plus','Log offset','Offsets'],['travel','route','Travel orders','Field work'],['availability','users','Availability','Overview'],
+  return [['dashboard','grid','Dashboard','Overview'],['log','plus','Log offset','Offsets'],['travel','route','Travel orders','Field work'],['events','megaphone','Events','Field work'],['availability','users','Availability','Overview'],
        ['calendar','cal','Calendar','Overview'],tev,['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets']].concat(wlOnly() ? [['leaves','plane','Wellness leave','Leaves']] : []);
 }
-var SHORT = { travel: 'Travel', availability: 'Who’s in', log: 'Log', leaves: 'Leaves', approvals: 'Review' };
+var SHORT = { events: 'Events', travel: 'Travel', availability: 'Who’s in', log: 'Log', leaves: 'Leaves', approvals: 'Review' };
 function sideNav(nav, navBtn){
   var order = ['Overview','Field work','Offsets','Leaves','Admin'], html = '';
   order.forEach(function(g){ var items = nav.filter(function(n){ return n[3] === g; }); if (items.length) html += '<div class="nav-h">' + g + '</div>' + items.map(navBtn).join(''); });
@@ -905,7 +927,7 @@ function render(){
   var nav = navItems(), pc = isAdmin() ? pending().filter(canReview).length : 0;
   function navBtn(n){ return '<button data-go="' + n[0] + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ic(n[1]) + '<span>' + n[2] + '</span>' + (n[0] === 'approvals' && pc ? '<span class="badge">' + pc + '</span>' : '') + '</button>'; }
   var tabs = nav.slice(0, 5);
-  var views = { dashboard: viewDashboard, log: viewLog, approvals: viewApprovals, calendar: viewCalendar, monthly: viewMonthly, records: viewRecords, staff: viewStaff, settings: viewSettings, availability: viewAvailability, travel: viewTravel, leaves: viewLeaves, tev: viewTEV };
+  var views = { dashboard: viewDashboard, log: viewLog, approvals: viewApprovals, calendar: viewCalendar, events: viewEvents, monthly: viewMonthly, records: viewRecords, staff: viewStaff, settings: viewSettings, availability: viewAvailability, travel: viewTravel, leaves: viewLeaves, tev: viewTEV };
   if (!views[S.view] || (['staff','approvals','settings'].indexOf(S.view) >= 0 && !isAdmin())) S.view = 'dashboard';
   var v = views[S.view]();
   var myDiv = divOf(S.me.division), y = window.scrollY, same = S.view === S.lastView && !!app.querySelector('.shell'), kept = same ? keepForm(app) : null;
@@ -915,7 +937,7 @@ function render(){
       '<div class="drawer-scrim" data-act="drawerClose"></div><aside class="side" id="sidenav"><div class="brand"><img src="' + LOGO + '" alt="Provincial Information Office seal"><div><b>PIO Overwatch</b><small>Camarines Norte</small></div></div>' +
         '<nav class="nav" aria-label="Main">' + sideNav(nav, navBtn) + '</nav>' +
         '<div class="side-foot"><div class="who">' + (myDiv ? divBadge(myDiv, 36) : '<span class="avatar">' + esc(initials(S.me.name)) + '</span>') +
-          '<div style="min-width:0"><b>' + esc(S.me.name) + '</b><small><span class="cap">' + esc(S.me.role) + '</span> · ' + (myDiv ? esc(myDiv.short) : '@' + esc(S.me.username)) + '</small></div></div>' +
+          '<div style="min-width:0"><b>' + esc(S.me.name) + '</b><small><span class="cap">' + esc(S.me.role === 'scheduler' ? 'event scheduler' : S.me.role) + '</span> · ' + (myDiv ? esc(myDiv.short) : '@' + esc(S.me.username)) + '</small></div></div>' +
         '<div class="nav">' + (S.view === 'dashboard' ? '<button data-act="customize" class="show-sm">' + ic('sliders') + '<span>Customize dashboard</span></button>' : '') + '<button data-act="refresh">' + ic('refresh') + '<span>Refresh</span></button><button data-act="changePin">' + ic('key') + '<span>Change PIN</span></button><button data-act="logout">' + ic('out') + '<span>Sign out</span></button></div></div>' +
       '</aside>' +
       '<div style="min-width:0">' +
@@ -1434,7 +1456,7 @@ function viewStaff(){
 function addStaffModal(){
   modal('Add staff', '<div class="field"><label for="an">Full name</label><input class="input" id="an" name="name" required></div>' +
     '<div class="two"><div class="field"><label for="au">Username</label><input class="input" id="au" name="username" autocapitalize="none" spellcheck="false" placeholder="e.g. jdelacruz" required></div><div class="field"><label for="ap">Starting PIN</label><input class="input pin" id="ap" name="pin" inputmode="numeric" maxlength="6" placeholder="4–6 digits" required></div></div>' +
-    '<div class="two"><div class="field"><label for="ad">Division</label>' + divSelect('ad', '', 'Division', false, true) + '</div><div class="field"><label for="ar">Role</label><select class="input" id="ar" name="role"><option value="employee">Employee</option><option value="admin">Admin</option></select></div></div>' +
+    '<div class="two"><div class="field"><label for="ad">Division</label>' + divSelect('ad', '', 'Division', false, true) + '</div><div class="field"><label for="ar">Role</label><select class="input" id="ar" name="role"><option value="employee">Employee</option><option value="scheduler">Event scheduler</option><option value="admin">Admin</option></select></div></div>' +
     '<div class="field"><label for="aet">Employment</label><select class="input" id="aet" name="empType"><option value="JO">JO (Job order)</option><option value="COS">COS (Contract of service)</option><option>Casual</option><option>Regular</option></select><span class="hint">Regular and casual get CSC leave credits. JO and COS get wellness leave. Everyone can log offsets.</span></div>' +
     '<span class="hint">Give the PIN to the employee in person. They can change it after signing in.</span>',
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">' + ic('plus') + 'Add staff</button>', 'addUser');
@@ -1552,6 +1574,7 @@ function personModal(username){
       '<div class="label">Account</div><div class="acct"><button type="button" class="btn btn-sm btn-ghost" data-act="pinModal" data-u="' + esc(username) + '">' + ic('key') + (u.noPin ? 'Set PIN' : 'Reset PIN') + '</button>' +
       (self ? '<span class="hint">Another admin manages your own role and status.</span>' :
         '<button type="button" class="btn btn-sm btn-ghost" data-act="setRole" data-u="' + esc(username) + '" data-r="' + (u.role === 'admin' ? 'employee' : 'admin') + '">' + ic('shield') + (u.role === 'admin' ? 'Make employee' : 'Make admin') + '</button>' +
+        (u.role !== 'admin' ? '<button type="button" class="btn btn-sm btn-ghost" data-act="setRole" data-u="' + esc(username) + '" data-r="' + (u.role === 'scheduler' ? 'employee' : 'scheduler') + '">' + ic('megaphone') + (u.role === 'scheduler' ? 'Remove event scheduler' : 'Make event scheduler') + '</button>' : '') +
         '<button type="button" class="btn btn-sm btn-ghost" data-act="toggleActive" data-u="' + esc(username) + '" data-a="' + (u.active ? '0' : '1') + '">' + (u.active ? 'Deactivate' : 'Activate') + '</button>' +
         '<button type="button" class="btn btn-sm btn-danger" data-act="removeUser" data-u="' + esc(username) + '">' + ic('trash') + 'Remove ' + (u.role === 'admin' ? 'admin' : 'staff') + '</button>') + '</div>' +
       (!self && st.avail > 0 ? '<div class="warn-note">' + ic('clock') + '<span>' + esc(u.name.split(' ')[0]) + ' still has ' + fD(st.avail) + ' available. Settle or record it before removing the account.</span></div>' : '') +
@@ -1673,7 +1696,7 @@ document.addEventListener('click', function(ev){
   if (a === 'confirmAll'){ if (t.dataset.sure !== '1'){ t.dataset.sure = '1'; t.innerHTML = ic('check') + 'Tap again to approve all'; return; }
     busy(t, act('reviewMany', { ids: pending(t.dataset.k).filter(canReview).map(function(e){ return e.id; }), decision: 'Confirmed' }, function(n){ return n + ' approved'; })); return; }
   if (a === 'toggleActive'){ var on2 = t.dataset.a === '1', tu = t.dataset.u; busy(t, act('setActive', { username: tu, active: on2 }, on2 ? 'Account activated' : 'Account deactivated').then(function(){ personModal(tu); }), 'merr'); return; }
-  if (a === 'setRole'){ var tu2 = t.dataset.u, r = t.dataset.r; busy(t, act('setRole', { username: tu2, role: r }, firstName(tu2) + ' is now ' + (r === 'admin' ? 'an admin' : 'an employee')).then(function(){ personModal(tu2); }), 'merr'); return; }
+  if (a === 'setRole'){ var tu2 = t.dataset.u, r = t.dataset.r; busy(t, act('setRole', { username: tu2, role: r }, firstName(tu2) + ' is now ' + (r === 'admin' ? 'an admin' : r === 'scheduler' ? 'an event scheduler' : 'an employee')).then(function(){ personModal(tu2); }), 'merr'); return; }
   if (a === 'removeUser'){ if (!sure(t, 'Tap again to remove ' + esc(firstName(t.dataset.u)))) return; var nm2 = userName(t.dataset.u); busy(t, act('removeUser', { username: t.dataset.u }, nm2 + ' was removed').then(closeModal), 'merr'); return; }
 });
 document.addEventListener('keydown', function(ev){
@@ -1728,6 +1751,9 @@ document.addEventListener('submit', function(ev){
   else if (kind === 'requestUse') p = act('requestUse', d, isAdmin() && !otherAdmins() ? 'Day off recorded' : 'Request sent').then(closeModal);
   else if (kind === 'recordUse') p = act('recordUse', d, 'Offset use recorded').then(closeModal);
   else if (kind === 'moveUse'){ d.id = M.id; p = act('moveUse', d, 'Day off rescheduled').then(closeModal); }
+  else if (kind === 'saveEvent'){ d.needs = [].map.call(f.querySelectorAll('input[name=need]:checked'), function(x){ return x.value; }); var wasNew = !d.id;
+    p = act('saveEvent', d, wasNew ? 'Event added' : 'Event saved').then(function(r){ closeModal(); var ne = S.events.filter(function(x){ return x.id === (r && r.id); })[0];
+      if (ne){ var dd = pd(ne.date); S.ev.y = dd.getFullYear(); S.ev.m = dd.getMonth(); S.ev.f = 'month'; S.ev.day = ''; S.ev.open = ''; render(); if (wasNew) setTimeout(function(){ evPrompt(ne); }, 250); } }); }
   else if (kind === 'reject') p = act('review', { id: M.id, decision: 'Rejected', note: d.note }, 'Rejected').then(closeModal);
   else if (kind === 'addUser') p = act('addUser', d, d.name + ' can now sign in');
   else if (kind === 'resetPin') p = act('resetPin', d, 'PIN reset').then(closeModal);
@@ -1885,6 +1911,115 @@ function prepPrompt(t, tev, pr){
   modal('Travel order prepared', '<p style="margin:0">' + (pr ? 'Print <b>' + esc(t.event) + '</b> now so it is ready to sign. ' : '') + (tev ? 'A TEV was started for each of the ' + n + ' ' + (n === 1 ? 'person' : 'people') + '. Fill in the amounts now or later from <b>TEVs</b> under Field work.' : '') + '</p>',
     '<button type="button" class="btn btn-ghost" data-act="close">Later</button>' + (tev ? '<button type="button" class="btn ' + (pr ? 'btn-ghost' : 'btn-primary') + '" data-act="tevGo" data-id="' + t.id + '">' + ic('peso') + 'Make TEVs</button>' : '') + (pr ? '<button type="button" class="btn btn-primary" data-act="toPrint" data-id="' + t.id + '">' + ic('print') + 'Print now</button>' : ''));
 }
+/* ----- Events: what is coming up and who still needs to be dispatched ----- */
+var EV_NEEDS = ['Documentation (photo and video)', 'Livestream', 'News and write-up', 'Graphics and pubmat', 'Emcee or hosting', 'Other'];
+var EV_LABEL = { need: 'Needs dispatching', wait: 'Dispatch filed', ok: 'Dispatched', off: 'Cancelled' };
+function evState(e){
+  if (e.status === 'Cancelled') return 'off';
+  var ts = S.travelOrders.filter(function(t){ return t.eventId === e.id && t.status !== 'Cancelled'; });
+  return !ts.length ? 'need' : ts.some(function(t){ return t.status === 'Prepared'; }) ? 'ok' : 'wait';
+}
+function evTime(h){ var p = String(h).split(':'), n = Number(p[0]); return (n % 12 || 12) + ':' + p[1] + ' ' + (n < 12 ? 'AM' : 'PM'); }
+function evWhen(e){ return (e.dateTo && e.dateTo !== e.date ? fRange(e.date, e.dateTo, { month:'short', day:'numeric', year:'numeric' }) : fDate(e.date, { weekday:'long', month:'long', day:'numeric', year:'numeric' })) + (e.time ? ' · ' + evTime(e.time) : ''); }
+function evShort(e){ return (e.dateTo && e.dateTo !== e.date ? fRange(e.date, e.dateTo, { month:'short', day:'numeric' }) : fDate(e.date, { weekday:'short', month:'short', day:'numeric' })) + (e.time ? ' · ' + evTime(e.time) : ''); }
+function evSort(a, b){ return a.date !== b.date ? (a.date < b.date ? -1 : 1) : (a.time || '') !== (b.time || '') ? ((a.time || '') < (b.time || '') ? -1 : 1) : (a.title < b.title ? -1 : 1); }
+function evToAgenda(){ setTimeout(function(){ var el = document.getElementById('evagenda'); if (el && window.innerWidth < 1100) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); }
+function evLinkHtml(t){
+  if (!t.eventId) return '';
+  var e = S.events.filter(function(x){ return x.id === t.eventId; })[0];
+  return '<input type="hidden" name="eventId" value="' + esc(t.eventId) + '">' + (e ? '<div class="info-note">' + ic('megaphone') + '<span>For the event <b>' + esc(e.title) + '</b> · ' + esc(e.venue) + ' · ' + esc(evWhen(e)) + (e.needs && e.needs.length ? '<br>Needed: ' + esc(e.needs.join(', ')) : '') + '</span></div>' : '');
+}
+function evDispatch(e){
+  var n0 = (e.needs || [])[0] || '', pre = /^Documentation/.test(n0) ? 'To document ' : n0 === 'Livestream' ? 'To livestream ' : n0 === 'Emcee or hosting' ? 'To serve as emcee for ' : 'To cover ';
+  var ex = S.travelOrders.filter(function(t){ return t.eventId === e.id && t.status !== 'Cancelled'; })[0];
+  toModal('', { event: pre + e.title, destination: e.venue, dateFrom: e.date, dateTo: e.dateTo || '', eventId: e.id });
+}
+function evPrompt(e){
+  modal('Event added', '<div class="sumbox"><b>' + esc(e.title) + '</b><span>' + esc(e.venue) + ' · ' + esc(evWhen(e)) + '</span></div>' +
+    '<div class="field"><span class="label">What is needed</span><div>' + esc(e.needs && e.needs.length ? e.needs.join(', ') : 'Not specified yet') + '</div></div>' +
+    '<p style="margin:0">Nobody is dispatched yet. Prepare the travel order now so the event is covered' + (e.status === 'Pending' ? ', or do it later. An admin still needs to confirm the event.' : ', or do it later from the event.') + '</p>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Later</button><button type="button" class="btn btn-primary" data-act="evDispatch" data-id="' + e.id + '">' + ic('route') + 'Prepare travel order</button>');
+}
+function evModal(id){
+  var e = S.events.filter(function(x){ return x.id === id; })[0] || { title: '', venue: '', date: (S.ev && S.ev.day) || today(), dateTo: '', time: '', requester: '', needs: [], note: '' }, adm = isAdmin();
+  modal(e.id ? 'Edit event' : 'Add an event',
+    '<input type="hidden" name="id" value="' + esc(e.id || '') + '">' +
+    '<div class="field"><label for="evt">Event</label><input class="input" id="evt" name="title" maxlength="160" value="' + esc(e.title) + '" placeholder="e.g. Provincial Board regular session" required></div>' +
+    '<div class="field"><label for="evv">Where</label><input class="input" id="evv" name="venue" maxlength="160" value="' + esc(e.venue) + '" placeholder="e.g. Brgy. Gubat, Daet, Camarines Norte" required></div>' +
+    '<div class="two"><div class="field"><label for="evd1">When</label><input class="input" id="evd1" name="date" type="date" value="' + esc(e.date) + '" required></div><div class="field"><label for="evd2">Until <span class="hint">(if more than one day)</span></label><input class="input" id="evd2" name="dateTo" type="date" value="' + (e.dateTo && e.dateTo !== e.date ? esc(e.dateTo) : '') + '"></div></div>' +
+    '<div class="field"><label for="evtm">Time <span class="hint">(optional)</span></label><input class="input" id="evtm" name="time" type="time" value="' + esc(e.time || '') + '"></div>' +
+    '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">What is needed?</legend><div style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">' + EV_NEEDS.map(function(n){ return '<label class="check" style="padding:10px 12px"><input type="checkbox" name="need" value="' + esc(n) + '"' + ((e.needs || []).indexOf(n) >= 0 ? ' checked' : '') + '><span>' + esc(n) + '</span></label>'; }).join('') + '</div></fieldset>' +
+    '<div class="field"><label for="evr">Requested by <span class="hint">(office or group on the request letter)</span></label><input class="input" id="evr" name="requester" maxlength="120" value="' + esc(e.requester || '') + '"></div>' +
+    '<div class="field"><label for="evn">Notes <span class="hint">(optional)</span></label><input class="input" id="evn" name="note" maxlength="400" value="' + esc(e.note || '') + '"></div>' +
+    '<div class="info-note">' + ic('shield') + '<span>' + (adm ? 'Events you add are confirmed right away.' : 'An admin confirms the event. Editing a confirmed event asks for confirmation again.') + '</span></div>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">' + (e.id ? 'Save event' : 'Add event') + '</button>', 'saveEvent');
+}
+function evDetail(e, st){
+  var ts = S.travelOrders.filter(function(t){ return t.eventId === e.id && t.status !== 'Cancelled'; }), cs = canSched(), adm = isAdmin();
+  var row = function(k, v){ return '<dt>' + k + '</dt><dd>' + v + '</dd>'; };
+  var disp = ts.length ? ts.map(function(t){ return '<div>' + esc(t.names.map(dispName).join(', ')) + ' <span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : 'Pending') + '">' + (t.status === 'Prepared' ? (t.printedAt ? 'Prepared · printed' : 'Prepared') : 'To prepare') + '</span></div>'; }).join('') : '<span class="pill e-need">No travel order yet</span>';
+  var acts = '';
+  if (e.status !== 'Cancelled'){
+    acts += '<button type="button" class="btn btn-sm ' + (st === 'need' ? 'btn-primary' : 'btn-ghost') + '" data-act="evDispatch" data-id="' + e.id + '">' + ic('route') + (ts.length ? 'Add another travel order' : 'Prepare travel order') + '</button>';
+    if (adm && e.status === 'Pending') acts += '<button type="button" class="btn btn-sm btn-ghost" data-act="evConfirm" data-id="' + e.id + '">' + ic('check') + 'Confirm event</button>';
+  }
+  if (cs){
+    acts += '<button type="button" class="btn btn-sm btn-ghost" data-act="evEdit" data-id="' + e.id + '">' + ic('edit') + 'Edit</button>';
+    if (e.status !== 'Cancelled') acts += '<button type="button" class="btn btn-sm btn-ghost" data-act="evCancel" data-id="' + e.id + '">' + ic('x') + 'Cancel event</button>';
+    else if (adm) acts += '<button type="button" class="btn btn-sm btn-ghost" data-act="evReopen" data-id="' + e.id + '">Reopen</button>';
+    if (adm || e.status === 'Pending') acts += '<button type="button" class="btn btn-sm btn-danger" data-act="evDelete" data-id="' + e.id + '">' + ic('trash') + 'Delete</button>';
+  }
+  return '<div class="evd" id="evd-' + e.id + '"><dl>' + row('Where', esc(e.venue)) + row('When', esc(evWhen(e))) +
+    row('What is needed', e.needs && e.needs.length ? e.needs.map(function(n){ return '<span class="pill off">' + esc(n) + '</span>'; }).join(' ') : '<span class="hint">Not specified</span>') +
+    (e.requester ? row('Requested by', esc(e.requester)) : '') + (e.note ? row('Notes', esc(e.note)) : '') +
+    row('Dispatch', disp) + row('Status', e.status === 'Confirmed' ? 'Confirmed' + (e.confirmedBy ? ' by ' + esc(firstName(e.confirmedBy)) : '') : e.status === 'Pending' ? 'Waiting for an admin to confirm' : 'Cancelled') + '</dl>' +
+    (acts ? '<div class="acts-row">' + acts + '</div>' : '') + '</div>';
+}
+function evRow(e){
+  var st = evState(e), open = S.ev.open === e.id;
+  return '<li class="evr ' + st + (e.dateTo < today() ? ' past' : '') + '" id="ev-' + e.id + '"><button type="button" class="evh" data-act="evToggle" data-id="' + e.id + '" aria-expanded="' + open + '" aria-controls="evd-' + e.id + '"><span class="evbar" aria-hidden="true"></span>' +
+    '<span class="evm"><b>' + esc(e.title) + '</b><small>' + esc(evShort(e)) + '</small></span><span class="pills"><span class="pill e-' + st + '">' + EV_LABEL[st] + '</span>' + (e.status === 'Pending' ? '<span class="pill Pending">Unconfirmed</span>' : '') + '</span><span class="evx">' + ic('right') + '</span></button>' + (open ? evDetail(e, st) : '') + '</li>';
+}
+function viewEvents(){
+  if (!S.ev){ var t0 = pd(today()); S.ev = { y: t0.getFullYear(), m: t0.getMonth(), f: 'month', day: '', open: '' }; }
+  var E = S.ev, td = today(), cs = canSched(), all = S.events.slice();
+  var up = all.filter(function(e){ return e.status !== 'Cancelled' && e.dateTo >= td; }).sort(evSort), cnt = { need: 0, wait: 0, ok: 0 };
+  up.forEach(function(e){ cnt[evState(e)]++; });
+  var unconf = up.filter(function(e){ return e.status === 'Pending'; }).length;
+  var first = new Date(E.y, E.m, 1), start = new Date(E.y, E.m, 1 - first.getDay()), gs = ymd(start), ge = ymd(new Date(start.getFullYear(), start.getMonth(), start.getDate() + 41));
+  var mS = ymd(first), mE = ymd(new Date(E.y, E.m + 1, 0)), ym = mS.slice(0, 7), byDay = {};
+  all.sort(evSort).forEach(function(e){ for (var x = e.date < gs ? gs : e.date; x <= e.dateTo && x <= ge; x = addDays(x, 1)) (byDay[x] = byDay[x] || []).push(e); });
+  var cells = '';
+  for (var i = 0; i < 42; i++){
+    var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), k = ymd(d), evs = byDay[k] || [], h = holidayOn(k);
+    if (i >= 35 && d.getMonth() !== E.m) break;
+    var cls = 'day' + (d.getMonth() !== E.m ? ' out' : '') + (d.getDay() % 6 === 0 ? ' wknd' : '') + (h ? ' isHol' : '') + (k === td ? ' today' : '') + (k === E.day ? ' sel' : '');
+    var chips = evs.slice(0, 3).map(function(e){ return '<span class="ev e-' + evState(e) + (e.status === 'Pending' ? ' e-un' : '') + '" title="' + esc(e.title) + '">' + esc(e.title) + '</span>'; }).join('') + (evs.length > 3 ? '<span class="more">+' + (evs.length - 3) + ' more</span>' : '');
+    var aria = fDate(k, { weekday:'long', month:'long', day:'numeric' }) + (evs.length ? ': ' + evs.map(function(e){ return e.title + ', ' + EV_LABEL[evState(e)].toLowerCase(); }).join('; ') : ', no events');
+    cells += '<button type="button" class="' + cls + '" data-act="evDay" data-d="' + k + '" aria-label="' + esc(aria) + '"><span class="dn">' + d.getDate() + '</span>' + chips + '</button>';
+  }
+  var list, title;
+  if (E.f === 'upcoming'){ list = up; title = 'Upcoming events'; }
+  else if (E.f === 'need' || E.f === 'wait' || E.f === 'ok'){ list = up.filter(function(e){ return evState(e) === E.f; }); title = EV_LABEL[E.f] + ' · upcoming'; }
+  else if (E.f === 'day' && E.day){ list = all.filter(function(e){ return e.date <= E.day && e.dateTo >= E.day; }); title = fDate(E.day, { weekday:'long', month:'long', day:'numeric' }); }
+  else { list = all.filter(function(e){ return e.date <= mE && e.dateTo >= mS; }); title = 'Events in ' + fMonth(ym); }
+  list = list.slice().sort(evSort);
+  var rows = '', last = '';
+  list.forEach(function(e){ if (e.date !== last){ last = e.date; rows += '<li class="evday">' + esc(fDate(e.date, { weekday:'short', month:'short', day:'numeric', year:'numeric' })) + '</li>'; } rows += evRow(e); });
+  var nx = up[0];
+  var tiles = '<div class="tiles" style="margin-bottom:16px">' + [
+    ['upcoming', 'Upcoming', 'cal', String(up.length), (nx ? 'Next: ' + fDate(nx.date, { month:'short', day:'numeric' }) : 'Nothing scheduled') + (cs && unconf ? ' · ' + unconf + ' unconfirmed' : ''), ''],
+    ['need', 'Needs dispatching', 'megaphone', String(cnt.need), cnt.need ? 'No travel order yet' : 'All covered', cnt.need ? 'bad' : ''],
+    ['wait', 'Dispatch in progress', 'clock', String(cnt.wait), 'Travel order not prepared', cnt.wait ? 'warn' : ''],
+    ['ok', 'Dispatched', 'check', String(cnt.ok), 'Travel order prepared', 'ok']
+  ].map(function(x){ return tile(x[1], x[3], x[4], x[5], x[2], 'data-act="evFilter" data-f="' + x[0] + '" aria-pressed="' + (E.f === x[0]) + '"'); }).join('') + '</div>';
+  var legend = '<div class="legend" style="padding:0"><span><i class="e-need"></i>Needs dispatching</span><span><i class="e-wait"></i>Dispatch filed</span><span><i class="e-ok"></i>Dispatched</span><span><i class="e-off"></i>Cancelled</span><span><i class="e-un"></i>Unconfirmed</span></div>';
+  var back = E.f !== 'month' ? '<div class="panel-b" style="padding-bottom:0"><button type="button" class="btn btn-sm btn-ghost" data-act="evFilter" data-f="' + E.f + '">Show the whole month</button></div>' : '';
+  return { eyebrow: 'Field work', title: first.toLocaleDateString('en-PH', { month:'long', year:'numeric' }), sub: 'Events from request letters, so the office can see what is coming and who is still missing. Red means nobody is dispatched yet.',
+    actions: '<button type="button" class="btn btn-glass" data-act="evPrev" aria-label="Previous month">' + ic('left') + '</button><button type="button" class="btn btn-glass" data-act="evToday">Today</button><button type="button" class="btn btn-glass" data-act="evNext" aria-label="Next month">' + ic('right') + '</button>' + (cs ? '<button type="button" class="btn btn-sun" data-act="evNew">' + ic('plus') + 'Add event</button>' : ''),
+    body: tiles + '<div class="grid"><section class="panel span-12"><div class="panel-h">' + legend + '</div><div class="cal">' + ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(x){ return '<div class="dow">' + x + '</div>'; }).join('') + cells + '</div></section>' +
+      panel(title, 'megaphone', back + (rows ? '<ul class="evlist">' + rows + '</ul>' : empty('cal', 'No events here', cs ? 'Add the events from request letters so the office can see them.' : 'Nothing is scheduled for this view.', cs ? '<button type="button" class="btn btn-primary" data-act="evNew">' + ic('plus') + 'Add event</button>' : '')), '', 'span-12" id="evagenda') + '</div>' };
+}
 function dayoffHint(t){
   if (t.toType !== 'dayoff') return '';
   var n = 0, d0 = t.dateFrom; for (; d0 <= t.dateTo; d0 = addDays(d0, 1)) n++;
@@ -1938,11 +2073,11 @@ function viewTravel(){
       (list.length ? '<ul class="list">' + list.map(toRow).join('') + '</ul>' : empty('route', 'No travel orders here', 'Try another period, type or tab.', '<button class="btn btn-primary" data-act="toNew">' + ic('plus') + 'New travel order</button>')) + '</section>' };
 }
 var TO = { names: [] };
-function toModal(id){
-  var t = S.travelOrders.filter(function(x){ return x.id === id; })[0] || { dateFrom: today(), dateTo: '', event: '', destination: '', names: [] };
+function toModal(id, pre){
+  var t = S.travelOrders.filter(function(x){ return x.id === id; })[0] || Object.assign({ dateFrom: today(), dateTo: '', event: '', destination: '', names: [] }, pre || {});
   TO = { id: t.id || '', names: t.names.slice() };
   modal(t.id ? 'Edit travel order' : 'New travel order',
-    '<div class="two"><div class="field"><label for="tf">Date</label><input class="input" id="tf" name="dateFrom" type="date" value="' + t.dateFrom + '" required></div><div class="field"><label for="tt">Until <span class="hint">(if more than one day)</span></label><input class="input" id="tt" name="dateTo" type="date" value="' + (t.dateTo !== t.dateFrom ? t.dateTo : '') + '"></div></div>' +
+    evLinkHtml(t) + '<div class="two"><div class="field"><label for="tf">Date</label><input class="input" id="tf" name="dateFrom" type="date" value="' + t.dateFrom + '" required></div><div class="field"><label for="tt">Until <span class="hint">(if more than one day)</span></label><input class="input" id="tt" name="dateTo" type="date" value="' + (t.dateTo !== t.dateFrom ? t.dateTo : '') + '"></div></div>' +
     '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">Type of travel order</legend><div class="seg">' + [['regular','Regular','Official work or event'],['dayoff','Day off','Uses offset']].map(function(o, i){ return '<input type="radio" name="toType" id="tty' + i + '" value="' + o[0] + '"' + ((t.toType || 'regular') === o[0] ? ' checked' : '') + '><label for="tty' + i + '"><b>' + o[1] + '</b><small>' + o[2] + '</small></label>'; }).join('') + '</div><span class="hint">A day-off travel order is the paper for using offset. Preparing it deducts 1 day per person for each date.</span></fieldset>' +
     '<div class="field"><label for="te">Purpose</label><input class="input" id="te" name="event" maxlength="200" value="' + esc(t.event) + '" placeholder="e.g. To cover the Provincial Board regular session" required><span class="hint">Copied exactly as you type it.</span></div>' +
     '<div class="field"><label for="tdst">Location</label><input class="input" id="tdst" name="destination" maxlength="120" value="' + esc(t.destination) + '" placeholder="e.g. Brgy. Gubat, Daet, Camarines Norte" required><span class="hint">Copied as: Purpose in Location on Date.</span></div>' +
@@ -2104,6 +2239,16 @@ document.addEventListener('click', function(ev){
   else if (a === 'toPer'){ S.toPer = t.dataset.p; if (!S.toAnchor) S.toAnchor = today(); render(); }
   else if (a === 'toNav'){ var dv = Number(t.dataset.d), an = S.toAnchor || today(); if (S.toPer === 'week') S.toAnchor = addDays(an, 7 * dv); else { var dm = pd(an); S.toAnchor = ymd(new Date(dm.getFullYear(), dm.getMonth() + dv, 1)); } render(); }
   else if (a === 'toSort'){ var cur = S.toSort || (S.toFilter === 'past' ? 'desc' : 'asc'); S.toSort = cur === 'desc' ? 'asc' : 'desc'; render(); }
+  else if (a === 'evPrev' || a === 'evNext'){ var dm2 = new Date(S.ev.y, S.ev.m + (a === 'evNext' ? 1 : -1), 1); S.ev.y = dm2.getFullYear(); S.ev.m = dm2.getMonth(); S.ev.f = 'month'; S.ev.day = ''; render(); }
+  else if (a === 'evToday'){ var t1 = pd(today()); S.ev = { y: t1.getFullYear(), m: t1.getMonth(), f: 'month', day: '', open: '' }; render(); }
+  else if (a === 'evFilter'){ S.ev.f = S.ev.f === t.dataset.f ? 'month' : t.dataset.f; S.ev.day = ''; render(); evToAgenda(); }
+  else if (a === 'evDay'){ var kd = t.dataset.d; if (S.ev.day === kd){ S.ev.day = ''; S.ev.f = 'month'; } else { S.ev.day = kd; S.ev.f = 'day'; } render(); evToAgenda(); }
+  else if (a === 'evToggle'){ var eid = t.dataset.id; S.ev.open = S.ev.open === eid ? '' : eid; render(); setTimeout(function(){ var el = document.getElementById('ev-' + eid); if (el && S.ev.open === eid) el.scrollIntoView({ block: 'nearest' }); }, 30); }
+  else if (a === 'evNew') evModal();
+  else if (a === 'evEdit') evModal(t.dataset.id);
+  else if (a === 'evDispatch'){ var de = S.events.filter(function(x){ return x.id === t.dataset.id; })[0]; if (de){ closeModal(); evDispatch(de); } }
+  else if (a === 'evConfirm' || a === 'evCancel' || a === 'evReopen'){ var es = a === 'evConfirm' ? 'Confirmed' : a === 'evCancel' ? 'Cancelled' : 'Pending'; if (a === 'evCancel' && !confirm('Cancel this event? Travel orders already filed for it stay as they are.')) return; act('setEventStatus', { id: t.dataset.id, status: es }, es === 'Confirmed' ? 'Event confirmed' : es === 'Cancelled' ? 'Event cancelled' : 'Event reopened').catch(function(e){ toast(e.message); }); }
+  else if (a === 'evDelete'){ if (confirm('Delete this event for good?')) act('deleteEvent', { id: t.dataset.id }, 'Event deleted').catch(function(e){ toast(e.message); }); }
   else if (a === 'toMarkPrinted'){ var mp = S.travelOrders.filter(function(x){ return x.id === t.dataset.id; })[0]; if (mp) markPrinted([mp]); }
   else if (a === 'toNew') toModal();
   else if (a === 'toEdit') toModal(t.dataset.id);
@@ -3454,7 +3599,7 @@ document.addEventListener('submit', function(ev){
     if (S.users.some(function(x){ return x.username === un; })) return bad(errId, 'That username is taken.');
     if (!/^\d{4,6}$/.test(d.pin || '')) return bad(errId, 'PIN must be 4 to 6 digits.');
     if (!String(d.name || '').trim()) return bad(errId, 'Full name is required.');
-    var nu = { username: un, name: d.name.trim(), role: d.role === 'admin' ? 'admin' : 'employee', division: d.division || '', active: true, empType: d.empType || 'JO', _saving: true };
+    var nu = { username: un, name: d.name.trim(), role: d.role === 'admin' ? 'admin' : d.role === 'scheduler' ? 'scheduler' : 'employee', division: d.division || '', active: true, empType: d.empType || 'JO', _saving: true };
     f.reset(); if (errId === 'merr') closeModal();
     return bg('addUser', d, { arr: 'users', key: 'username', item: nu }, nu.name + ' added', 'The account for ' + nu.name);
   }
@@ -3467,7 +3612,7 @@ document.addEventListener('submit', function(ev){
     if (!String(d.destination || '').trim()) return bad(errId, 'Location is required.');
     if (!TO.names.length) return bad(errId, 'Add at least one person.');
     var names = TO.names.slice(), usernames = names.map(function(n){ var x = S.users.filter(function(u){ return u.name.toUpperCase() === n; })[0]; return x ? x.username : null; }).filter(Boolean);
-    var fields = { dateFrom: d.dateFrom, dateTo: d.dateTo || d.dateFrom, event: d.event.trim(), destination: (d.destination || '').trim(), names: names, usernames: usernames, toType: d.toType === 'dayoff' ? 'dayoff' : 'regular', updatedBy: me, updatedAt: now, _saving: true };
+    var fields = { dateFrom: d.dateFrom, dateTo: d.dateTo || d.dateFrom, event: d.event.trim(), destination: (d.destination || '').trim(), names: names, usernames: usernames, toType: d.toType === 'dayoff' ? 'dayoff' : 'regular', eventId: d.eventId || '', updatedBy: me, updatedAt: now, _saving: true };
     if (TO.id){ return bg('saveTO', d, { arr: 'travelOrders', id: TO.id, patch: fields }, 'Travel order saved', 'The travel order “' + fields.event + '”'); }
     var nt = Object.assign({ id: id, toNo: '', status: 'Filed', tev: '', createdBy: me, createdAt: now }, fields);
     return bg('saveTO', d, { arr: 'travelOrders', item: nt }, 'Travel order filed', 'The travel order “' + fields.event + '”', id);
@@ -3590,9 +3735,9 @@ var Fire = (function(){
   var CFG = window.PIO_FIREBASE || {}, F = null, app = null, auth = null, db = null, booting = null;
   var me = null, member = null, unsub = [], store = null, timer = null, syncing = null, DEF = null;
   var DOMAIN = 'pio-overwatch.local';
-  var COLS = { users: 'username', entries: 'id', travelOrders: 'id', leaves: 'id', tevs: 'id', divisions: 'id', holidays: 'date', credits: 'username', settings: 'id', board: 'id' };
+  var COLS = { users: 'username', entries: 'id', travelOrders: 'id', events: 'id', leaves: 'id', tevs: 'id', divisions: 'id', holidays: 'date', credits: 'username', settings: 'id', board: 'id' };
   var PRIVATE = { entries: 1, leaves: 1, credits: 1, tevs: 1 };
-  var ENGINE = { users: 'users', entries: 'entries', travelOrders: 'tos', leaves: 'leaves', tevs: 'tevs', divisions: 'divisions', holidays: 'holidays', credits: 'credits' };
+  var ENGINE = { users: 'users', entries: 'entries', travelOrders: 'tos', events: 'events', leaves: 'leaves', tevs: 'tevs', divisions: 'divisions', holidays: 'holidays', credits: 'credits' };
   var PH_CAL = 'en.philippines#holiday@group.v.calendar.google.com';
 
   function email(u, k){ return u + (k ? '.' + k : '') + '@' + DOMAIN; }
@@ -3637,7 +3782,7 @@ var Fire = (function(){
   function arrays(){
     function vals(c){ return Object.keys(store[c].docs).map(function(id){ return clone(store[c].docs[id]); }); }
     var settings = store.settings.docs.app ? clone(store.settings.docs.app) : clone(DEF.settings); delete settings.id;
-    return { users: vals('users'), entries: vals('entries'), tos: vals('travelOrders'), leaves: vals('leaves'), tevs: vals('tevs'), divisions: vals('divisions').sort(function(a, b){ return (a.order || 0) - (b.order || 0); }),
+    return { users: vals('users'), entries: vals('entries'), tos: vals('travelOrders'), events: vals('events'), leaves: vals('leaves'), tevs: vals('tevs'), divisions: vals('divisions').sort(function(a, b){ return (a.order || 0) - (b.order || 0); }),
       holidays: vals('holidays').sort(function(a, b){ return a.date < b.date ? -1 : 1; }), credits: vals('credits'), settings: settings,
       activity: Object.keys(store.activity.docs).map(function(id){ return store.activity.docs[id]; }).sort(function(a, b){ return a.at < b.at ? 1 : -1; }), board: vals('board') };
   }
@@ -3711,7 +3856,7 @@ var Fire = (function(){
       list.forEach(function(x){
         var id = String(x[keyName]); seen[id] = 1;
         var data = clone(x); delete data.pin; delete data._saving;
-        if (c === 'travelOrders' || c === 'entries' || c === 'leaves' || c === 'tevs' || c === 'divisions') data.id = id;
+        if (c === 'travelOrders' || c === 'events' || c === 'entries' || c === 'leaves' || c === 'tevs' || c === 'divisions') data.id = id;
         var old = before[c].docs[id];
         if (!old || JSON.stringify(old) !== JSON.stringify(data)) w.push({ c: c, id: id, data: data });
       });
@@ -3762,6 +3907,7 @@ var Fire = (function(){
   function staffMay(x){
     if (x.c === 'activity') return true;
     if (x.c === 'entries') return x.data.username === me;
+    if (x.c === 'events') return member.role === 'scheduler';
     if (x.c === 'travelOrders'){ var old = store.travelOrders.docs[x.id]; return old ? old.createdBy === me && old.status === 'Filed' && x.data.status === 'Filed' : x.data.createdBy === me && x.data.status === 'Filed'; }
     return false;
   }
@@ -4001,7 +4147,7 @@ var Mock = (function(){
   var holidays = [['2026-01-01',"New Year's Day",'Regular'],['2026-02-17','Chinese New Year','Special'],['2026-04-02','Maundy Thursday','Regular'],['2026-04-03','Good Friday','Regular'],['2026-04-04','Black Saturday','Special'],['2026-04-09','Araw ng Kagitingan','Regular'],['2026-05-01','Labor Day','Regular'],['2026-06-12','Independence Day','Regular'],['2026-08-21','Ninoy Aquino Day','Special'],['2026-08-31','National Heroes Day','Regular'],['2026-09-28','Wenceslao Vinzons Day (Camarines Norte)','Local'],['2026-11-01',"All Saints' Day",'Special'],['2026-11-02',"All Souls' Day",'Special'],['2026-11-30','Bonifacio Day','Regular'],['2026-12-08','Immaculate Conception','Special'],['2026-12-24','Christmas Eve','Special'],['2026-12-25','Christmas Day','Regular'],['2026-12-30','Rizal Day','Regular'],['2026-12-31','Last Day of the Year','Special']]
     .map(function(h){ return { date:h[0], name:h[1], kind:h[2] }; });
   var settings = { workdays: 22, carryCap: 0, wellnessDays: 5, tevBudget: 250000 }, lastWrite = Date.now(), tevs = [];
-  var LT = { VL:'VL', FL:'VL', SL:'SL' }, tos = [], leaves = [], credits = [];
+  var LT = { VL:'VL', FL:'VL', SL:'SL' }, tos = [], events = [], leaves = [], credits = [];
   function to(fromOff, toOff, event, dest, names, status, tev, by){ var f = addDays(today(), fromOff); tos.push({ id:'t' + (tos.length + 1), toNo: status === 'Prepared' ? 'PIO-2026-' + (100 + tos.length) : '', dateFrom:f, dateTo:addDays(today(), toOff), event:event, destination:dest, names:names.map(function(n){ return n.toUpperCase(); }), usernames:[], status:status, tev:tev, createdBy:by, createdAt:new Date(Date.now() - 3*864e5).toISOString(), updatedBy:'', updatedAt:'' }); }
   to(0, 0, 'Provincial Board regular session coverage', 'Sangguniang Panlalawigan Hall, Daet', ['Juan Dela Cruz','Mark Bautista'], 'Prepared', 'No', 'jdelacruz');
   to(3, 4, 'Livelihood caravan', 'Labo, Camarines Norte', ['Ana Reyes','Juan Dela Cruz','Pedro Ramos'], 'Filed', '', 'areyes');
@@ -4059,7 +4205,7 @@ var Mock = (function(){
     var board = leaves.filter(function(l){ return !/^ADJ/.test(l.type); }).map(function(l){ return { username:l.username, from:l.dateFrom, to:l.dateTo, kind:'leave', label: adm || l.username === me.username ? l.type : '' }; });
     if (!adm) entries.forEach(function(e){ if (e.type === 'USE' && e.status === 'Confirmed' && e.username !== me.username) board.push({ username:e.username, from:e.date, to:e.date, kind:'off', label:'' }); });
     return { me:pub(me), users: users.map(pub), divisions:copy(divisions), holidays:copy(holidays), settings:copy(settings), activity: adm ? copy(activity) : [], entries: copy(entries.filter(function(e){ return adm || e.username === me.username; })),
-      lastWrite: lastWrite, travelOrders: copy(tos), tevs: copy(tevs.filter(function(v){ return adm || v.username === me.username; })), leaves: copy(leaves.filter(function(l){ return adm || l.username === me.username; })), credits: copy(credits.filter(function(c){ return adm || c.username === me.username; })), board: board }; }
+      lastWrite: lastWrite, travelOrders: copy(tos), events: copy(events), tevs: copy(tevs.filter(function(v){ return adm || v.username === me.username; })), leaves: copy(leaves.filter(function(l){ return adm || l.username === me.username; })), credits: copy(credits.filter(function(c){ return adm || c.username === me.username; })), board: board }; }
   /* Shared with the Firebase layer: the same rules run in the browser, and the changes are written to Firestore. */
   var OP = '', K = 0, extBoard = null;
   function nid(){ return OP ? OP.replace(/[^A-Za-z0-9_-]/g, '') + '-' + (++K) : Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + (++K); }
@@ -4083,8 +4229,8 @@ var Mock = (function(){
   }
   return { bump: function(){ lastWrite = Date.now(); },
     engine: {
-      load: function(o){ users = o.users; entries = o.entries; divisions = o.divisions; holidays = o.holidays; settings = o.settings; activity = o.activity; tos = o.tos; leaves = o.leaves; credits = o.credits; tevs = o.tevs; extBoard = o.board || null; sessions = {}; },
-      dump: function(){ return { users: users, entries: entries, divisions: divisions, holidays: holidays, settings: settings, activity: activity, tos: tos, leaves: leaves, credits: credits, tevs: tevs }; },
+      load: function(o){ users = o.users; entries = o.entries; divisions = o.divisions; holidays = o.holidays; settings = o.settings; activity = o.activity; tos = o.tos; events = o.events || []; leaves = o.leaves; credits = o.credits; tevs = o.tevs; extBoard = o.board || null; sessions = {}; },
+      dump: function(){ return { users: users, entries: entries, divisions: divisions, holidays: holidays, settings: settings, activity: activity, tos: tos, events: events, leaves: leaves, credits: credits, tevs: tevs }; },
       board: boardOf,
       run: function(username, a, p){ sessions.fb = username; return Mock.api(a, p, 'fb'); },
       data: function(username){ var me = find(username); return me ? data(me) : null; }
@@ -4115,6 +4261,28 @@ var Mock = (function(){
       log(me, 'Requested a day off', me.username, p.date + ' · ' + dd + ' day(s)'); return ok(me); }
     if (a === 'deleteEntry'){ var i = entries.findIndex(function(e){ return e.id === p.id; }); if (i < 0) return fail('Entry not found.'); var e = entries[i]; if (!adm && !(e.username === me.username && e.status === 'Pending')) return fail('You can only remove your own pending entries.'); entries.splice(i,1); log(me, 'Removed an entry', e.username, e.date + ' · ' + e.days + ' day(s)'); return ok(me); }
     if (a === 'changePin'){ if (p.oldPin !== me.pin) return fail('Current PIN is wrong.'); if (!/^\d{4,6}$/.test(p.newPin)) return fail('PIN must be 4 to 6 digits.'); me.pin = p.newPin; log(me, 'Changed own PIN', me.username); return ok(me); }
+    if (a === 'saveEvent' || a === 'setEventStatus' || a === 'deleteEvent'){
+      if (!(adm || me.role === 'scheduler')) return fail('Only the event scheduler or an admin can do that.');
+      if (a === 'saveEvent'){
+        var evT = String(p.title || '').trim(), evV = String(p.venue || '').trim(), ev1 = String(p.date || ''), ev2 = String(p.dateTo || '') || ev1;
+        if (evT.length < 3) return fail('Write the event name.');
+        if (!/^\d{4}-\d\d-\d\d$/.test(ev1)) return fail('Pick the event date.');
+        if (ev2 < ev1) return fail('The end date is before the start date.');
+        if (!evV) return fail('Write where the event is.');
+        var evX = p.id ? events.filter(function(x){ return x.id === p.id; })[0] : null;
+        if (p.id && !evX) return fail('That event was not found.');
+        var evF = { title: evT, venue: evV, date: ev1, dateTo: ev2, time: /^\d\d:\d\d$/.test(p.time || '') ? p.time : '', requester: String(p.requester || '').trim().slice(0, 120), needs: (Array.isArray(p.needs) ? p.needs : []).map(String).filter(Boolean).slice(0, 12), note: String(p.note || '').trim().slice(0, 400), updatedBy: me.username, updatedAt: now };
+        if (evX){ Object.assign(evX, evF); if (!adm && evX.status === 'Confirmed'){ evX.status = 'Pending'; evX.confirmedBy = ''; evX.confirmedAt = ''; } log(me, 'Edited an event', evT, ev1); return ok(me, { id: evX.id }); }
+        var evN = Object.assign({ id: 'ev' + nid(), status: adm ? 'Confirmed' : 'Pending', createdBy: me.username, createdAt: now, confirmedBy: adm ? me.username : '', confirmedAt: adm ? now : '' }, evF);
+        events.push(evN); log(me, 'Added an event', evT, ev1 + ' · ' + evV); return ok(me, { id: evN.id });
+      }
+      var evO = events.filter(function(x){ return x.id === p.id; })[0]; if (!evO) return fail('That event was not found.');
+      if (a === 'deleteEvent'){ if (!adm && evO.status !== 'Pending') return fail('Only an admin can delete a confirmed event.'); events.splice(events.indexOf(evO), 1); log(me, 'Deleted an event', evO.title, evO.date); return ok(me); }
+      if (['Confirmed', 'Pending', 'Cancelled'].indexOf(p.status) < 0) return fail('Unknown status.');
+      if (p.status === 'Confirmed' && !adm) return fail('Only an admin can confirm an event.');
+      evO.status = p.status; evO.updatedBy = me.username; evO.updatedAt = now; if (p.status === 'Confirmed'){ evO.confirmedBy = me.username; evO.confirmedAt = now; }
+      log(me, p.status === 'Confirmed' ? 'Confirmed an event' : p.status === 'Cancelled' ? 'Cancelled an event' : 'Reopened an event', evO.title, evO.date); return ok(me);
+    }
     if (a === 'moveUse'){ var mu = entries.filter(function(e){ return e.id === p.id; })[0];
       if (!mu || mu.type !== 'USE' || mu.status !== 'Confirmed') return fail('Only approved days off can be rescheduled.');
       if (mu.toId) return fail('This day off came from a travel order. Edit the travel order instead.');
@@ -4125,7 +4293,7 @@ var Mock = (function(){
       if (entries.some(function(e){ return e !== mu && e.username === mu.username && e.type === 'USE' && e.date === p.date; })) return fail('That date already has a day off.');
       var was = mu.date; mu.movedFrom = was; mu.movedAt = now; mu.date = p.date; log(me, 'Rescheduled a day off', mu.username, was + ' to ' + p.date); return ok(me); }
     if (a === 'saveTO'){ var nm = String(p.names||'').split('\n').map(function(s){ return s.trim().toUpperCase(); }).filter(Boolean); if (!nm.length) return fail('Add at least one person.'); if (!String(p.event||'').trim()) return fail('Purpose is required.'); if (!String(p.destination||'').trim()) return fail('Location is required.'); if (!p.dateFrom) return fail('Pick a valid date.');
-      var tf = { dateFrom:p.dateFrom, dateTo:p.dateTo || p.dateFrom, event:p.event.trim(), destination:(p.destination||'').trim(), names:nm, toType:(p.toType === 'dayoff' ? 'dayoff' : 'regular'), updatedBy:me.username, updatedAt:now };
+      var tf = { dateFrom:p.dateFrom, dateTo:p.dateTo || p.dateFrom, event:p.event.trim(), destination:(p.destination||'').trim(), names:nm, toType:(p.toType === 'dayoff' ? 'dayoff' : 'regular'), eventId:String(p.eventId || ''), updatedBy:me.username, updatedAt:now };
       if (tf.dateTo < tf.dateFrom) return fail('The end date is before the start date.');
       if (p.id){ var ex1 = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && (ex1.createdBy !== me.username || ex1.status !== 'Filed')) return fail('Only admins can edit a travel order after it is prepared.'); Object.assign(ex1, tf); log(me, 'Edited a travel order', tf.event); }
       else { tos.push(Object.assign({ id:'t' + nid(), toNo:'', status:'Filed', tev:'', createdBy:me.username, createdAt:now, usernames:[] }, tf)); log(me, 'Filed a travel order', tf.event, tf.dateFrom + ' · ' + nm.join(', ')); }
@@ -4178,10 +4346,10 @@ var Mock = (function(){
       return c ? ok(me, c) : fail('Nothing was reviewed.'); }
     if (a === 'recordUse'){ var dy = Number(p.days), b = bal(p.username); if (!(dy >= 0.5) || dy > 30 || dy * 2 !== Math.round(dy * 2)) return fail('Days must be in half-day steps, from ½ to 30.'); if (dy > b) return fail(find(p.username).name + ' has only ' + fD(b) + ' available.');
       entries.push({ id:'e' + nid(), username:p.username, type:'USE', date:p.date, category:'Used', days:dy, event:'', venue:'', endTime:'', status:'Confirmed', note:'', createdBy:me.username, createdAt:now, reviewedBy:me.username, reviewedAt:now }); log(me, 'Recorded offset use', p.username, p.date + ' · ' + dy + ' day(s)'); return ok(me); }
-    if (a === 'addUser'){ var nu = String(p.username||'').trim().toLowerCase(); if (!/^[a-z0-9._-]{3,30}$/.test(nu)) return fail('Usernames use 3–30 letters, numbers, dots or dashes.'); if (find(nu)) return fail('That username is taken.'); if (!/^\d{4,6}$/.test(p.pin)) return fail('PIN must be 4 to 6 digits.'); users.push({ username:nu, name:p.name, role:p.role, division:p.division||'', pin:p.pin, active:true, empType:p.empType || 'JO' }); log(me, 'Added an account', nu, p.role); return ok(me); }
+    if (a === 'addUser'){ var nu = String(p.username||'').trim().toLowerCase(); if (!/^[a-z0-9._-]{3,30}$/.test(nu)) return fail('Usernames use 3–30 letters, numbers, dots or dashes.'); if (find(nu)) return fail('That username is taken.'); if (!/^\d{4,6}$/.test(p.pin)) return fail('PIN must be 4 to 6 digits.'); users.push({ username:nu, name:p.name, role:(['admin','scheduler'].indexOf(p.role) >= 0 ? p.role : 'employee'), division:p.division||'', pin:p.pin, active:true, empType:p.empType || 'JO' }); log(me, 'Added an account', nu, p.role); return ok(me); }
     if (a === 'resetPin'){ if (!/^\d{4,6}$/.test(p.pin)) return fail('PIN must be 4 to 6 digits.'); find(p.username).pin = p.pin; log(me, 'Reset a PIN', p.username); return ok(me); }
     if (a === 'setActive'){ find(p.username).active = p.active; log(me, p.active ? 'Activated an account' : 'Deactivated an account', p.username); return ok(me); }
-    if (a === 'setRole'){ find(p.username).role = p.role; log(me, 'Changed a role', p.username, 'Now ' + p.role); return ok(me); }
+    if (a === 'setRole'){ if (['admin','employee','scheduler'].indexOf(p.role) < 0) return fail('Unknown role.'); find(p.username).role = p.role; log(me, 'Changed a role', p.username, 'Now ' + p.role); return ok(me); }
     if (a === 'setDivision'){ find(p.username).division = p.division || ''; log(me, 'Changed a division', p.username); return ok(me); }
     if (a === 'removeUser'){ var ru = find(p.username); if (!ru) return fail('User not found.'); if (ru.username === me.username) return fail('You cannot remove your own account. Ask another admin.'); if (ru.role === 'admin' && users.filter(function(u){ return u.role === 'admin' && u.active; }).length <= 1) return fail('This is the only admin. Make someone else an admin first.');
       log(me, 'Removed an account', ru.username, ru.name + ' · balance left: ' + fD(bal(ru.username))); users = users.filter(function(u){ return u !== ru; }); return ok(me); }
