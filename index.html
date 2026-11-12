@@ -633,7 +633,7 @@ button,[role=button],a,input,select,summary,label{touch-action:manipulation}
 .evlist{list-style:none;margin:0;padding:0}
 .evday{padding:12px 16px 4px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 .evr{border-top:1px solid var(--line)} .evday+.evr{border-top:0}
-.evr.need{--ec:var(--red)} .evr.wait{--ec:var(--gold)} .evr.ok{--ec:var(--brand)} .evr.off{--ec:var(--line-strong)} .evr.past .evm{opacity:.7}
+.evr.need{--ec:var(--red)} .evr.wait{--ec:var(--gold)} .evr.ok{--ec:var(--brand)} .evr.off{--ec:var(--line-strong)} .evr.past .evm b{color:var(--ink-2)}
 .evh{display:flex;gap:12px;align-items:center;width:100%;min-height:60px;text-align:left;padding:10px 16px;background:none;border:0;font:inherit;color:inherit;cursor:pointer}
 .evh:hover{background:var(--surface-2)}
 .evbar{width:6px;align-self:stretch;min-height:36px;border-radius:3px;flex:none;background:var(--ec)}
@@ -642,7 +642,16 @@ button,[role=button],a,input,select,summary,label{touch-action:manipulation}
 .evx{display:flex;color:var(--muted);transition:transform .15s} .evh[aria-expanded=true] .evx{transform:rotate(90deg)}
 .evd{padding:2px 16px 16px 34px;display:grid;gap:12px} .evd dl{display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px 14px;margin:0} .evd dt{color:var(--muted);font-size:13px;font-weight:600} .evd dd{margin:0;overflow-wrap:anywhere}
 .evd .acts-row{display:flex;gap:8px;flex-wrap:wrap}
-@media (max-width:560px){.evd{padding-left:28px}.evd dl{grid-template-columns:1fr;gap:2px}.evd dt{margin-top:8px}.evh .pills .pill.Pending{display:none}}
+@media (max-width:560px){.evd{padding-left:28px}.evd dl{grid-template-columns:1fr;gap:2px}.evd dt{margin-top:8px}.evh .pills{flex-direction:column;align-items:flex-end;gap:4px}}
+
+/* UX pass: events on the shared calendar */
+.ev.e-need::before{content:"! "} .ev.e-wait::before{content:"\2026 "} .ev.e-ok::before{content:"\2713 "}
+@media (max-width:860px){
+  .ev.e-need{background:var(--red)} .ev.e-wait{background:var(--gold)} .ev.e-ok{background:var(--brand)} .ev.e-off{background:var(--line-strong)}
+  .ev.e-un{outline-offset:1px}
+}
+@media (prefers-reduced-motion:reduce){.evx{transition:none}}
+.evh:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
 </style>
 </head>
 <body>
@@ -4294,10 +4303,11 @@ var Mock = (function(){
       if (p.id){ var ex1 = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && (ex1.createdBy !== me.username || ex1.status !== 'Filed')) return fail('Only admins can edit a travel order after it is prepared.'); Object.assign(ex1, tf); log(me, 'Edited a travel order', tf.event); }
       else { tos.push(Object.assign({ id:'t' + nid(), toNo:'', status:'Filed', tev:'', createdBy:me.username, createdAt:now, usernames:[] }, tf)); log(me, 'Filed a travel order', tf.event, tf.dateFrom + ' · ' + nm.join(', ')); }
       return ok(me); }
-    if (a === 'deleteTO'){ var dt = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && (dt.createdBy !== me.username || dt.status !== 'Filed')) return fail('You can only delete your own travel orders that are not yet prepared.'); tos = tos.filter(function(t){ return t !== dt; }); log(me, 'Deleted a travel order', dt.event); return ok(me); }
+    if (a === 'deleteTO'){ var dt = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && (dt.createdBy !== me.username || dt.status !== 'Filed')) return fail('You can only delete your own travel orders that are not yet prepared.'); if (dt.offsetDone){ entries = entries.filter(function(e){ return !(e.toId === dt.id && e.type === 'USE'); }); log(me, 'Returned offset for a deleted day-off travel order', dt.event); } tos = tos.filter(function(t){ return t !== dt; }); log(me, 'Deleted a travel order', dt.event); return ok(me); }
     if (!adm) return fail('Only admins can do that.');
     if (a === 'markTOPrinted'){ (p.ids || []).forEach(function(i9){ var t9 = tos.filter(function(t){ return t.id === i9; })[0]; if (t9 && t9.status === 'Prepared' && !t9.printedAt){ t9.printedAt = now; t9.printedBy = me.username; } }); log(me, 'Printed travel orders', String((p.ids || []).length)); return ok(me); }
     if (a === 'setTOStatus'){ var st2 = tos.filter(function(t){ return t.id === p.id; })[0]; if (st2.status !== p.status) st2.statusAt = now; st2.status = p.status; st2.tev = p.tev; st2.toNo = p.toNo || ''; st2.datePrepared = p.datePrepared || st2.datePrepared || (p.status === 'Prepared' ? today() : ''); log(me, 'Updated a travel order', st2.event, 'Status: ' + p.status + ' · TEV: ' + (p.tev || 'not set'));
+      if (p.status === 'Cancelled' && st2.offsetDone){ var gone = entries.filter(function(e){ return e.toId === st2.id && e.type === 'USE'; }).length; entries = entries.filter(function(e){ return !(e.toId === st2.id && e.type === 'USE'); }); st2.offsetDone = false; log(me, 'Returned offset for a cancelled day-off travel order', st2.event, gone + ' day(s)'); }
       var cut = 0; if (p.status === 'Prepared' && st2.toType === 'dayoff' && !st2.offsetDone){
         st2.names.forEach(function(nm3){ var u3 = users.filter(function(x){ return x.name.toUpperCase() === nm3; })[0]; if (!u3) return;
           for (var dd = st2.dateFrom; dd <= st2.dateTo; dd = addDays(dd, 1)){ if (bal(u3.username) < 1) break;
