@@ -652,6 +652,56 @@ button,[role=button],a,input,select,summary,label{touch-action:manipulation}
 }
 @media (prefers-reduced-motion:reduce){.evx{transition:none}}
 .evh:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+
+/* ---- v7: one calendar, dispatch orders, inventory, notifications ---- */
+.mc{--lane:21px;--bar:18px;--top:32px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.mc-dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--surface-2);border-bottom:1px solid var(--line)}
+.mc-dow div{padding:8px 4px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);text-align:center}
+.mc-wk{position:relative;border-top:1px solid var(--line)} .mc-dow+.mc-wk{border-top:0}
+.mc-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.mc-day{position:relative;display:block;text-align:left;min-height:calc(var(--top) + var(--lanes) * var(--lane) + 20px);padding:4px 6px;background:var(--surface);border:0;border-left:1px solid var(--line);font:inherit;color:inherit;cursor:pointer;overflow:hidden}
+.mc-day:first-child{border-left:0} .mc-day:hover{background:var(--surface-2)}
+.mc-day.out{background:var(--surface-2);color:var(--muted)} .mc-day.hol{background:var(--navy-soft)}
+.mc-n{display:inline-grid;place-items:center;min-width:24px;height:24px;border-radius:12px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.mc-day.today .mc-n{background:var(--brand);color:#fff}
+.mc-hl{margin-left:4px;font-size:10.5px;font-weight:600;color:var(--navy);vertical-align:middle;display:inline-block;max-width:calc(100% - 34px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mc-more{position:absolute;right:6px;bottom:3px;font-size:11px;font-weight:700;color:var(--muted)}
+.mc-bars{position:absolute;inset:0;pointer-events:none}
+.mc-bar{position:absolute;left:calc(var(--c0) * 100% / 7 + var(--il));width:calc((var(--c1) - var(--c0) + 1) * 100% / 7 - var(--il) - var(--ir));top:calc(var(--top) + var(--l) * var(--lane));height:var(--bar);padding:0 7px;font-size:11.5px;font-weight:600;line-height:var(--bar);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:5px}
+.mc-bar.cl{border-top-left-radius:0;border-bottom-left-radius:0} .mc-bar.cr{border-top-right-radius:0;border-bottom-right-radius:0}
+.b-need{background:var(--red-soft);color:var(--red);box-shadow:inset 3px 0 0 var(--red)} .b-wait{background:var(--gold-soft);color:var(--gold);box-shadow:inset 3px 0 0 var(--gold)}
+.b-ok{background:var(--brand-soft);color:var(--brand-strong);box-shadow:inset 3px 0 0 var(--brand)} .b-to{background:var(--violet-soft);color:var(--violet);box-shadow:inset 3px 0 0 var(--violet)}
+.b-lv{background:var(--rose-soft);color:var(--rose);box-shadow:inset 3px 0 0 var(--rose)}
+.b-un{outline:1px dashed currentColor;outline-offset:-1px}
+.mc-bar.b-need::before{content:"! "} .mc-bar.b-wait::before{content:"\2026 "} .mc-bar.b-ok::before{content:"\2713 "} .mc-bar.b-mine::before{content:"\2605 "}
+.legend i.lg{display:inline-block;width:16px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+.mcbar{display:flex;gap:10px 16px;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:12px 16px}
+.mcstrip{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center;font-size:13.5px;color:var(--muted)} .mcstrip b{color:var(--ink)}
+@media (max-width:860px){
+  .mc{--lane:9px;--bar:6px;--top:30px}
+  .mc-bar{font-size:0;padding:0;border-radius:3px;box-shadow:none;line-height:0}
+  .mc-bar::before{content:none!important}
+  .b-need.mc-bar{background:var(--red)} .b-wait.mc-bar{background:var(--gold)} .b-ok.mc-bar{background:var(--brand)} .b-to.mc-bar{background:var(--violet)} .b-lv.mc-bar{background:var(--rose)}
+  .mc-day{padding:3px 3px} .mc-hl{display:none} .mc-n{min-width:22px;height:22px;font-size:12px}
+}
+.dcard{border:1px solid var(--line);border-left:5px solid var(--ec,var(--line-strong));border-radius:10px;padding:12px 14px;margin:0 0 12px;background:var(--surface)}
+.dcard.need{--ec:var(--red)} .dcard.wait{--ec:var(--gold)} .dcard.ok{--ec:var(--brand)} .dcard.off{--ec:var(--line-strong)}
+.dcard h4{margin:0 0 10px;font-size:16px;display:flex;gap:6px 8px;flex-wrap:wrap;align-items:center}
+.dcard dl{display:grid;grid-template-columns:104px minmax(0,1fr);gap:7px 12px;margin:0} .dcard dt{color:var(--muted);font-size:13px;font-weight:600} .dcard dd{margin:0;overflow-wrap:anywhere}
+.dcard .acts-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.dsec{margin:14px 0 8px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.pp{display:flex;gap:6px;flex-wrap:wrap}
+.evsoon{color:var(--red);font-weight:700}
+.invr{display:flex;gap:10px 14px;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--line)} .invr:first-child{border-top:0} .invr .grow{flex:1;min-width:200px}
+.nrow{list-style:none;border-top:1px solid var(--line)} .nrow:first-child{border-top:0}
+.nbtn{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;padding:12px 4px;background:none;border:0;font:inherit;color:inherit;cursor:pointer}
+.nrow.unread .nbtn b::after{content:"";display:inline-block;width:8px;height:8px;margin-left:8px;border-radius:50%;background:var(--red)}
+.badge.bad{background:var(--red);color:#fff}
+.topbar .bellb{position:relative} .topbar .bellb .badge{position:absolute;top:0;right:0;margin:0;padding:0 5px}
+.evlink{cursor:pointer;border:0;font:inherit;display:inline-flex;gap:4px;align-items:center;max-width:100%} .evlink svg{width:12px;height:12px}
+@media (prefers-reduced-motion:no-preference){main.pgin{animation:pgin .22s ease-out both}@keyframes pgin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}html{scroll-behavior:smooth}}
+main:focus{outline:none} .btn:active:not(:disabled){transform:translateY(1px)}
+@media (max-width:560px){.dcard dl{grid-template-columns:1fr;gap:2px}.dcard dt{margin-top:8px}}
 </style>
 </head>
 <body>
@@ -665,7 +715,7 @@ var LOGO = 'pio-logo.webp';
 var API = (window.PIO_API_URL || '').trim();
 var FIRE = !!(window.PIO_FIREBASE && window.PIO_FIREBASE.apiKey && window.PIO_FIREBASE.projectId);
 var LIVE = FIRE || /^https:\/\/script\.google\.com\//.test(API);
-var S = { token: null, me: null, users: [], entries: [], divisions: [], holidays: [], activity: [], travelOrders: [], events: [], leaves: [], credits: [], board: [], availDate: null, toFilter: 'upcoming', toMine: false,
+var S = { token: null, me: null, users: [], entries: [], divisions: [], holidays: [], activity: [], travelOrders: [], events: [], inventory: [], leaves: [], credits: [], board: [], availDate: null, toFilter: 'upcoming', toMine: false,
           settings: { workdays: 22, carryCap: 0 }, view: 'dashboard', cal: null, mon: null, calUser: 'all', selDay: null,
           dashDiv: 'all', rf: { user: 'all', div: 'all', type: 'all', status: 'all' }, recTab: 'entries', holYear: null,
           needsSetup: false, prefill: null, loadedAt: 0 };
@@ -715,6 +765,7 @@ function holidayOn(d){ return S.holidays.filter(function(h){ return h.date === d
 function isWeekend(d){ var w = pd(d).getDay(); return w === 0 || w === 6; }
 
 var ICONS = {
+  bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/>',
   grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   cal:'<rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>',
   month:'<rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4M7.5 14h3M7.5 17.5h6"/>',
@@ -783,7 +834,7 @@ function toast(msg){ var t = document.getElementById('toast'); t.textContent = m
 function apply(d){
   S.me = d.me; S.users = d.users; S.entries = d.entries; S.divisions = d.divisions;
   S.holidays = d.holidays || []; S.settings = d.settings || S.settings; S.activity = d.activity || [];
-  S.travelOrders = d.travelOrders || []; S.events = d.events || []; S.tevs = d.tevs || []; S.leaves = d.leaves || []; S.credits = d.credits || []; S.board = d.board || [];
+  S.travelOrders = d.travelOrders || []; S.events = d.events || []; S.inventory = d.inventory || []; S.tevs = d.tevs || []; S.leaves = d.leaves || []; S.credits = d.credits || []; S.board = d.board || [];
   S.loadedAt = Date.now(); S.lastWrite = d.lastWrite || 0;
   if (remembered()) lSet('pio_cache', JSON.stringify(d));
 }
@@ -894,11 +945,11 @@ function entriesCsv(list){
 function navItems(){
   // The first five are the phone tab bar. Regular and casual staff get leaves up front; JO and COS get offsets.
   var tev = ['tev','peso','TEVs','Field work'];
-  if (isAdmin()) return [['dashboard','grid','Dashboard','Overview'],['availability','users','Availability','Overview'],['travel','route','Travel orders','Field work'],['approvals','check','Approvals','Offsets'],
+  if (isAdmin()) return [['dashboard','grid','Dashboard','Overview'],['travel','route','Travel orders','Field work'],['approvals','check','Approvals','Offsets'],
        ['calendar','cal','Calendar','Overview'],tev,['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets'],['leaves','plane','Leaves','Leaves'],['staff','users','Staff','Admin'],['settings','cog','Settings','Admin']];
-  if (hasLeaves()) return [['dashboard','grid','Dashboard','Overview'],['leaves','plane','My leaves','Leaves'],['travel','route','Travel orders','Field work'],['availability','users','Availability','Overview'],
+  if (hasLeaves()) return [['dashboard','grid','Dashboard','Overview'],['leaves','plane','My leaves','Leaves'],['travel','route','Travel orders','Field work'],
        ['calendar','cal','Calendar','Overview'],tev,['log','plus','Log offset','Offsets'],['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets']];
-  return [['dashboard','grid','Dashboard','Overview'],['log','plus','Log offset','Offsets'],['travel','route','Travel orders','Field work'],['availability','users','Availability','Overview'],
+  return [['dashboard','grid','Dashboard','Overview'],['log','plus','Log offset','Offsets'],['travel','route','Travel orders','Field work'],
        ['calendar','cal','Calendar','Overview'],tev,['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets']].concat(wlOnly() ? [['leaves','plane','Wellness leave','Leaves']] : []);
 }
 var SHORT = { travel: 'Travel', availability: 'Who’s in', log: 'Log', leaves: 'Leaves', approvals: 'Review' };
@@ -934,10 +985,10 @@ function render(){
   var banner = LIVE ? '' : '<div class="preview">Preview mode with sample data. Nothing is saved. Sign in as <b>admin</b> or <b>jdelacruz</b>, PIN <b>1234</b>. To go live, put your Firebase settings in config.js (see README).</div>';
   if (!S.me){ app.innerHTML = banner + (S.needsSetup ? viewSetup() : viewLogin()); return; }
   var nav = navItems(), pc = isAdmin() ? pending().filter(canReview).length : 0;
-  function navBtn(n){ return '<button data-go="' + n[0] + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ic(n[1]) + '<span>' + n[2] + '</span>' + (n[0] === 'approvals' && pc ? '<span class="badge">' + pc + '</span>' : '') + '</button>'; }
+  function navBtn(n){ return '<button data-go="' + n[0] + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ic(n[1]) + '<span>' + n[2] + '</span>' + navBadge(n[0], pc) + '</button>'; }
   var tabs = nav.slice(0, 5);
-  var views = { dashboard: viewDashboard, log: viewLog, approvals: viewApprovals, calendar: viewCalendar, events: viewCalendar, monthly: viewMonthly, records: viewRecords, staff: viewStaff, settings: viewSettings, availability: viewAvailability, travel: viewTravel, leaves: viewLeaves, tev: viewTEV };
-  if (!views[S.view] || (['staff','approvals','settings'].indexOf(S.view) >= 0 && !isAdmin())) S.view = 'dashboard';
+  var views = { dashboard: viewDashboard, log: viewLog, approvals: viewApprovals, calendar: viewCalendar, events: viewCalendar, inventory: viewInventory, monthly: viewMonthly, records: viewRecords, staff: viewStaff, settings: viewSettings, availability: viewCalendar, travel: viewTravel, leaves: viewLeaves, tev: viewTEV };
+  if (!views[S.view] || ((['staff','approvals','settings'].indexOf(S.view) >= 0 && !isAdmin()) || (S.view === 'inventory' && !inProd()))) S.view = 'dashboard';
   var v = views[S.view]();
   var myDiv = divOf(S.me.division), y = window.scrollY, same = S.view === S.lastView && !!app.querySelector('.shell'), kept = same ? keepForm(app) : null;
   S.lastView = S.view;
@@ -947,10 +998,10 @@ function render(){
         '<nav class="nav" aria-label="Main">' + sideNav(nav, navBtn) + '</nav>' +
         '<div class="side-foot"><div class="who">' + (myDiv ? divBadge(myDiv, 36) : '<span class="avatar">' + esc(initials(S.me.name)) + '</span>') +
           '<div style="min-width:0"><b>' + esc(S.me.name) + '</b><small><span class="cap">' + esc(S.me.role === 'scheduler' ? 'event scheduler' : S.me.role) + '</span> · ' + (myDiv ? esc(myDiv.short) : '@' + esc(S.me.username)) + '</small></div></div>' +
-        '<div class="nav">' + (S.view === 'dashboard' ? '<button data-act="customize" class="show-sm">' + ic('sliders') + '<span>Customize dashboard</span></button>' : '') + '<button data-act="refresh">' + ic('refresh') + '<span>Refresh</span></button><button data-act="changePin">' + ic('key') + '<span>Change PIN</span></button><button data-act="logout">' + ic('out') + '<span>Sign out</span></button></div></div>' +
+        '<div class="nav">' + (S.view === 'dashboard' ? '<button data-act="customize" class="show-sm">' + ic('sliders') + '<span>Customize dashboard</span></button>' : '') + bellBtn(true) + '<button data-act="refresh">' + ic('refresh') + '<span>Refresh</span></button><button data-act="changePin">' + ic('key') + '<span>Change PIN</span></button><button data-act="logout">' + ic('out') + '<span>Sign out</span></button></div></div>' +
       '</aside>' +
       '<div style="min-width:0">' +
-        '<header class="topbar"><button data-act="drawer" aria-label="Open menu" aria-controls="sidenav" aria-expanded="false">' + ic('menu') + '</button><img src="' + LOGO + '" alt=""><b>PIO Overwatch</b><button data-act="refresh" aria-label="Refresh">' + ic('refresh') + '</button></header>' +
+        '<header class="topbar"><button data-act="drawer" aria-label="Open menu" aria-controls="sidenav" aria-expanded="false">' + ic('menu') + '</button><img src="' + LOGO + '" alt=""><b>PIO Overwatch</b>' + bellBtn(false) + '<button data-act="refresh" aria-label="Refresh">' + ic('refresh') + '</button></header>' +
         '<main class="main" id="main" tabindex="-1">' +
           '<section class="band"><div class="band-in"><div><p class="eyebrow">' + (v.eyebrow || 'PIO Overwatch') + '</p><h1>' + v.title + '</h1>' + (v.sub ? '<p' + (S.view === 'dashboard' ? ' class="keep-sub"' : '') + '>' + v.sub + '</p>' : '') + '</div>' + (v.actions ? '<div class="row-btns no-print">' + v.actions + '</div>' : '') + '</div></section>' +
           '<div class="wrap">' + v.body + '</div>' +
@@ -1109,7 +1160,8 @@ var WIDGETS = {
     ['hero', 'Balance card', 12], ['kpis', 'Summary tiles', 12], ['recent', 'Recent activity', 7], ['requests', 'My days off', 5], ['trend', 'My monthly chart', 7], ['holidays', 'Upcoming holidays', 5]
   ]
 };
-function widgetPrefs(){
+function ensureComing(){ Object.keys(WIDGETS).forEach(function(k){ var L = WIDGETS[k], at = 0, has = false; for (var i = 0; i < L.length; i++){ if (L[i][0] === 'coming') has = true; if (L[i][0] === 'kpis' || L[i][0] === 'leave' || L[i][0] === 'hero') at = i + 1; } if (!has) L.splice(at, 0, ['coming', 'Coming up', 12]); }); }
+function widgetPrefs(){ ensureComing();
   var role = wRole(), all = WIDGETS[role].map(function(w){ return w[0]; }), saved = null;
   try { saved = JSON.parse(lGet('pio_w_' + role) || 'null'); } catch(e){}
   // Phones start with a shorter dashboard; everything can be turned back on in Customize.
@@ -1120,7 +1172,7 @@ function widgetPrefs(){
 }
 /* Dashboards: admins, regular/casual staff (leaves first) and JO/COS staff (offsets first). */
 function wRole(){ return isAdmin() ? 'admin' : hasLeaves() ? 'regular' : 'employee'; }
-function widgetDef(id){ return WIDGETS[wRole()].filter(function(w){ return w[0] === id; })[0]; }
+function widgetDef(id){ ensureComing(); return WIDGETS[wRole()].filter(function(w){ return w[0] === id; })[0]; }
 
 /* Greeting by time of day in the Philippines. */
 function greeting(){
@@ -1179,7 +1231,7 @@ function quip(){
 function viewDashboard(){
   var adm = isAdmin(), P = widgetPrefs(), html = '';
   var staff = S.users.filter(function(u){ return u.active && (!adm || S.dashDiv === 'all' || u.division === S.dashDiv); });
-  var W = adm ? adminWidgets(staff) : empWidgets();
+  var W = adm ? adminWidgets(staff) : empWidgets(); W.coming = comingWidget;
   // Pack widgets into full rows of 12 so side-by-side boxes always line up:
   // a box that would leave a gap at the end of its row is widened to fill it.
   var items = P.order.filter(function(id){ return P.hidden.indexOf(id) < 0 && W[id] && W[id](widgetDef(id)[2]); }).map(function(id){ return { id: id, n: widgetDef(id)[2] }; });
@@ -1339,85 +1391,6 @@ function viewApprovals(){
 }
 
 /* ----- calendar ----- */
-function viewCalendar(){
-  if (!S.cal){ var t = pd(today()); S.cal = { y: t.getFullYear(), m: t.getMonth() }; }
-  if (!S.ev) S.ev = { f: 'month', open: '' };
-  var y = S.cal.y, m = S.cal.m, first = new Date(y, m, 1), start = new Date(y, m, 1 - first.getDay()), ym = ymd(first).slice(0,7);
-  var adm = isAdmin(), cs = canSched(), td = today(), E = S.ev, layer = S.calLayer || 'all', showEv = layer !== 'people', showPe = layer !== 'events';
-  var gs = ymd(start), ge = ymd(new Date(start.getFullYear(), start.getMonth(), start.getDate() + 41));
-  var all = S.events.slice().sort(evSort), evById = {}, evDay = {};
-  all.forEach(function(e){ evById[e.id] = e; for (var x = e.date < gs ? gs : e.date; x <= e.dateTo && x <= ge; x = addDays(x, 1)) (evDay[x] = evDay[x] || []).push(e); });
-  var list = S.entries.filter(function(e){ return e.status !== 'Rejected' && (!adm || S.calUser === 'all' || e.username === S.calUser); });
-  var byDay = {}; list.forEach(function(e){ (byDay[e.date] = byDay[e.date] || []).push(e); });
-  var who = adm ? (S.calUser === 'all' ? null : S.calUser) : S.me.username, extra = {};
-  var shown = function(t){ var e = t.eventId && evById[t.eventId]; return !!(showEv && e && e.status !== 'Cancelled'); };
-  if (showPe){
-    activeTOs().forEach(function(t){ if ((who && t.usernames.indexOf(who) < 0) || shown(t)) return; for (var x = t.dateFrom; x <= t.dateTo; x = addDays(x, 1)) (extra[x] = extra[x] || []).push({ c: 'to', t: 'TO · ' + t.event + (t.destination ? ' · ' + t.destination : '') }); });
-    S.leaves.forEach(function(l){ if (/^ADJ/.test(l.type) || (who && l.username !== who)) return; for (var x = l.dateFrom; x <= l.dateTo; x = addDays(x, 1)) (extra[x] = extra[x] || []).push({ c: 'lv', t: (adm && !who ? firstName(l.username) + ' · ' : '') + leaveName(l.type) }); });
-  }
-  var cells = '';
-  for (var i = 0; i < 42; i++){
-    var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), k = ymd(d), h = holidayOn(k), evs = showPe ? (byDay[k] || []) : [], ve = showEv ? (evDay[k] || []) : [];
-    if (i >= 35 && d.getMonth() !== m) break;
-    var cls = 'day' + (d.getMonth() !== m ? ' out' : '') + (d.getDay() % 6 === 0 ? ' wknd' : '') + (h ? ' isHol' : '') + (k === td ? ' today' : '') + (k === S.selDay ? ' sel' : '');
-    var items = ve.map(function(e){ return '<span class="ev e-' + evState(e) + (e.status === 'Pending' ? ' e-un' : '') + '" title="' + esc(e.title) + '">' + esc(e.title) + '</span>'; })
-      .concat((extra[k] || []).map(function(x){ return '<span class="ev ' + x.c + '" title="' + esc(x.t) + '">' + esc(x.t) + '</span>'; }))
-      .concat(evs.map(function(e){
-        var c = e.status === 'Pending' ? 'pend' : (e.type === 'USE' ? 'use' : 'earn');
-        var label = adm && S.calUser === 'all' ? firstName(e.username) : (e.type === 'USE' ? 'Day off' : e.event);
-        return '<span class="ev ' + c + '">' + fDs(e.type === 'USE' ? -e.days : e.days, true) + ' ' + esc(label) + '</span>'; }));
-    var cap = h ? 2 : 3;
-    var chips = (h ? '<span class="hl" title="' + esc(h.name) + '">' + esc(h.name) + '</span>' : '') + items.slice(0, cap).join('') + (items.length > cap ? '<span class="more">+' + (items.length - cap) + ' more</span>' : '');
-    var aria = fDate(k, { weekday:'long', month:'long', day:'numeric' }) + (h ? ', ' + h.name : '') + (ve.length ? ': ' + ve.map(function(e){ return e.title + ', ' + EV_LABEL[evState(e)].toLowerCase(); }).join('; ') : '') + (evs.length ? (ve.length ? '; ' : ': ') + evs.map(function(e){ return (e.type === 'USE' ? 'day off ' : (e.status === 'Pending' ? 'pending ' : 'earned ')) + fD(e.days); }).join(', ') : '');
-    cells += '<button class="' + cls + '" data-day="' + k + '" aria-label="' + esc(aria) + '"><span class="dn">' + d.getDate() + '</span>' + chips + '</button>';
-  }
-  var filter = adm && showPe ? '<select class="input" id="calUser" aria-label="Show employee"><option value="all">All staff</option>' + S.users.map(function(u){ return '<option value="' + esc(u.username) + '"' + (S.calUser === u.username ? ' selected' : '') + '>' + esc(u.name) + '</option>'; }).join('') + '</select>' : '';
-  var layers = '<div class="tabs" role="group" aria-label="Show on the calendar">' + [['all', 'Everything'], ['events', 'Events'], ['people', 'Staff schedule']].map(function(x){ return '<button type="button" data-act="calLayer" data-l="' + x[0] + '" aria-pressed="' + (layer === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>';
-  var legend = '<div class="legend" style="padding:0"><span><i style="background:var(--navy-soft);box-shadow:inset 0 0 0 1px var(--navy)"></i>Holiday</span>' +
-    (showEv ? '<span><i class="e-need"></i>Needs dispatching</span><span><i class="e-wait"></i>Dispatch filed</span><span><i class="e-ok"></i>Dispatched</span><span><i class="e-un"></i>Unconfirmed</span>' : '') +
-    (showPe ? '<span><i class="st-to"></i>Travel order</span><span><i class="st-lv"></i>Leave</span><span><i style="background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)"></i>Earned</span><span><i style="box-shadow:inset 0 0 0 1px var(--line-strong)"></i>Waiting for review</span><span><i style="background:var(--gold-soft);box-shadow:inset 0 0 0 1px var(--gold)"></i>Day off</span>' : '') + '</div>';
-  var sel = '';
-  if (S.selDay){
-    var hh = holidayOn(S.selDay), future = S.selDay >= td;
-    var dayEv = showEv ? all.filter(function(e){ return e.date <= S.selDay && e.dateTo >= S.selDay; }) : [];
-    var de = showPe ? sorted(byDay[S.selDay] || []) : [];
-    var tl = showPe ? activeTOs().filter(function(t){ return t.dateFrom <= S.selDay && t.dateTo >= S.selDay && (!who || t.usernames.indexOf(who) >= 0) && !shown(t); }) : [];
-    sel = panel(fDate(S.selDay, { weekday:'long', month:'long', day:'numeric', year:'numeric' }), 'cal',
-      (hh ? '<div class="panel-b" style="padding-bottom:0"><div class="info-note">' + ic('flag') + '<span>' + esc(hh.name) + ' · ' + esc(hh.kind) + ' holiday</span></div></div>' : '') +
-      (dayEv.length ? '<ul class="evlist">' + dayEv.map(evRow).join('') + '</ul>' : '') +
-      (tl.length ? '<ul class="list">' + tl.map(toRow).join('') + '</ul>' : '') +
-      (de.length ? '<ul class="list">' + de.map(function(e){ return entryRow(e, { showName: adm }); }).join('') + '</ul>' : (dayEv.length || tl.length ? '' : '<div class="empty">' + (showPe ? 'Nothing on this day.' : 'No events on this day.') + '</div>')),
-      '<div class="row-btns">' + (showEv && cs ? '<button class="btn btn-sm btn-ghost" data-act="evNew">' + ic('plus') + 'Add event on this day</button>' : '') +
-        (showPe && adm ? '<button class="btn btn-sm btn-ghost" data-act="useModal" data-date="' + S.selDay + '"' + (S.calUser !== 'all' ? ' data-u="' + esc(S.calUser) + '"' : '') + '>' + ic('minus') + 'Record use</button>' : '') +
-        (showPe ? (future ? '<button class="btn btn-sm btn-ghost" data-act="requestModal" data-date="' + S.selDay + '">' + ic('plane') + 'Request this day off</button>' : '<button class="btn btn-sm btn-ghost" data-act="logOn" data-date="' + S.selDay + '">' + ic('plus') + 'Log offset on this day</button>') : '') + '</div>', 'span-12" id="daypanel');
-  }
-  var tiles = '', agenda = '';
-  if (showEv){
-    var up = all.filter(function(e){ return e.status !== 'Cancelled' && e.dateTo >= td; }), cnt = { need: 0, wait: 0, ok: 0 };
-    up.forEach(function(e){ cnt[evState(e)]++; });
-    var unconf = up.filter(function(e){ return e.status === 'Pending'; }).length, nx = up[0], mS = ymd(first), mE = ymd(new Date(y, m + 1, 0)), lst, title;
-    if (E.f === 'upcoming'){ lst = up; title = 'Upcoming events'; }
-    else if (E.f === 'need' || E.f === 'wait' || E.f === 'ok'){ lst = up.filter(function(e){ return evState(e) === E.f; }); title = EV_LABEL[E.f] + ' · upcoming'; }
-    else { lst = all.filter(function(e){ return e.date <= mE && e.dateTo >= mS; }); title = 'Events in ' + fMonth(ym); }
-    var rows = '', last = '';
-    lst.forEach(function(e){ if (e.date !== last){ last = e.date; rows += '<li class="evday">' + esc(fDate(e.date, { weekday:'short', month:'short', day:'numeric', year:'numeric' })) + '</li>'; } rows += evRow(e); });
-    tiles = '<div class="tiles" style="margin-bottom:16px">' + [
-      ['upcoming', 'Upcoming', 'cal', String(up.length), (nx ? 'Next: ' + fDate(nx.date, { month:'short', day:'numeric' }) : 'Nothing scheduled') + (cs && unconf ? ' · ' + unconf + ' unconfirmed' : ''), ''],
-      ['need', 'Needs dispatching', 'megaphone', String(cnt.need), cnt.need ? 'No travel order yet' : 'All covered', cnt.need ? 'bad' : ''],
-      ['wait', 'Dispatch in progress', 'clock', String(cnt.wait), 'Travel order not prepared', cnt.wait ? 'warn' : ''],
-      ['ok', 'Dispatched', 'check', String(cnt.ok), 'Travel order prepared', 'ok']
-    ].map(function(x){ return tile(x[1], x[3], x[4], x[5], x[2], 'data-act="evFilter" data-f="' + x[0] + '" aria-pressed="' + (E.f === x[0]) + '"'); }).join('') + '</div>';
-    var back = E.f !== 'month' ? '<div class="panel-b" style="padding-bottom:0"><button type="button" class="btn btn-sm btn-ghost" data-act="evFilter" data-f="' + E.f + '">Show the whole month</button></div>' : '';
-    agenda = panel(title, 'megaphone', back + (rows ? '<ul class="evlist">' + rows + '</ul>' : empty('cal', 'No events here', cs ? 'Add the events from request letters so the office can see them.' : 'Nothing is scheduled for this view.', cs ? '<button type="button" class="btn btn-primary" data-act="evNew">' + ic('plus') + 'Add event</button>' : '')), '', 'span-12" id="evagenda');
-  } else {
-    agenda = panel('Schedule for ' + fMonth(ym), 'list', eventsOverview(ym, who), adm ? '<button class="btn btn-sm btn-ghost" data-go="settings">Edit holidays</button>' : '', 'span-12');
-  }
-  return { eyebrow: 'Calendar', title: first.toLocaleDateString('en-PH', { month:'long', year:'numeric' }), sub: 'Events, holidays, travel orders, leaves and offsets in one place. Red events still need people dispatched. Tap a day for details.',
-    actions: '<button class="btn btn-glass" data-act="calPrev" aria-label="Previous month">' + ic('left') + '</button><button class="btn btn-glass" data-act="calToday">Today</button><button class="btn btn-glass" data-act="calNext" aria-label="Next month">' + ic('right') + '</button>' + (cs ? '<button type="button" class="btn btn-sun" data-act="evNew">' + ic('plus') + 'Add event</button>' : ''),
-    body: tiles + '<div class="grid"><section class="panel span-12"><div class="panel-h">' + layers + filter + '</div><div class="panel-h" style="padding-top:0">' + legend + '</div>' +
-      '<div class="cal">' + ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(d){ return '<div class="dow">' + d + '</div>'; }).join('') + cells + '</div></section>' + sel + agenda + '</div>' };
-}
-
 /* ----- monthly summary & report ----- */
 function monthRows(m){
   var dv = S.dashDiv;
@@ -1679,7 +1652,7 @@ function sure(t, label){ if (t.dataset.sure === '1') return true; t.dataset.sure
 document.addEventListener('click', function(ev){
   var t = ev.target.closest('[data-go],[data-act],[data-day],[data-d],[data-rec],[data-entry],[data-person],[data-reason],[data-calday],[data-div]');
   if (!t) return;
-  if (t.dataset.go){ closeModal(); S.view = t.dataset.go; S.selDay = null; render(); window.scrollTo(0,0); return; }
+  if (t.dataset.go){ closeModal(); S.view = t.dataset.go; S.selDay = null; render(); window.scrollTo(0,0); pgIn(); return; }
   if (t.dataset.rec){ var kv = t.dataset.rec.split(':'), o = {}; o[kv[0]] = kv[1]; goRecords(o); return; }
   if (t.dataset.calday){ var cd = pd(t.dataset.calday); S.cal = { y: cd.getFullYear(), m: cd.getMonth() }; S.selDay = t.dataset.calday; S.view = 'calendar'; render(); window.scrollTo(0,0); return; }
   if (t.dataset.div && !t.dataset.act){ S.dashDiv = t.dataset.div; render(); return; }
@@ -1800,7 +1773,10 @@ document.addEventListener('submit', function(ev){
   else if (kind === 'moveUse'){ d.id = M.id; p = act('moveUse', d, 'Day off rescheduled').then(closeModal); }
   else if (kind === 'saveEvent'){ d.needs = [].map.call(f.querySelectorAll('input[name=need]:checked'), function(x){ return x.value; }); var wasNew = !d.id;
     p = act('saveEvent', d, wasNew ? 'Event added' : 'Event saved').then(function(r){ closeModal(); var ne = S.events.filter(function(x){ return x.id === (r && r.id); })[0];
-      if (ne){ var dd = pd(ne.date); S.cal = { y: dd.getFullYear(), m: dd.getMonth() }; S.selDay = ''; S.ev.f = 'month'; S.ev.open = ''; render(); if (wasNew) setTimeout(function(){ evPrompt(ne); }, 250); } }); }
+      if (ne){ var dd = pd(ne.date); S.cal = { y: dd.getFullYear(), m: dd.getMonth() }; S.selDay = ''; S.pop = ''; render(); if (wasNew) setTimeout(function(){ evPrompt(ne); }, 250); } }); }
+  else if (kind === 'assignEvent'){ d.users = [].map.call(f.querySelectorAll('input[name=user]:checked'), function(x){ return x.value; }); d.id = M.id; p = act('assignEvent', d, 'Dispatch order saved').then(function(){ closeModal(); }); }
+  else if (kind === 'saveItem') p = act('saveItem', d, d.id ? 'Equipment saved' : 'Equipment added').then(closeModal);
+  else if (kind === 'checkoutItem') p = act('checkoutItem', d, 'Checked out').then(closeModal);
   else if (kind === 'reject') p = act('review', { id: M.id, decision: 'Rejected', note: d.note }, 'Rejected').then(closeModal);
   else if (kind === 'addUser') p = act('addUser', d, d.name + ' can now sign in');
   else if (kind === 'resetPin') p = act('resetPin', d, 'PIN reset').then(closeModal);
@@ -1894,28 +1870,6 @@ function groupify(root){
 function statusPill(s){ return s ? '<span class="pill st-' + KIND[s.kind][2] + '" title="' + esc(s.kind === 'to' ? 'In the field · ' + s.label : s.label) + '">' + esc(s.kind === 'to' ? 'In the field' : s.label) + '</span>' : '<span class="pill Confirmed">Available</span>'; }
 
 /* ----- availability ----- */
-function viewAvailability(){
-  var d = S.availDate || today(), dv = S.dashDiv, h = holidayOn(d), wk = isWeekend(d);
-  var people = S.users.filter(function(u){ return u.active && (dv === 'all' || u.division === dv); }).sort(byDiv);
-  var rows = people.map(function(u){ return { u: u, s: statusOn(u.username, d) }; });
-  var count = { avail: 0, to: 0, leave: 0, off: 0 };
-  rows.forEach(function(r){ count[r.s ? r.s.kind : 'avail']++; });
-  var start = addDays(d, -((pd(d).getDay() + 6) % 7)), days = []; for (var i = 0; i < 7; i++) days.push(addDays(start, i));
-  var week = '<div class="table-wrap"><table class="week"><thead><tr><th>Staff</th>' + days.map(function(x){ var hh = holidayOn(x); return '<th class="c' + (x === d ? ' on' : '') + (isWeekend(x) || hh ? ' nw' : '') + '" title="' + esc(hh ? hh.name : '') + '">' + fDate(x, { weekday:'short' }) + '<br><span class="num">' + pd(x).getDate() + '</span></th>'; }).join('') + '</tr></thead><tbody>' +
-    people.map(function(u){ return '<tr data-grp="' + esc(u.division) + '"><td><b>' + esc(u.name) + '</b></td>' + days.map(function(x){ var s = statusOn(u.username, x), nw = isWeekend(x) || holidayOn(x);
-      return '<td class="c' + (x === d ? ' on' : '') + (nw ? ' nw' : '') + '">' + (s ? '<span class="dot st-' + KIND[s.kind][2] + '" title="' + esc(KIND[s.kind][0] + ': ' + s.label) + '">' + KIND[s.kind][0].charAt(0) + '</span>' : (nw ? '' : '<span class="dot ok" title="Available">✓</span>')) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>' +
-    '<div class="legend" style="padding-top:12px"><span><i class="st-ok"></i>Available</span><span><i class="st-to"></i>T = Travel order</span><span><i class="st-lv"></i>O = On leave</span><span><i class="st-off"></i>D = Day off (offset)</span><span><i style="background:var(--surface-2)"></i>Weekend or holiday</span></div>';
-  return { eyebrow: 'Availability', title: fDate(d, { weekday:'long', month:'long', day:'numeric' }), sub: (h ? esc(h.name) + ' (holiday). ' : wk ? 'Weekend. ' : '') + 'Who is in the office, in the field, on leave or on a day off.',
-    actions: '<button class="btn btn-glass" data-act="avPrev" aria-label="Previous day">' + ic('left') + '</button><input class="input" type="date" id="avDate" value="' + d + '" aria-label="Pick a date" style="width:auto;height:42px;color:var(--ink)"><button class="btn btn-glass" data-act="avToday">Today</button><button class="btn btn-glass" data-act="avNext" aria-label="Next day">' + ic('right') + '</button>',
-    body: '<div class="grid"><div class="tiles span-12">' + tile('Available', count.avail, 'In the office', '', 'check') + tile('In the field', count.to, 'On a travel order', '', 'route') + tile('On leave', count.leave, isAdmin() ? 'Any leave type' : 'Leave types are private', '', 'plane') + tile('Day off', count.off, 'Using offsets', '', 'sun') + '</div>' +
-      panel('Staff today', 'users', rows.length ? '<ul class="list">' + rows.map(function(r){ var dd = divOf(r.u.division);
-        return '<li data-grp="' + esc(r.u.division) + '" class="row avail' + (isAdmin() ? ' tap" data-person="' + esc(r.u.username) + '" tabindex="0' : '') + '">' + (dd ? divBadge(dd, 34) : '<span class="avatar">' + esc(initials(r.u.name)) + '</span>') + '<div class="body"><div class="t">' + esc(r.u.name) + '</div><div class="m">' + (r.s && r.s.kind === 'to' ? esc(r.s.ref.event) + (r.s.ref.destination ? ' · ' + esc(r.s.ref.destination) : '') : esc(r.u.empType)) + '</div></div>' + statusPill(r.s) + '</li>'; }).join('') + '</ul>' : empty('users', 'No staff', 'Pick another division.'),
-        divSelect('dashDiv', dv, 'Filter by division', true), 'span-12') +
-      panel('This week', 'cal', week, '', 'span-12') + '</div>' };
-}
-
-/* ----- travel orders ----- */
-/* Copy order: date, purpose (kept exactly as typed), then names in capital letters. */
 function toWhen(t){
   var o = { month:'long', day:'numeric', year:'numeric' }, a = t.dateFrom, b = t.dateTo;
   if (!b || b === a) return 'on ' + fDate(a, o);
@@ -1941,7 +1895,7 @@ function toRow(t){
   return '<li class="to-card"><div class="to-date"><b>' + fDate(t.dateFrom, { month:'short' }).toUpperCase() + '</b><span class="num">' + pd(t.dateFrom).getDate() + (t.dateTo !== t.dateFrom ? '–' + pd(t.dateTo).getDate() : '') + '</span></div>' +
     '<div class="to-body"><div class="t">' + esc(t.event) + '</div><div class="m">' + fRange(t.dateFrom, t.dateTo, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') + '</div>' +
       '<div class="to-names">' + sortNames(t.names).map(function(n){ return '<span>' + esc(dispName(n)) + '</span>'; }).join('') + '</div>' +
-      '<div class="row-btns"><span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + t.status + '</span>' + (adm || t.tev ? '<span class="pill ' + (t.tev === 'Yes' ? 'hol' : 'off') + '">TEV: ' + (t.tev || 'not set') + '</span>' : '') + (t._saving ? '<span class="pill off">Saving…</span>' : '') + (t.toType === 'dayoff' ? '<span class="pill off">Day off · uses offset</span>' : '') + (adm && t.status === 'Prepared' && !t.printedAt ? '<span class="pill Pending">Not printed</span>' : '') + (t.printedAt ? '<span class="pill Confirmed">Printed ' + fDate(String(t.printedAt).slice(0, 10), { month:'short', day:'numeric' }) + '</span>' : '') + '<span class="hint">Filed by ' + esc(userName(t.createdBy)) + ' · ' + ago(t.createdAt) + '</span></div></div>' +
+      '<div class="row-btns"><span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + t.status + '</span>' + (adm || t.tev ? '<span class="pill ' + (t.tev === 'Yes' ? 'hol' : 'off') + '">TEV: ' + (t.tev || 'not set') + '</span>' : '') + (t._saving ? '<span class="pill off">Saving…</span>' : '') + evChip(t) + (t.auto ? '<span class="pill off">From an approved offset</span>' : '') + (t.toType === 'dayoff' ? '<span class="pill off">Day off · uses offset</span>' : '') + (adm && t.status === 'Prepared' && !t.printedAt ? '<span class="pill Pending">Not printed</span>' : '') + (t.printedAt ? '<span class="pill Confirmed">Printed ' + fDate(String(t.printedAt).slice(0, 10), { month:'short', day:'numeric' }) + '</span>' : '') + '<span class="hint">Filed by ' + esc(userName(t.createdBy)) + ' · ' + ago(t.createdAt) + '</span></div></div>' +
     '<div class="to-acts' + (t._saving ? ' is-saving' : '') + '">' + (adm ? '<button class="btn btn-sm ' + (t.status === 'Filed' ? 'btn-primary' : 'btn-ghost') + '" data-act="toManage" data-id="' + t.id + '">' + ic('shield') + (t.status === 'Filed' ? 'Prepare' : 'Update') + '</button>' : '') +
       '<div class="to-icons"><button class="btn btn-sm btn-ghost" data-act="toCopy" data-id="' + t.id + '" title="Copy the text for the document">' + ic('list') + 'Copy</button>' + (adm && t.status === 'Prepared' && !t.printedAt ? '<button class="btn btn-sm btn-ghost" data-act="toMarkPrinted" data-id="' + t.id + '">' + ic('check') + 'Mark printed</button>' : '') + (canEdit ? '<button class="btn btn-sm btn-ghost" data-act="toEdit" data-id="' + t.id + '">' + ic('edit') + 'Edit</button>' : '') + '</div></div>' + '</li>';
 }
@@ -1958,75 +1912,294 @@ function prepPrompt(t, tev, pr){
   modal('Travel order prepared', '<p style="margin:0">' + (pr ? 'Print <b>' + esc(t.event) + '</b> now so it is ready to sign. ' : '') + (tev ? 'A TEV was started for each of the ' + n + ' ' + (n === 1 ? 'person' : 'people') + '. Fill in the amounts now or later from <b>TEVs</b> under Field work.' : '') + '</p>',
     '<button type="button" class="btn btn-ghost" data-act="close">Later</button>' + (tev ? '<button type="button" class="btn ' + (pr ? 'btn-ghost' : 'btn-primary') + '" data-act="tevGo" data-id="' + t.id + '">' + ic('peso') + 'Make TEVs</button>' : '') + (pr ? '<button type="button" class="btn btn-primary" data-act="toPrint" data-id="' + t.id + '">' + ic('print') + 'Print now</button>' : ''));
 }
-/* ----- Events: what is coming up and who still needs to be dispatched ----- */
-var EV_NEEDS = ['Documentation (photo and video)', 'Livestream', 'News and write-up', 'Graphics and pubmat', 'Emcee or hosting', 'Other'];
-var EV_LABEL = { need: 'Needs dispatching', wait: 'Dispatch filed', ok: 'Dispatched', off: 'Cancelled' };
+/* ----- Events, dispatch orders and the shared calendar ----- */
+var EV_NEEDS = ['Photo Documentation', 'Video Documentation', 'Livestreaming', 'News and Write-up', 'Emcee or Hosting', 'Other'];
+var EV_LABEL = { need: 'Needs dispatching', wait: 'Dispatch in progress', ok: 'Dispatched', off: 'Cancelled' };
+function inProd(){ if (!S.me) return false; if (isAdmin()) return true; var d = divOf(S.me.division); return !!(d && /production/i.test(d.name)); }
+function dayDiff(a, b){ return Math.round((pd(a) - pd(b)) / 864e5); }
+function evKind(e){ return e.kind === 'tasking' ? 'tasking' : 'travel'; }
+function evLinked(e){ return S.travelOrders.filter(function(t){ return t.eventId === e.id && t.status !== 'Cancelled'; }); }
 function evState(e){
   if (e.status === 'Cancelled') return 'off';
-  var ts = S.travelOrders.filter(function(t){ return t.eventId === e.id && t.status !== 'Cancelled'; });
+  if (evKind(e) === 'tasking') return (e.assigned || []).length ? 'ok' : 'need';
+  var ts = evLinked(e);
   return !ts.length ? 'need' : ts.some(function(t){ return t.status === 'Prepared'; }) ? 'ok' : 'wait';
 }
+function evPeople(e){
+  if (evKind(e) === 'tasking') return (e.assigned || []).map(function(u){ var x = userOf(u); return { name: x ? x.name : u, u: u, st: '' }; });
+  var out = [], seen = {};
+  evLinked(e).forEach(function(t){ (t.names || []).forEach(function(n, i){ if (seen[n]) return; seen[n] = 1; out.push({ name: dispName(n), u: (t.usernames || [])[i] || '', st: t.status === 'Prepared' ? 'Prepared' : 'To prepare' }); }); });
+  return out;
+}
+function evMine(e, u){ return evKind(e) === 'tasking' ? (e.assigned || []).indexOf(u) >= 0 : evLinked(e).some(function(t){ return (t.usernames || []).indexOf(u) >= 0; }); }
 function evTime(h){ var p = String(h).split(':'), n = Number(p[0]); return (n % 12 || 12) + ':' + p[1] + ' ' + (n < 12 ? 'AM' : 'PM'); }
-function evWhen(e){ return (e.dateTo && e.dateTo !== e.date ? fRange(e.date, e.dateTo, { month:'short', day:'numeric', year:'numeric' }) : fDate(e.date, { weekday:'long', month:'long', day:'numeric', year:'numeric' })) + (e.time ? ' · ' + evTime(e.time) : ''); }
-function evShort(e){ return (e.dateTo && e.dateTo !== e.date ? fRange(e.date, e.dateTo, { month:'short', day:'numeric' }) : fDate(e.date, { weekday:'short', month:'short', day:'numeric' })) + (e.time ? ' · ' + evTime(e.time) : ''); }
+function evTimes(e){ return e.time ? evTime(e.time) + (e.timeEnd ? ' to ' + evTime(e.timeEnd) : '') : (e.timeEnd ? 'Until ' + evTime(e.timeEnd) : ''); }
+function evDates(e){
+  var o = { weekday:'long', month:'long', day:'numeric', year:'numeric' };
+  if (!e.dateTo || e.dateTo === e.date) return fDate(e.date, o);
+  return fDate(e.date, { weekday:'short', month:'short', day:'numeric' }) + ' to ' + fDate(e.dateTo, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + ' (' + (dayDiff(e.dateTo, e.date) + 1) + ' days)';
+}
+function evShort(e){ return e.dateTo && e.dateTo !== e.date ? fRange(e.date, e.dateTo, { month:'short', day:'numeric' }) : fDate(e.date, { weekday:'short', month:'short', day:'numeric' }); }
+function evRelText(e){ var td = today(); if (e.dateTo < td) return 'past'; if (e.date <= td) return e.date === td ? 'today' : 'happening now'; var n = dayDiff(e.date, td); return n === 1 ? 'tomorrow' : n < 14 ? 'in ' + n + ' days' : 'in ' + Math.round(n / 7) + ' weeks'; }
 function evSort(a, b){ return a.date !== b.date ? (a.date < b.date ? -1 : 1) : (a.time || '') !== (b.time || '') ? ((a.time || '') < (b.time || '') ? -1 : 1) : (a.title < b.title ? -1 : 1); }
-function evToAgenda(){ setTimeout(function(){ var el = document.getElementById('evagenda'); if (el && window.innerWidth < 1100) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 30); }
+function evNeedsText(e){ return (e.needs || []).map(function(n){ return n === 'Other' && e.needOther ? 'Other: ' + e.needOther : n; }); }
 function evLinkHtml(t){
   if (!t.eventId) return '';
   var e = S.events.filter(function(x){ return x.id === t.eventId; })[0];
-  return '<input type="hidden" name="eventId" value="' + esc(t.eventId) + '">' + (e ? '<div class="info-note">' + ic('megaphone') + '<span>For the event <b>' + esc(e.title) + '</b> · ' + esc(e.venue) + ' · ' + esc(evWhen(e)) + (e.needs && e.needs.length ? '<br>Needed: ' + esc(e.needs.join(', ')) : '') + '</span></div>' : '');
+  return '<input type="hidden" name="eventId" value="' + esc(t.eventId) + '">' + (e ? '<div class="info-note">' + ic('megaphone') + '<span>For the event <b>' + esc(e.title) + '</b> · ' + esc(e.venue) + ' · ' + esc(evDates(e)) + (evNeedsText(e).length ? '<br>Needed: ' + esc(evNeedsText(e).join(', ')) : '') + '</span></div>' : '');
 }
+function evChip(t){ var e = t.eventId && S.events.filter(function(x){ return x.id === t.eventId; })[0]; return e ? '<button type="button" class="pill off evlink" data-act="evPick" data-id="' + esc(e.id) + '" title="Open this event">' + ic('megaphone') + esc(e.title) + '</button>' : ''; }
 function evDispatch(e){
-  var n0 = (e.needs || [])[0] || '', pre = /^Documentation/.test(n0) ? 'To document ' : n0 === 'Livestream' ? 'To livestream ' : n0 === 'Emcee or hosting' ? 'To serve as emcee for ' : 'To cover ';
-  var ex = S.travelOrders.filter(function(t){ return t.eventId === e.id && t.status !== 'Cancelled'; })[0];
+  var n0 = (e.needs || [])[0] || '', pre = /^Photo|^Video/.test(n0) ? 'To document ' : n0 === 'Livestreaming' ? 'To livestream ' : n0 === 'Emcee or Hosting' ? 'To serve as emcee for ' : 'To cover ';
   toModal('', { event: pre + e.title, destination: e.venue, dateFrom: e.date, dateTo: e.dateTo || '', eventId: e.id });
 }
 function evPrompt(e){
-  modal('Event added', '<div class="sumbox"><b>' + esc(e.title) + '</b><span>' + esc(e.venue) + ' · ' + esc(evWhen(e)) + '</span></div>' +
-    '<div class="field"><span class="label">What is needed</span><div>' + esc(e.needs && e.needs.length ? e.needs.join(', ') : 'Not specified yet') + '</div></div>' +
-    '<p style="margin:0">Nobody is dispatched yet. Prepare the travel order now so the event is covered' + (e.status === 'Pending' ? ', or do it later. An admin still needs to confirm the event.' : ', or do it later from the event.') + '</p>',
-    '<button type="button" class="btn btn-ghost" data-act="close">Later</button><button type="button" class="btn btn-primary" data-act="evDispatch" data-id="' + e.id + '">' + ic('route') + 'Prepare travel order</button>');
+  var tasking = evKind(e) === 'tasking';
+  modal('Event added', '<div class="sumbox"><b>' + esc(e.title) + '</b><span>' + esc(e.venue) + ' · ' + esc(evDates(e)) + '</span></div>' +
+    '<div class="field"><span class="label">What is needed</span><div>' + esc(evNeedsText(e).join(', ') || 'Not specified yet') + '</div></div>' +
+    '<p style="margin:0">Nobody is dispatched yet. ' + (tasking ? 'Assign the people who will cover it so it shows on their dashboards.' : 'Prepare the travel order now so the event is covered.') + (e.status === 'Pending' ? ' An admin still needs to confirm the event.' : '') + '</p>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Later</button>' + (tasking ? (canSched() ? '<button type="button" class="btn btn-primary" data-act="evAssign" data-id="' + e.id + '">' + ic('users') + 'Assign people</button>' : '') : '<button type="button" class="btn btn-primary" data-act="evDispatch" data-id="' + e.id + '">' + ic('route') + 'Prepare travel order</button>'));
 }
 function evModal(id){
-  var e = S.events.filter(function(x){ return x.id === id; })[0] || { title: '', venue: '', date: S.selDay || today(), dateTo: '', time: '', requester: '', needs: [], note: '' }, adm = isAdmin();
+  var e = S.events.filter(function(x){ return x.id === id; })[0] || { title: '', venue: '', date: S.selDay || today(), dateTo: '', time: '', timeEnd: '', kind: 'travel', requester: '', contact: '', needs: [], needOther: '', note: '' }, adm = isAdmin();
+  var kinds = [['travel', 'Travel order', 'Outside the Capitol'], ['tasking', 'Dispatch order', 'Within the Capitol and office hours']];
   modal(e.id ? 'Edit event' : 'Add an event',
     '<input type="hidden" name="id" value="' + esc(e.id || '') + '">' +
-    '<div class="field"><label for="evt">Event</label><input class="input" id="evt" name="title" maxlength="160" value="' + esc(e.title) + '" placeholder="e.g. Provincial Board regular session" required></div>' +
-    '<div class="field"><label for="evv">Where</label><input class="input" id="evv" name="venue" maxlength="160" value="' + esc(e.venue) + '" placeholder="e.g. Brgy. Gubat, Daet, Camarines Norte" required></div>' +
-    '<div class="two"><div class="field"><label for="evd1">When</label><input class="input" id="evd1" name="date" type="date" value="' + esc(e.date) + '" required></div><div class="field"><label for="evd2">Until <span class="hint">(if more than one day)</span></label><input class="input" id="evd2" name="dateTo" type="date" value="' + (e.dateTo && e.dateTo !== e.date ? esc(e.dateTo) : '') + '"></div></div>' +
-    '<div class="field"><label for="evtm">Time <span class="hint">(optional)</span></label><input class="input" id="evtm" name="time" type="time" value="' + esc(e.time || '') + '"></div>' +
-    '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">What is needed?</legend><div style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">' + EV_NEEDS.map(function(n){ return '<label class="check" style="padding:10px 12px"><input type="checkbox" name="need" value="' + esc(n) + '"' + ((e.needs || []).indexOf(n) >= 0 ? ' checked' : '') + '><span>' + esc(n) + '</span></label>'; }).join('') + '</div></fieldset>' +
-    '<div class="field"><label for="evr">Requested by <span class="hint">(office or group on the request letter)</span></label><input class="input" id="evr" name="requester" maxlength="120" value="' + esc(e.requester || '') + '"></div>' +
-    '<div class="field"><label for="evn">Notes <span class="hint">(optional)</span></label><input class="input" id="evn" name="note" maxlength="400" value="' + esc(e.note || '') + '"></div>' +
+    '<div class="field"><label for="evt">Event name</label><input class="input" id="evt" name="title" maxlength="160" value="' + esc(e.title) + '" placeholder="e.g. Provincial Board regular session" required></div>' +
+    '<div class="field"><label for="evv">Location</label><input class="input" id="evv" name="venue" maxlength="160" value="' + esc(e.venue) + '" placeholder="e.g. Capitol Gym, Daet" required></div>' +
+    '<div class="two"><div class="field"><label for="evd1">When</label><input class="input" id="evd1" name="date" type="date" value="' + esc(e.date) + '" required></div><div class="field"><label for="evd2">Until when <span class="hint">(if more than one day)</span></label><input class="input" id="evd2" name="dateTo" type="date" value="' + (e.dateTo && e.dateTo !== e.date ? esc(e.dateTo) : '') + '"></div></div>' +
+    '<div class="two"><div class="field"><label for="evtm">Time of the event</label><input class="input" id="evtm" name="time" type="time" value="' + esc(e.time || '') + '"></div><div class="field"><label for="evte">Until what time</label><input class="input" id="evte" name="timeEnd" type="time" value="' + esc(e.timeEnd || '') + '"></div></div>' +
+    '<fieldset class="field" style="border:0;padding:0;margin:0 0 12px"><legend class="label" style="margin-bottom:6px">How will staff be sent?</legend><div class="seg">' + kinds.map(function(o, i){ return '<input type="radio" name="kind" id="evk' + i + '" value="' + o[0] + '"' + (evKind(e) === o[0] ? ' checked' : '') + '><label for="evk' + i + '"><b>' + o[1] + '</b><small>' + o[2] + '</small></label>'; }).join('') + '</div></fieldset>' +
+    '<fieldset class="field" style="border:0;padding:0;margin:0 0 12px"><legend class="label" style="margin-bottom:6px">What is needed?</legend><div style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">' + EV_NEEDS.map(function(n){ return '<label class="check" style="padding:10px 12px"><input type="checkbox" name="need" value="' + esc(n) + '"' + ((e.needs || []).indexOf(n) >= 0 ? ' checked' : '') + '><span>' + esc(n) + '</span></label>'; }).join('') + '</div><input class="input" name="needOther" maxlength="120" value="' + esc(e.needOther || '') + '" placeholder="If Other, what is needed?" aria-label="Other, what is needed" style="margin-top:8px"></fieldset>' +
+    '<div class="field"><label for="evr">Requested by <span class="hint">(optional)</span></label><input class="input" id="evr" name="requester" maxlength="120" value="' + esc(e.requester || '') + '" placeholder="Office or group on the request letter"></div>' +
+    '<div class="field"><label for="evn">Notes <span class="hint">(optional)</span></label><textarea class="input" id="evn" name="note" maxlength="400" rows="2">' + esc(e.note || '') + '</textarea></div>' +
+    '<div class="field"><label for="evc">Contact person <span class="hint">(optional)</span></label><input class="input" id="evc" name="contact" maxlength="120" value="' + esc(e.contact || '') + '" placeholder="Name and number"></div>' +
     '<div class="info-note">' + ic('shield') + '<span>' + (adm ? 'Events you add are confirmed right away.' : 'An admin confirms the event. Editing a confirmed event asks for confirmation again.') + '</span></div>',
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">' + (e.id ? 'Save event' : 'Add event') + '</button>', 'saveEvent');
 }
-function evDetail(e, st){
-  var ts = S.travelOrders.filter(function(t){ return t.eventId === e.id && t.status !== 'Cancelled'; }), cs = canSched(), adm = isAdmin();
+function assignModal(id){
+  var e = S.events.filter(function(x){ return x.id === id; })[0]; if (!e) return;
+  M = { id: id };
+  var cur = e.assigned || [], staff = S.users.filter(function(u){ return u.active; }), seen = {};
+  var group = function(title, us){ return us.length ? '<div class="dsec">' + esc(title) + '</div><div style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">' + us.map(function(u){ var s = statusOn(u.username, e.date); return '<label class="check" style="padding:10px 12px"><input type="checkbox" name="user" value="' + esc(u.username) + '"' + (cur.indexOf(u.username) >= 0 ? ' checked' : '') + '><span>' + esc(u.name) + (s ? ' <small class="hint">' + esc(KIND[s.kind][0]) + '</small>' : '') + '</span></label>'; }).join('') + '</div>' : ''; };
+  var body = '<div class="sumbox"><b>' + esc(e.title) + '</b><span>' + esc(evDates(e)) + (evTimes(e) ? ' · ' + esc(evTimes(e)) : '') + ' · ' + esc(e.venue) + '</span></div>' +
+    S.divisions.map(function(d){ var us = staff.filter(function(u){ return u.division === d.id; }); us.forEach(function(u){ seen[u.username] = 1; }); return group(d.short || d.name, us); }).join('') + group('Others', staff.filter(function(u){ return !seen[u.username]; })) +
+    '<div class="info-note" style="margin-top:12px">' + ic('megaphone') + '<span>People you assign see this on their dashboard and in Notifications.</span></div>';
+  modal('Dispatch order', body, '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Save dispatch order</button>', 'assignEvent');
+}
+function evCard(e){
+  var st = evState(e), cs = canSched(), adm = isAdmin(), tasking = evKind(e) === 'tasking', ppl = evPeople(e), mine = evMine(e, S.me.username), ts = evLinked(e);
   var row = function(k, v){ return '<dt>' + k + '</dt><dd>' + v + '</dd>'; };
-  var disp = ts.length ? ts.map(function(t){ return '<div>' + esc(t.names.map(dispName).join(', ')) + ' <span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : 'Pending') + '">' + (t.status === 'Prepared' ? (t.printedAt ? 'Prepared · printed' : 'Prepared') : 'To prepare') + '</span></div>'; }).join('') : '<span class="pill e-need">No travel order yet</span>';
+  var people = ppl.length ? '<div class="pp">' + ppl.map(function(p){ return '<span class="pill ' + (p.st === 'To prepare' ? 'Pending' : 'Confirmed') + '">' + esc(p.name) + (p.st ? ' · ' + p.st : '') + '</span>'; }).join('') + '</div>' : (e.status === 'Cancelled' ? '<span class="hint">None</span>' : '<span class="pill e-need">No one dispatched yet</span>');
+  var gear = inProd() ? S.inventory.filter(function(i){ return i.eventId === e.id && i.status === 'Out'; }) : [];
   var acts = '';
   if (e.status !== 'Cancelled'){
-    acts += '<button type="button" class="btn btn-sm ' + (st === 'need' ? 'btn-primary' : 'btn-ghost') + '" data-act="evDispatch" data-id="' + e.id + '">' + ic('route') + (ts.length ? 'Add another travel order' : 'Prepare travel order') + '</button>';
+    if (tasking){ if (cs) acts += '<button type="button" class="btn btn-sm ' + (st === 'need' ? 'btn-primary' : 'btn-ghost') + '" data-act="evAssign" data-id="' + e.id + '">' + ic('users') + (ppl.length ? 'Change dispatch order' : 'Assign people') + '</button>'; }
+    else acts += '<button type="button" class="btn btn-sm ' + (st === 'need' ? 'btn-primary' : 'btn-ghost') + '" data-act="evDispatch" data-id="' + e.id + '">' + ic('route') + (ppl.length ? 'Add another travel order' : 'Prepare travel order') + '</button>';
     if (adm && e.status === 'Pending') acts += '<button type="button" class="btn btn-sm btn-ghost" data-act="evConfirm" data-id="' + e.id + '">' + ic('check') + 'Confirm event</button>';
   }
+  if (ts.length) acts += '<button type="button" class="btn btn-sm btn-ghost" data-go="travel">View travel orders</button>';
   if (cs){
     acts += '<button type="button" class="btn btn-sm btn-ghost" data-act="evEdit" data-id="' + e.id + '">' + ic('edit') + 'Edit</button>';
     if (e.status !== 'Cancelled') acts += '<button type="button" class="btn btn-sm btn-ghost" data-act="evCancel" data-id="' + e.id + '">' + ic('x') + 'Cancel event</button>';
     else if (adm) acts += '<button type="button" class="btn btn-sm btn-ghost" data-act="evReopen" data-id="' + e.id + '">Reopen</button>';
     if (adm || e.status === 'Pending') acts += '<button type="button" class="btn btn-sm btn-danger" data-act="evDelete" data-id="' + e.id + '">' + ic('trash') + 'Delete</button>';
   }
-  return '<div class="evd" id="evd-' + e.id + '"><dl>' + row('Where', esc(e.venue)) + row('When', esc(evWhen(e))) +
-    row('What is needed', e.needs && e.needs.length ? e.needs.map(function(n){ return '<span class="pill off">' + esc(n) + '</span>'; }).join(' ') : '<span class="hint">Not specified</span>') +
-    (e.requester ? row('Requested by', esc(e.requester)) : '') + (e.note ? row('Notes', esc(e.note)) : '') +
-    row('Dispatch', disp) + row('Status', e.status === 'Confirmed' ? 'Confirmed' + (e.confirmedBy ? ' by ' + esc(firstName(e.confirmedBy)) : '') : e.status === 'Pending' ? 'Waiting for an admin to confirm' : 'Cancelled') + '</dl>' +
-    (acts ? '<div class="acts-row">' + acts + '</div>' : '') + '</div>';
+  return '<article class="dcard ' + st + '"><h4>' + esc(e.title) + ' <span class="pill e-' + st + '">' + EV_LABEL[st] + '</span>' + (e.status === 'Pending' ? '<span class="pill Pending">Unconfirmed</span>' : '') + (mine ? '<span class="pill Confirmed">You</span>' : '') + '</h4><dl>' +
+    row('Date', esc(evDates(e))) + (evTimes(e) ? row('Time', esc(evTimes(e))) : '') + row('Place', esc(e.venue)) +
+    row('Sent by', tasking ? 'Dispatch order <span class="hint">(within the Capitol)</span>' : 'Travel order') + row('Dispatched', people) +
+    row('Needed', evNeedsText(e).length ? evNeedsText(e).map(function(n){ return '<span class="pill off">' + esc(n) + '</span>'; }).join(' ') : '<span class="hint">Not specified</span>') +
+    (e.requester ? row('Requested by', esc(e.requester)) : '') + (e.contact ? row('Contact', esc(e.contact)) : '') + (e.note ? row('Notes', esc(e.note)) : '') +
+    (gear.length ? row('Gear', esc(gear.map(function(i){ return i.name; }).join(', '))) : '') +
+    row('Status', e.status === 'Confirmed' ? 'Confirmed' + (e.confirmedBy ? ' by ' + esc(firstName(e.confirmedBy)) : '') : e.status === 'Pending' ? 'Waiting for an admin to confirm' : 'Cancelled') + '</dl>' +
+    (acts ? '<div class="acts-row">' + acts + '</div>' : '') + '</article>';
 }
-function evRow(e){
-  var st = evState(e), open = S.ev.open === e.id;
-  return '<li class="evr ' + st + (e.dateTo < today() ? ' past' : '') + '" id="ev-' + e.id + '"><button type="button" class="evh" data-act="evToggle" data-id="' + e.id + '" aria-expanded="' + open + '" aria-controls="evd-' + e.id + '"><span class="evbar" aria-hidden="true"></span>' +
-    '<span class="evm"><b>' + esc(e.title) + '</b><small>' + esc(evShort(e)) + '</small></span><span class="pills"><span class="pill e-' + st + '">' + EV_LABEL[st] + '</span>' + (e.status === 'Pending' ? '<span class="pill Pending">Unconfirmed</span>' : '') + '</span><span class="evx">' + ic('right') + '</span></button>' + (open ? evDetail(e, st) : '') + '</li>';
+function evLine(e){
+  var st = evState(e), mine = evMine(e, S.me.username), soon = st === 'need' && e.date >= today() && dayDiff(e.date, today()) <= 7;
+  return '<li class="evr ' + st + '"><button type="button" class="evh" data-act="evPick" data-id="' + e.id + '"><span class="evbar" aria-hidden="true"></span><span class="evm"><b>' + esc(e.title) + '</b><small>' + esc(evShort(e)) + (evTimes(e) ? ' · ' + esc(evTimes(e)) : '') + ' · ' + esc(e.venue) + ' · <span class="' + (soon ? 'evsoon' : '') + '">' + esc(evRelText(e)) + '</span></small></span><span class="pills"><span class="pill e-' + st + '">' + EV_LABEL[st] + '</span>' + (mine ? '<span class="pill Confirmed">You</span>' : '') + (e.status === 'Pending' ? '<span class="pill Pending">Unconfirmed</span>' : '') + '</span><span class="evx">' + ic('right') + '</span></button></li>';
 }
+function dayPop(k){
+  S.pop = k;
+  var td = today(), adm = isAdmin(), cs = canSched(), h = holidayOn(k), future = k >= td;
+  var evs = S.events.filter(function(e){ return e.date <= k && e.dateTo >= k; }).sort(evSort);
+  var away = []; S.users.filter(function(u){ return u.active; }).forEach(function(u){ var s = statusOn(u.username, k); if (s) away.push({ u: u, s: s }); });
+  var ents = S.entries.filter(function(e){ return e.date === k && e.status !== 'Rejected' && (adm || e.username === S.me.username); });
+  var body = (h ? '<div class="info-note">' + ic('flag') + '<span>' + esc(h.name) + ' · ' + esc(h.kind) + ' holiday</span></div>' : '') +
+    '<div class="dsec">Events</div>' + (evs.length ? evs.map(evCard).join('') : '<p class="hint" style="margin:0 0 8px">No events on this day.</p>') +
+    '<div class="dsec">Out of the office</div>' + (away.length ? '<div class="pp">' + away.map(function(x){ return '<span class="pill st-' + (x.s.kind === 'to' ? 'to' : 'lv') + '">' + esc(firstName(x.u.username)) + ' · ' + esc(x.s.kind === 'to' ? 'Travel: ' + x.s.label : x.s.label) + '</span>'; }).join('') + '</div>' : '<p class="hint" style="margin:0">Everyone is in.</p>') +
+    (ents.length ? '<div class="dsec">Offsets</div><ul class="list">' + ents.map(function(e){ return entryRow(e, { showName: adm }); }).join('') + '</ul>' : '');
+  var foot = '<button type="button" class="btn btn-ghost" data-act="close">Close</button>' + (cs ? '<button type="button" class="btn btn-primary" data-act="evNew" data-d="' + k + '">' + ic('plus') + 'Add event</button>' : '') +
+    (adm ? '<button type="button" class="btn btn-ghost" data-act="useModal" data-date="' + k + '">' + ic('minus') + 'Record use</button>' : '') +
+    (future ? '<button type="button" class="btn btn-ghost" data-act="requestModal" data-date="' + k + '">' + ic('plane') + 'Request day off</button>' : '<button type="button" class="btn btn-ghost" data-act="logOn" data-date="' + k + '">' + ic('plus') + 'Log offset</button>');
+  modal(fDate(k, { weekday:'long', month:'long', day:'numeric', year:'numeric' }), body, foot);
+}
+function refreshPop(){ if (S.pop && document.getElementById('modal') && document.querySelector('#modal .dcard, #modal .dsec')) dayPop(S.pop); }
+function evTileModal(f){
+  var td = today(), up = S.events.filter(function(e){ return e.status !== 'Cancelled' && e.dateTo >= td; }).sort(evSort);
+  var list = f === 'upcoming' ? up : up.filter(function(e){ return evState(e) === f; });
+  modal(f === 'upcoming' ? 'Upcoming events' : EV_LABEL[f], list.length ? '<ul class="evlist">' + list.map(evLine).join('') + '</ul>' : '<p class="hint" style="margin:0">Nothing here right now.</p>', '<button type="button" class="btn btn-ghost" data-act="close">Close</button>');
+}
+function calItems(mine){
+  var me = S.me.username, adm = isAdmin(), items = [], live = {};
+  S.events.forEach(function(e){ if (e.status === 'Cancelled') return; live[e.id] = 1; var mm = evMine(e, me); if (mine && !mm) return; var st = evState(e); items.push({ s: e.date, e: e.dateTo, cls: 'b-' + st, t: e.title, un: e.status === 'Pending', mine: mm, pr: st === 'need' ? 0 : st === 'wait' ? 1 : 2 }); });
+  activeTOs().forEach(function(t){ if (t.eventId && live[t.eventId]) return; var mm = (t.usernames || []).indexOf(me) >= 0; if (mine && !mm) return; items.push({ s: t.dateFrom, e: t.dateTo, cls: 'b-to', t: 'TO · ' + t.event, mine: mm, pr: 3 }); });
+  S.leaves.forEach(function(l){ if (/^ADJ/.test(l.type)) return; var mm = l.username === me; if (mine && !mm) return; items.push({ s: l.dateFrom, e: l.dateTo, cls: 'b-lv', t: (adm && !mm ? firstName(l.username) + ' · ' : '') + leaveName(l.type), mine: mm, pr: 4 }); });
+  S.entries.forEach(function(e){ if (e.type !== 'USE' || e.status === 'Rejected') return; var mm = e.username === me; if (mine && !mm) return; items.push({ s: e.date, e: e.date, cls: 'b-lv', t: (adm && !mm ? firstName(e.username) + ' · ' : '') + 'Day off', un: e.status === 'Pending', mine: mm, pr: 4 }); });
+  if (!adm) S.board.forEach(function(b){ if (b.username === me || mine) return; items.push({ s: b.from, e: b.to, cls: 'b-lv', t: firstName(b.username) + ' · ' + (b.kind === 'leave' ? 'On leave' : 'Day off'), pr: 4 }); });
+  return items;
+}
+function calWeek(ws, items, m){
+  var we = addDays(ws, 6), td = today(), MAXL = 3;
+  var segs = items.filter(function(it){ return it.e >= ws && it.s <= we; }).map(function(it){ return { it: it, c0: Math.max(0, dayDiff(it.s, ws)), c1: Math.min(6, dayDiff(it.e, ws)), cl: it.s < ws, cr: it.e > we }; });
+  segs.sort(function(a, b){ return a.c0 - b.c0 || a.it.pr - b.it.pr || (b.c1 - b.c0) - (a.c1 - a.c0); });
+  var ends = []; segs.forEach(function(sg){ var l = 0; while (l < ends.length && ends[l] >= sg.c0) l++; ends[l] = sg.c1; sg.l = l; });
+  var more = [0, 0, 0, 0, 0, 0, 0]; segs.forEach(function(sg){ if (sg.l >= MAXL) for (var c = sg.c0; c <= sg.c1; c++) more[c]++; });
+  var cells = '';
+  for (var c = 0; c < 7; c++){
+    var k = addDays(ws, c), d = pd(k), h = holidayOn(k), col = c, names = segs.filter(function(sg){ return sg.c0 <= col && sg.c1 >= col; }).map(function(sg){ return sg.it.t; });
+    var cls = 'mc-day' + (d.getMonth() !== m ? ' out' : '') + (h ? ' hol' : '') + (k === td ? ' today' : '');
+    var aria = fDate(k, { weekday:'long', month:'long', day:'numeric' }) + (h ? ', ' + h.name : '') + (names.length ? ': ' + names.join('; ') : ', nothing scheduled');
+    cells += '<button type="button" class="' + cls + '" data-act="dayPop" data-d="' + k + '" aria-label="' + esc(aria) + '"><span class="mc-n">' + d.getDate() + '</span>' + (h ? '<span class="mc-hl">' + esc(h.name) + '</span>' : '') + (more[c] ? '<span class="mc-more">+' + more[c] + '</span>' : '') + '</button>';
+  }
+  var bars = segs.filter(function(sg){ return sg.l < MAXL; }).map(function(sg){ var it = sg.it; return '<span class="mc-bar ' + it.cls + (it.un ? ' b-un' : '') + (it.mine ? ' b-mine' : '') + (sg.cl ? ' cl' : '') + (sg.cr ? ' cr' : '') + '" style="--c0:' + sg.c0 + ';--c1:' + sg.c1 + ';--l:' + sg.l + ';--il:' + (sg.cl ? 0 : 4) + 'px;--ir:' + (sg.cr ? 0 : 4) + 'px">' + esc(it.t) + '</span>'; }).join('');
+  return '<div class="mc-wk" style="--lanes:' + Math.max(1, Math.min(MAXL, ends.length)) + '"><div class="mc-days">' + cells + '</div><div class="mc-bars" aria-hidden="true">' + bars + '</div></div>';
+}
+function viewCalendar(){
+  if (!S.cal){ var t0 = pd(today()); S.cal = { y: t0.getFullYear(), m: t0.getMonth() }; }
+  var y = S.cal.y, m = S.cal.m, first = new Date(y, m, 1), td = today(), cs = canSched();
+  var gs = ymd(new Date(y, m, 1 - first.getDay())), mEnd = ymd(new Date(y, m + 1, 0)), items = calItems(!!S.calMine), weeks = '';
+  for (var w = 0; w < 6; w++){ var ws = addDays(gs, w * 7); if (ws > mEnd) break; weeks += calWeek(ws, items, m); }
+  var up = S.events.filter(function(e){ return e.status !== 'Cancelled' && e.dateTo >= td; }).sort(evSort), cnt = { need: 0, wait: 0, ok: 0 };
+  up.forEach(function(e){ cnt[evState(e)]++; });
+  var unconf = up.filter(function(e){ return e.status === 'Pending'; }).length, nx = up[0], nn = up.filter(function(e){ return evState(e) === 'need'; })[0];
+  var tiles = '<div class="tiles" style="margin-bottom:16px">' + [
+    ['upcoming', 'Upcoming', 'cal', String(up.length), (nx ? 'Next: ' + evRelText(nx) : 'Nothing scheduled') + (cs && unconf ? ' · ' + unconf + ' unconfirmed' : ''), ''],
+    ['need', 'Needs dispatching', 'megaphone', String(cnt.need), cnt.need ? 'Next: ' + evRelText(nn) : 'All covered', cnt.need ? 'bad' : ''],
+    ['wait', 'Dispatch in progress', 'clock', String(cnt.wait), 'Travel order not prepared', cnt.wait ? 'warn' : ''],
+    ['ok', 'Dispatched', 'check', String(cnt.ok), 'Dispatch order or travel order ready', 'ok']
+  ].map(function(x){ return tile(x[1], x[3], x[4], x[5], x[2], 'data-act="evTile" data-f="' + x[0] + '"'); }).join('') + '</div>';
+  var st = { to: 0, leave: 0, off: 0 }, act = S.users.filter(function(u){ return u.active; }); act.forEach(function(u){ var s = statusOn(u.username, td); if (s) st[s.kind === 'off' ? 'off' : s.kind]++; });
+  var strip = '<div class="mcstrip"><span><b>' + (act.length - st.to - st.leave - st.off) + '</b> in the office today</span><span><b>' + st.to + '</b> on travel</span><span><b>' + (st.leave + st.off) + '</b> on leave or day off</span><button type="button" class="btn btn-sm btn-ghost" data-act="dayPop" data-d="' + td + '">See who</button></div>';
+  var legend = '<div class="legend" style="padding:0"><span><i class="lg b-need"></i>Needs dispatching</span><span><i class="lg b-wait"></i>Dispatch in progress</span><span><i class="lg b-ok"></i>Dispatched</span><span><i class="lg b-to"></i>On travel</span><span><i class="lg b-lv"></i>Leave or day off</span><span><i class="lg b-un"></i>Unconfirmed</span><span>★ Yours</span></div>';
+  return { eyebrow: 'Calendar', title: first.toLocaleDateString('en-PH', { month:'long', year:'numeric' }), sub: 'Events, travel, leaves and days off in one place. Tap a day to see everything about it.',
+    actions: '<button type="button" class="btn btn-glass" data-act="calPrev" aria-label="Previous month">' + ic('left') + '</button><button type="button" class="btn btn-glass" data-act="calToday">Today</button><button type="button" class="btn btn-glass" data-act="calNext" aria-label="Next month">' + ic('right') + '</button>' + (cs ? '<button type="button" class="btn btn-sun" data-act="evNew">' + ic('plus') + 'Add event</button>' : ''),
+    body: tiles + '<section class="panel"><div class="mcbar">' + strip + '<label class="keep" style="font-size:13.5px"><input type="checkbox" id="calMine"' + (S.calMine ? ' checked' : '') + '>Only mine</label></div><div class="mcbar" style="padding-top:0">' + legend + '</div>' +
+      '<div class="mc"><div class="mc-dow">' + ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(d){ return '<div>' + d + '</div>'; }).join('') + '</div>' + weeks + '</div></section>' };
+}
+/* ----- Notifications ----- */
+function nGet(k){ try { return JSON.parse(lGet('pio_' + k + '_' + S.me.username) || '[]'); } catch(e){ return []; } }
+function nSet(k, v){ lSet('pio_' + k + '_' + S.me.username, JSON.stringify(v)); }
+function myAlerts(){
+  var me = S.me.username, td = today(), out = [];
+  S.events.forEach(function(e){
+    if (e.status === 'Cancelled' || e.dateTo < td) return;
+    if (evMine(e, me)){ out.push({ id: 'asg:' + e.id, e: e, kind: 'assigned', text: 'You are dispatched: ' + e.title }); var n = dayDiff(e.date, td); if (n >= 0 && n <= 1) out.push({ id: 'rem:' + e.id + ':' + td, e: e, kind: 'reminder', text: (n === 0 ? 'Today: ' : 'Tomorrow: ') + e.title }); }
+    else if (canSched() && evState(e) === 'need' && dayDiff(e.date, td) <= 7) out.push({ id: 'need:' + e.id, e: e, kind: 'need', text: 'Needs dispatching ' + evRelText(e) + ': ' + e.title });
+  });
+  S.travelOrders.forEach(function(t){ if (t.status === 'Prepared' && t.dateTo >= td && (t.usernames || []).indexOf(me) >= 0) out.push({ id: 'to:' + t.id, kind: 'to', text: 'Travel order ready: ' + t.event }); });
+  return out;
+}
+function unreadCount(){ if (!S.me) return 0; var seen = nGet('seen'); return myAlerts().filter(function(a){ return seen.indexOf(a.id) < 0; }).length; }
+function devNotifState(){ if (typeof Notification === 'undefined') return 'none'; if (Notification.permission === 'denied') return 'denied'; return Notification.permission === 'granted' && lGet('pio_dn_' + S.me.username) === '1' ? 'on' : 'off'; }
+function showSys(title, body, tag){
+  try {
+    var o = { body: body, tag: tag, icon: 'icon-192.png', badge: 'icon-192.png' };
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) navigator.serviceWorker.getRegistration().then(function(r){ if (r && r.showNotification) r.showNotification(title, o); else new Notification(title, o); });
+    else new Notification(title, o);
+  } catch(e){}
+}
+function checkNotify(){
+  if (!S.me || devNotifState() !== 'on') return;
+  var done = nGet('notified'), fresh = myAlerts().filter(function(a){ return done.indexOf(a.id) < 0; });
+  if (!fresh.length) return;
+  nSet('notified', done.concat(fresh.map(function(a){ return a.id; })).slice(-200));
+  fresh.slice(0, 3).forEach(function(a){ showSys(a.kind === 'assigned' ? 'New dispatch' : a.kind === 'reminder' ? 'Reminder' : a.kind === 'need' ? 'Needs dispatching' : 'Travel order ready', a.text, a.id); });
+}
+function notifModal(){
+  var al = myAlerts(), seen = nGet('seen'), ds = devNotifState();
+  al.sort(function(a, b){ var ua = seen.indexOf(a.id) < 0, ub = seen.indexOf(b.id) < 0; return ua === ub ? 0 : ua ? -1 : 1; });
+  var rows = al.map(function(a){ var un = seen.indexOf(a.id) < 0; return '<li class="nrow' + (un ? ' unread' : '') + '"><button type="button" class="nbtn" ' + (a.e ? 'data-act="evPick" data-id="' + a.e.id + '"' : 'data-go="travel"') + '><span><b>' + esc(a.text) + '</b><small class="hint" style="display:block">' + (a.e ? esc(evShort(a.e) + (evTimes(a.e) ? ' · ' + evTimes(a.e) : '') + ' · ' + a.e.venue) : 'Open Travel orders') + '</small></span></button></li>'; }).join('');
+  var dev = ds === 'none' ? '<p class="hint" style="margin:0">This browser cannot show device notifications.</p>' : ds === 'denied' ? '<p class="hint" style="margin:0">Notifications are blocked for this site. Allow them in your browser settings to turn them on.</p>' : ds === 'on' ? '<button type="button" class="btn btn-ghost" data-act="notifOff">Turn off device notifications</button>' : '<button type="button" class="btn btn-primary" data-act="notifOn">' + ic('bell') + 'Turn on device notifications</button>';
+  modal('Notifications', (rows ? '<ul style="margin:0;padding:0">' + rows + '</ul>' : '<p class="hint" style="margin:0">Nothing new. Dispatches, reminders and ready travel orders show up here.</p>') + '<div class="dsec">On this device</div>' + dev + '<p class="hint" style="margin:8px 0 0">You get a notice when the app is open or when you open it. Alerts while the app is closed need an extra server setup.</p>', '<button type="button" class="btn btn-ghost" data-act="close">Close</button>');
+  nSet('seen', al.map(function(a){ return a.id; })); var b = document.querySelector('.badge.bad[data-n]'); 
+}
+function bellBtn(side){ var n = unreadCount(); return side ? '<button data-act="notifs">' + ic('bell') + '<span>Notifications</span>' + (n ? '<span class="badge bad">' + n + '<span class="sr"> new</span></span>' : '') + '</button>' : '<button data-act="notifs" class="bellb" aria-label="Notifications' + (n ? ', ' + n + ' new' : '') + '">' + ic('bell') + (n ? '<span class="badge bad">' + n + '</span>' : '') + '</button>'; }
+function needSoon(){ var td = today(), lim = addDays(td, 7); return S.events.filter(function(e){ return e.status !== 'Cancelled' && e.dateTo >= td && e.date <= lim && evState(e) === 'need'; }).length; }
+function navBadge(id, pc){
+  if (id === 'approvals') return pc ? '<span class="badge">' + pc + '</span>' : '';
+  if (id === 'calendar' && canSched()){ var n = needSoon(); return n ? '<span class="badge bad">' + n + '<span class="sr"> events need dispatching soon</span></span>' : ''; }
+  if (id === 'travel' && isAdmin()){ var k = S.travelOrders.filter(function(t){ return t.status === 'Filed'; }).length; return k ? '<span class="badge">' + k + '<span class="sr"> travel orders to prepare</span></span>' : ''; }
+  return '';
+}
+function comingWidget(n){
+  var td = today(), me = S.me.username, cs = canSched(), horizon = addDays(td, 14);
+  var up = S.events.filter(function(e){ return e.status !== 'Cancelled' && e.dateTo >= td; }).sort(evSort);
+  var mine = up.filter(function(e){ return evMine(e, me); }), need = up.filter(function(e){ return evState(e) === 'need'; });
+  var win = up.filter(function(e){ return e.date <= horizon; }), covered = win.filter(function(e){ return evState(e) !== 'need'; }).length;
+  var body = '';
+  if (cs && win.length) body += '<div class="mcbar" style="padding-bottom:4px"><span class="mcstrip"><span><b>' + covered + ' of ' + win.length + '</b> events in the next 2 weeks have people assigned</span>' + (win.length - covered ? '<span class="pill e-need">' + (win.length - covered) + ' still need dispatching</span>' : '<span class="pill e-ok">All covered</span>') + '</span></div>';
+  if (mine.length) body += '<div class="dsec" style="padding:0 16px">My taskings</div><ul class="evlist">' + mine.slice(0, 5).map(evLine).join('') + '</ul>';
+  if (cs && need.length) body += '<div class="dsec" style="padding:0 16px">Needs dispatching</div><ul class="evlist">' + need.slice(0, 4).map(evLine).join('') + '</ul>';
+  if (!cs && !mine.length && up.length) body += '<div class="dsec" style="padding:0 16px">Coming up in the office</div><ul class="evlist">' + up.slice(0, 4).map(evLine).join('') + '</ul>';
+  if (!body && !cs) return '';
+  if (!body) body = empty('megaphone', 'No events or taskings coming up', cs ? 'Add events from request letters so the office sees them early.' : 'You have nothing assigned right now.', cs ? '<button class="btn btn-primary" data-act="evNew">' + ic('plus') + 'Add event</button>' : '');
+  return panel('Coming up', 'megaphone', body, '<div class="row-btns"><button class="btn btn-sm btn-ghost" data-go="calendar">Open calendar</button>' + (cs ? '<button class="btn btn-sm btn-ghost" data-act="evNew">' + ic('plus') + 'Add event</button>' : '') + '</div>', span(n));
+}
+/* ----- Inventory (Production team and admins) ----- */
+var INV_CATS = ['Camera', 'Lens', 'Audio', 'Lighting', 'Drone', 'Computer', 'Tripod and Support', 'Storage and Cards', 'Accessory', 'Other'];
+var INV_ST = { Available: ['Available', 'e-ok'], Out: ['Checked out', 'e-wait'], Repair: ['In repair', 'e-need'], Missing: ['Missing', 'e-need'] };
+function invOverdue(i){ return i.status === 'Out' && i.dueBack && i.dueBack < today(); }
+function invRow(i){
+  var st = INV_ST[i.status] || INV_ST.Available, u = i.holder && userOf(i.holder), ev = i.eventId && S.events.filter(function(x){ return x.id === i.eventId; })[0], b = '';
+  if (i.status === 'Available') b += '<button type="button" class="btn btn-sm btn-primary" data-act="invOut" data-id="' + i.id + '">Check out</button><button type="button" class="btn btn-sm btn-ghost" data-act="invStatus" data-id="' + i.id + '" data-s="Repair">Repair</button>';
+  else if (i.status === 'Out') b += '<button type="button" class="btn btn-sm btn-primary" data-act="invIn" data-id="' + i.id + '">Return</button>';
+  else b += '<button type="button" class="btn btn-sm btn-ghost" data-act="invStatus" data-id="' + i.id + '" data-s="Available">Mark available</button>';
+  b += '<button type="button" class="btn btn-sm btn-ghost" data-act="invEdit" data-id="' + i.id + '" aria-label="Edit ' + esc(i.name) + '">' + ic('edit') + '</button>';
+  return '<li class="invr"><div class="grow"><b>' + esc(i.name) + '</b><div class="hint">' + esc(i.category) + (i.tag ? ' · ' + esc(i.tag) : '') + (i.serial ? ' · S/N ' + esc(i.serial) : '') + '</div>' +
+    (i.status === 'Out' ? '<div class="hint">With ' + esc(u ? u.name : i.holder) + (i.dueBack ? ' · due ' + esc(fDate(i.dueBack, { month:'short', day:'numeric' })) : '') + (ev ? ' · for ' + esc(ev.title) : '') + '</div>' : '') + (i.note ? '<div class="hint">' + esc(i.note) + '</div>' : '') + '</div>' +
+    '<div class="row-btns"><span class="pill ' + st[1] + '">' + st[0] + '</span>' + (invOverdue(i) ? '<span class="pill e-need">Overdue</span>' : '') + b + '</div></li>';
+}
+function viewInventory(){
+  var F = S.invF || 'all', Q = (S.invQ || '').toLowerCase(), all = S.inventory.slice().sort(function(a, b){ return a.name < b.name ? -1 : 1; });
+  var n = { Available: 0, Out: 0, bad: 0, over: 0 }; all.forEach(function(i){ if (i.status === 'Available') n.Available++; else if (i.status === 'Out') n.Out++; else n.bad++; if (invOverdue(i)) n.over++; });
+  var list = all.filter(function(i){
+    if ((F === 'Available' || F === 'Out') && i.status !== F) return false;
+    if (F === 'attention' && !(i.status === 'Repair' || i.status === 'Missing' || invOverdue(i))) return false;
+    if (Q){ var u = i.holder && userOf(i.holder); if ((i.name + ' ' + i.category + ' ' + i.tag + ' ' + i.serial + ' ' + (u ? u.name : '')).toLowerCase().indexOf(Q) < 0) return false; }
+    return true; });
+  var tiles = '<div class="tiles" style="margin-bottom:16px">' + [
+    ['all', 'Equipment', 'camera', String(all.length), 'Items on the list', ''],
+    ['Available', 'Available', 'check', String(n.Available), 'Ready to use', 'ok'],
+    ['Out', 'Checked out', 'clock', String(n.Out), n.over ? n.over + ' overdue' : 'None overdue', n.over ? 'warn' : ''],
+    ['attention', 'Needs attention', 'flag', String(n.bad + n.over), 'Repair, missing or overdue', n.bad + n.over ? 'bad' : '']
+  ].map(function(x){ return tile(x[1], x[3], x[4], x[5], x[2], 'data-act="invF" data-f="' + x[0] + '" aria-pressed="' + (F === x[0]) + '"'); }).join('') + '</div>';
+  var body = '<div class="mcbar"><input class="input" id="invQ" type="search" value="' + esc(S.invQ || '') + '" placeholder="Search name, tag, serial or person" aria-label="Search equipment" style="max-width:340px;margin:0"></div>' +
+    (list.length ? '<ul style="list-style:none;margin:0;padding:0">' + list.map(invRow).join('') + '</ul>' : empty('camera', all.length ? 'No equipment matches' : 'No equipment yet', all.length ? 'Try another filter or search.' : 'Add the cameras, lenses, mics and other gear so everyone knows who has what.', '<button type="button" class="btn btn-primary" data-act="invNew">' + ic('plus') + 'Add equipment</button>'));
+  return { eyebrow: 'Production', title: 'Inventory', sub: 'Cameras, lenses, audio and other gear. Check equipment out so everyone knows who has it.', actions: '<button type="button" class="btn btn-sun" data-act="invNew">' + ic('plus') + 'Add equipment</button>', body: tiles + panel('Equipment', 'camera', body, '', '') };
+}
+function invModal(id){
+  var i = S.inventory.filter(function(x){ return x.id === id; })[0] || { name: '', category: 'Camera', tag: '', serial: '', note: '' };
+  var hist = (i.history || []).slice(0, 5).map(function(h){ var u = h.who && userOf(h.who); return '<li class="hint">' + esc(fDate(String(h.at).slice(0, 10), { month:'short', day:'numeric' })) + ' · ' + esc(h.act) + (u ? ' · ' + esc(u.name) : '') + (h.note ? ' · ' + esc(h.note) : '') + '</li>'; }).join('');
+  modal(i.id ? 'Edit equipment' : 'Add equipment',
+    '<input type="hidden" name="id" value="' + esc(i.id || '') + '"><div class="field"><label for="ivn">Name</label><input class="input" id="ivn" name="name" maxlength="120" value="' + esc(i.name) + '" placeholder="e.g. Sony A7 III" required></div>' +
+    '<div class="two"><div class="field"><label for="ivc">Category</label><select class="input" id="ivc" name="category">' + INV_CATS.map(function(c){ return '<option' + (i.category === c ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '</select></div><div class="field"><label for="ivt">Asset tag <span class="hint">(optional)</span></label><input class="input" id="ivt" name="tag" maxlength="40" value="' + esc(i.tag || '') + '"></div></div>' +
+    '<div class="field"><label for="ivs">Serial number <span class="hint">(optional)</span></label><input class="input" id="ivs" name="serial" maxlength="60" value="' + esc(i.serial || '') + '"></div>' +
+    '<div class="field"><label for="ivo">Notes <span class="hint">(optional)</span></label><input class="input" id="ivo" name="note" maxlength="300" value="' + esc(i.note || '') + '" placeholder="Condition, what is in the bag, etc."></div>' + (hist ? '<div class="dsec">Recent history</div><ul style="margin:0;padding-left:18px">' + hist + '</ul>' : ''),
+    (i.id && isAdmin() ? '<button type="button" class="btn btn-danger" data-act="invDel" data-id="' + i.id + '">' + ic('trash') + 'Delete</button>' : '') + '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">' + (i.id ? 'Save' : 'Add equipment') + '</button>', 'saveItem');
+}
+function invOutModal(id){
+  var i = S.inventory.filter(function(x){ return x.id === id; })[0]; if (!i) return;
+  var td = today(), evs = S.events.filter(function(e){ return e.status !== 'Cancelled' && e.dateTo >= td; }).sort(evSort).slice(0, 30);
+  modal('Check out ' + i.name,
+    '<input type="hidden" name="id" value="' + esc(i.id) + '"><div class="field"><label for="iho">Who is borrowing it?</label><select class="input" id="iho" name="holder">' + S.users.filter(function(u){ return u.active; }).sort(function(a, b){ return a.name < b.name ? -1 : 1; }).map(function(u){ return '<option value="' + esc(u.username) + '"' + (u.username === S.me.username ? ' selected' : '') + '>' + esc(u.name) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="two"><div class="field"><label for="ihd">Due back</label><input class="input" id="ihd" name="dueBack" type="date" value="' + addDays(td, 3) + '" min="' + td + '"></div><div class="field"><label for="ihe">For the event <span class="hint">(optional)</span></label><select class="input" id="ihe" name="eventId"><option value="">No event</option>' + evs.map(function(e){ return '<option value="' + esc(e.id) + '">' + esc(e.title + ' · ' + evShort(e)) + '</option>'; }).join('') + '</select></div></div>' +
+    '<div class="field"><label for="ihn">Note <span class="hint">(optional)</span></label><input class="input" id="ihn" name="note" maxlength="200" placeholder="Condition when it leaves"></div>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Check out</button>', 'checkoutItem');
+}
+var _nav0 = navItems; navItems = function(){ var a = _nav0(); if (inProd()) a.push(['inventory', 'camera', 'Inventory', 'Production']); return a; };
+var _render0 = render; render = function(){ _render0.apply(this, arguments); try { checkNotify(); } catch(e){} };
+function pgIn(){ var m = document.querySelector('main'); if (!m) return; m.setAttribute('tabindex', '-1'); try { m.focus({ preventScroll: true }); } catch(e){} if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return; m.classList.remove('pgin'); void m.offsetWidth; m.classList.add('pgin'); }
+
 function dayoffHint(t){
   if (t.toType !== 'dayoff') return '';
   var n = 0, d0 = t.dateFrom; for (; d0 <= t.dateTo; d0 = addDays(d0, 1)) n++;
@@ -2246,14 +2419,25 @@ document.addEventListener('click', function(ev){
   else if (a === 'toPer'){ S.toPer = t.dataset.p; if (!S.toAnchor) S.toAnchor = today(); render(); }
   else if (a === 'toNav'){ var dv = Number(t.dataset.d), an = S.toAnchor || today(); if (S.toPer === 'week') S.toAnchor = addDays(an, 7 * dv); else { var dm = pd(an); S.toAnchor = ymd(new Date(dm.getFullYear(), dm.getMonth() + dv, 1)); } render(); }
   else if (a === 'toSort'){ var cur = S.toSort || (S.toFilter === 'past' ? 'desc' : 'asc'); S.toSort = cur === 'desc' ? 'asc' : 'desc'; render(); }
-  else if (a === 'evFilter'){ S.ev.f = S.ev.f === t.dataset.f ? 'month' : t.dataset.f; render(); evToAgenda(); }
-  else if (a === 'calLayer'){ S.calLayer = t.dataset.l; render(); }
-  else if (a === 'evToggle'){ var eid = t.dataset.id; S.ev.open = S.ev.open === eid ? '' : eid; render(); setTimeout(function(){ var el = document.getElementById('ev-' + eid); if (el && S.ev.open === eid) el.scrollIntoView({ block: 'nearest' }); }, 30); }
-  else if (a === 'evNew') evModal();
+  else if (a === 'dayPop') dayPop(t.dataset.d);
+  else if (a === 'evTile') evTileModal(t.dataset.f);
+  else if (a === 'evPick'){ var pe = S.events.filter(function(x){ return x.id === t.dataset.id; })[0]; if (pe){ closeModal(); dayPop(pe.date); } }
+  else if (a === 'evAssign'){ closeModal(); assignModal(t.dataset.id); }
+  else if (a === 'notifs') notifModal();
+  else if (a === 'notifOn'){ Promise.resolve(Notification.requestPermission()).then(function(p){ if (p === 'granted'){ lSet('pio_dn_' + S.me.username, '1'); nSet('notified', myAlerts().map(function(x){ return x.id; })); toast('Notifications are on'); } else toast('Notifications were not allowed'); notifModal(); }); }
+  else if (a === 'notifOff'){ lSet('pio_dn_' + S.me.username, null); toast('Notifications are off'); notifModal(); }
+  else if (a === 'invNew') invModal();
+  else if (a === 'invEdit') invModal(t.dataset.id);
+  else if (a === 'invOut') invOutModal(t.dataset.id);
+  else if (a === 'invIn') act('checkinItem', { id: t.dataset.id }, 'Returned').catch(function(e){ toast(e.message); });
+  else if (a === 'invStatus') act('setItemStatus', { id: t.dataset.id, status: t.dataset.s }, 'Updated').catch(function(e){ toast(e.message); });
+  else if (a === 'invDel'){ if (confirm('Delete this equipment for good?')) act('deleteItem', { id: t.dataset.id }, 'Equipment deleted').then(closeModal).catch(function(e){ toast(e.message); }); }
+  else if (a === 'invF'){ S.invF = S.invF === t.dataset.f ? 'all' : t.dataset.f; render(); }
+  else if (a === 'evNew'){ if (t.dataset.d) S.selDay = t.dataset.d; closeModal(); evModal(); }
   else if (a === 'evEdit') evModal(t.dataset.id);
   else if (a === 'evDispatch'){ var de = S.events.filter(function(x){ return x.id === t.dataset.id; })[0]; if (de){ closeModal(); evDispatch(de); } }
-  else if (a === 'evConfirm' || a === 'evCancel' || a === 'evReopen'){ var es = a === 'evConfirm' ? 'Confirmed' : a === 'evCancel' ? 'Cancelled' : 'Pending'; if (a === 'evCancel' && !confirm('Cancel this event? Travel orders already filed for it stay as they are.')) return; act('setEventStatus', { id: t.dataset.id, status: es }, es === 'Confirmed' ? 'Event confirmed' : es === 'Cancelled' ? 'Event cancelled' : 'Event reopened').catch(function(e){ toast(e.message); }); }
-  else if (a === 'evDelete'){ if (confirm('Delete this event for good?')) act('deleteEvent', { id: t.dataset.id }, 'Event deleted').catch(function(e){ toast(e.message); }); }
+  else if (a === 'evConfirm' || a === 'evCancel' || a === 'evReopen'){ var es = a === 'evConfirm' ? 'Confirmed' : a === 'evCancel' ? 'Cancelled' : 'Pending'; if (a === 'evCancel' && !confirm('Cancel this event? Travel orders already filed for it stay as they are.')) return; act('setEventStatus', { id: t.dataset.id, status: es }, es === 'Confirmed' ? 'Event confirmed' : es === 'Cancelled' ? 'Event cancelled' : 'Event reopened').then(refreshPop).catch(function(e){ toast(e.message); }); }
+  else if (a === 'evDelete'){ if (confirm('Delete this event for good?')) act('deleteEvent', { id: t.dataset.id }, 'Event deleted').then(refreshPop).catch(function(e){ toast(e.message); }); }
   else if (a === 'toMarkPrinted'){ var mp = S.travelOrders.filter(function(x){ return x.id === t.dataset.id; })[0]; if (mp) markPrinted([mp]); }
   else if (a === 'toNew') toModal();
   else if (a === 'toEdit') toModal(t.dataset.id);
@@ -2284,6 +2468,8 @@ document.addEventListener('change', function(ev){
   var id = ev.target.id;
   if (id === 'avDate' && ev.target.value){ S.availDate = ev.target.value; render(); }
   if (id === 'toMine'){ S.toMine = ev.target.checked; render(); }
+  if (id === 'calMine'){ S.calMine = ev.target.checked; render(); }
+  if (id === 'invQ'){ S.invQ = ev.target.value.trim(); render(); }
   if (id === 'toQ'){ S.toQ = ev.target.value.trim(); render(); }
   if (id === 'toTy'){ S.toType = ev.target.value; render(); }
   if (id === 'tf' || id === 'tt') drawChips();
@@ -2492,32 +2678,6 @@ function printTO(t, btn){
 })();
 
 /* ---------- calendar: events overview ---------- */
-function eventsOverview(ym, who){
-  var adm = isAdmin(), days = {};
-  function add(d, html){ (days[d] = days[d] || []).push(html); }
-  S.holidays.forEach(function(h){ if (h.date.slice(0, 7) === ym) add(h.date, '<span class="mark hol">' + ic('flag') + '</span><div class="body"><div class="t">' + esc(h.name) + '</div><div class="m">' + esc(h.kind) + ' holiday</div></div>'); });
-  activeTOs().forEach(function(t){
-    if (who && t.usernames.indexOf(who) < 0) return;
-    if (t.dateFrom.slice(0, 7) > ym || t.dateTo.slice(0, 7) < ym) return;
-    var d = t.dateFrom.slice(0, 7) === ym ? t.dateFrom : ym + '-01';
-    add(d, '<span class="mark to">' + ic('route') + '</span><div class="body"><div class="t">' + esc(t.event) + '</div><div class="m">' + esc(t.destination || 'No location') + ' · ' + fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric' }) + ' · ' + t.names.length + ' ' + (t.names.length === 1 ? 'person' : 'people') + '</div></div><span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : 'Pending') + '">TO</span>');
-  });
-  var ev = {};
-  S.entries.forEach(function(e){
-    if (e.type !== 'EARN' || e.status === 'Rejected' || e.date.slice(0, 7) !== ym || e.toId) return;
-    if (who && e.username !== who) return;
-    var k = e.date + '|' + e.event.toLowerCase(); (ev[k] = ev[k] || { e: e, n: [] }).n.push(e.username);
-  });
-  Object.keys(ev).forEach(function(k){ var x = ev[k];
-    add(x.e.date, '<span class="mark earn">' + ic('star') + '</span><div class="body"><div class="t">' + esc(x.e.event) + '</div><div class="m">' + esc(x.e.venue || '') + ' · ' + esc(x.e.category) + (adm && !who ? ' · ' + x.n.map(firstName).join(', ') : '') + '</div></div>');
-  });
-  var keys = Object.keys(days).sort();
-  return keys.length ? '<ul class="list">' + keys.map(function(d){ return '<li class="grp ev-day"><b>' + fDate(d, { weekday:'short', month:'short', day:'numeric' }) + '</b></li>' + days[d].map(function(h){ return '<li class="row tap" data-day="' + d + '" tabindex="0">' + h + '</li>'; }).join(''); }).join('') + '</ul>'
-    : '<div class="empty">No events this month.</div>';
-}
-
-/* ---------- log offset: pick from your travel orders, or the Capitol grounds ---------- */
-var CAPITOL = 'PGCN Capitol Grounds, Daet';
 function toPicks(who){
   var td = today(), from = addDays(td, -60);
   var list = activeTOs().filter(function(t){ return t.usernames.indexOf(who) >= 0 && t.dateFrom <= td && t.dateTo >= from; }).sort(function(a, b){ return a.dateFrom < b.dateFrom ? 1 : -1; }).slice(0, 6);
@@ -3740,9 +3900,9 @@ var Fire = (function(){
   var CFG = window.PIO_FIREBASE || {}, F = null, app = null, auth = null, db = null, booting = null;
   var me = null, member = null, unsub = [], store = null, timer = null, syncing = null, DEF = null;
   var DOMAIN = 'pio-overwatch.local';
-  var COLS = { users: 'username', entries: 'id', travelOrders: 'id', events: 'id', leaves: 'id', tevs: 'id', divisions: 'id', holidays: 'date', credits: 'username', settings: 'id', board: 'id' };
+  var COLS = { users: 'username', entries: 'id', travelOrders: 'id', events: 'id', inventory: 'id', leaves: 'id', tevs: 'id', divisions: 'id', holidays: 'date', credits: 'username', settings: 'id', board: 'id' };
   var PRIVATE = { entries: 1, leaves: 1, credits: 1, tevs: 1 };
-  var ENGINE = { users: 'users', entries: 'entries', travelOrders: 'tos', events: 'events', leaves: 'leaves', tevs: 'tevs', divisions: 'divisions', holidays: 'holidays', credits: 'credits' };
+  var ENGINE = { users: 'users', entries: 'entries', travelOrders: 'tos', events: 'events', inventory: 'inventory', leaves: 'leaves', tevs: 'tevs', divisions: 'divisions', holidays: 'holidays', credits: 'credits' };
   var PH_CAL = 'en.philippines#holiday@group.v.calendar.google.com';
 
   function email(u, k){ return u + (k ? '.' + k : '') + '@' + DOMAIN; }
@@ -3787,7 +3947,7 @@ var Fire = (function(){
   function arrays(){
     function vals(c){ return Object.keys(store[c].docs).map(function(id){ return clone(store[c].docs[id]); }); }
     var settings = store.settings.docs.app ? clone(store.settings.docs.app) : clone(DEF.settings); delete settings.id;
-    return { users: vals('users'), entries: vals('entries'), tos: vals('travelOrders'), events: vals('events'), leaves: vals('leaves'), tevs: vals('tevs'), divisions: vals('divisions').sort(function(a, b){ return (a.order || 0) - (b.order || 0); }),
+    return { users: vals('users'), entries: vals('entries'), tos: vals('travelOrders'), events: vals('events'), inventory: vals('inventory'), leaves: vals('leaves'), tevs: vals('tevs'), divisions: vals('divisions').sort(function(a, b){ return (a.order || 0) - (b.order || 0); }),
       holidays: vals('holidays').sort(function(a, b){ return a.date < b.date ? -1 : 1; }), credits: vals('credits'), settings: settings,
       activity: Object.keys(store.activity.docs).map(function(id){ return store.activity.docs[id]; }).sort(function(a, b){ return a.at < b.at ? 1 : -1; }), board: vals('board') };
   }
@@ -3861,7 +4021,7 @@ var Fire = (function(){
       list.forEach(function(x){
         var id = String(x[keyName]); seen[id] = 1;
         var data = clone(x); delete data.pin; delete data._saving;
-        if (c === 'travelOrders' || c === 'events' || c === 'entries' || c === 'leaves' || c === 'tevs' || c === 'divisions') data.id = id;
+        if (c === 'travelOrders' || c === 'events' || c === 'inventory' || c === 'entries' || c === 'leaves' || c === 'tevs' || c === 'divisions') data.id = id;
         var old = before[c].docs[id];
         if (!old || JSON.stringify(old) !== JSON.stringify(data)) w.push({ c: c, id: id, data: data });
       });
@@ -3913,6 +4073,7 @@ var Fire = (function(){
     if (x.c === 'activity') return true;
     if (x.c === 'entries') return x.data.username === me;
     if (x.c === 'events') return member.role === 'scheduler';
+    if (x.c === 'inventory') return true;
     if (x.c === 'travelOrders'){ var old = store.travelOrders.docs[x.id]; return old ? old.createdBy === me && old.status === 'Filed' && x.data.status === 'Filed' : x.data.createdBy === me && x.data.status === 'Filed'; }
     return false;
   }
@@ -4152,7 +4313,7 @@ var Mock = (function(){
   var holidays = [['2026-01-01',"New Year's Day",'Regular'],['2026-02-17','Chinese New Year','Special'],['2026-04-02','Maundy Thursday','Regular'],['2026-04-03','Good Friday','Regular'],['2026-04-04','Black Saturday','Special'],['2026-04-09','Araw ng Kagitingan','Regular'],['2026-05-01','Labor Day','Regular'],['2026-06-12','Independence Day','Regular'],['2026-08-21','Ninoy Aquino Day','Special'],['2026-08-31','National Heroes Day','Regular'],['2026-09-28','Wenceslao Vinzons Day (Camarines Norte)','Local'],['2026-11-01',"All Saints' Day",'Special'],['2026-11-02',"All Souls' Day",'Special'],['2026-11-30','Bonifacio Day','Regular'],['2026-12-08','Immaculate Conception','Special'],['2026-12-24','Christmas Eve','Special'],['2026-12-25','Christmas Day','Regular'],['2026-12-30','Rizal Day','Regular'],['2026-12-31','Last Day of the Year','Special']]
     .map(function(h){ return { date:h[0], name:h[1], kind:h[2] }; });
   var settings = { workdays: 22, carryCap: 0, wellnessDays: 5, tevBudget: 250000 }, lastWrite = Date.now(), tevs = [];
-  var LT = { VL:'VL', FL:'VL', SL:'SL' }, tos = [], events = [], leaves = [], credits = [];
+  var LT = { VL:'VL', FL:'VL', SL:'SL' }, tos = [], events = [], inventory = [], leaves = [], credits = [];
   function to(fromOff, toOff, event, dest, names, status, tev, by){ var f = addDays(today(), fromOff); tos.push({ id:'t' + (tos.length + 1), toNo: status === 'Prepared' ? 'PIO-2026-' + (100 + tos.length) : '', dateFrom:f, dateTo:addDays(today(), toOff), event:event, destination:dest, names:names.map(function(n){ return n.toUpperCase(); }), usernames:[], status:status, tev:tev, createdBy:by, createdAt:new Date(Date.now() - 3*864e5).toISOString(), updatedBy:'', updatedAt:'' }); }
   to(0, 0, 'Provincial Board regular session coverage', 'Sangguniang Panlalawigan Hall, Daet', ['Juan Dela Cruz','Mark Bautista'], 'Prepared', 'No', 'jdelacruz');
   to(3, 4, 'Livelihood caravan', 'Labo, Camarines Norte', ['Ana Reyes','Juan Dela Cruz','Pedro Ramos'], 'Filed', '', 'areyes');
@@ -4196,6 +4357,17 @@ var Mock = (function(){
   activity.sort(function(a,b){ return a.at < b.at ? 1 : -1; });
   function pub(u){ return { username:u.username, name:u.name, role:u.role, division:u.division, active:u.active, empType:u.empType || 'JO', noPin: u.uid === '', position: u.position || '' }; }
   function find(u){ return users.filter(function(x){ return x.username === String(u||'').toLowerCase(); })[0]; }
+  function canInv(u){ if (u.role === 'admin') return true; var d = divisions.filter(function(x){ return x.id === u.division; })[0]; return !!(d && /production/i.test(d.name)); }
+  // An approved offset for work on a weekday still needs a travel order, so it goes straight to "To prepare".
+  function autoTO(e, me, now){
+    if (e.status !== 'Confirmed' || e.type !== 'EARN' || e.autoToId) return;
+    var w = new Date(e.date + 'T00:00:00').getDay(); if (w < 1 || w > 5) return;
+    if (holidays.some(function(h){ return (h.date || h[0]) === e.date; })) return;
+    var u = find(e.username); if (!u) return;
+    var id = 't' + nid(); e.autoToId = id;
+    tos.push({ id: id, toNo: '', status: 'Filed', tev: '', createdBy: me.username, createdAt: now, usernames: [], dateFrom: e.date, dateTo: e.date, event: 'After-hours work: ' + (e.event || 'offset'), destination: e.venue || 'PIO', names: [String(u.name).toUpperCase()], toType: 'regular', eventId: '', entryId: e.id, auto: true, updatedBy: me.username, updatedAt: now });
+    log(me, 'Started a travel order for an approved weekday offset', e.username, e.date);
+  }
   function bal(u){ return ledgerFor(entries, u, settings.carryCap).avail; }
   function fail(m){ return { ok:false, error:m }; }
   function copy(x){ return JSON.parse(JSON.stringify(x)); }
@@ -4210,7 +4382,7 @@ var Mock = (function(){
     var board = leaves.filter(function(l){ return !/^ADJ/.test(l.type); }).map(function(l){ return { username:l.username, from:l.dateFrom, to:l.dateTo, kind:'leave', label: adm || l.username === me.username ? l.type : '' }; });
     if (!adm) entries.forEach(function(e){ if (e.type === 'USE' && e.status === 'Confirmed' && e.username !== me.username) board.push({ username:e.username, from:e.date, to:e.date, kind:'off', label:'' }); });
     return { me:pub(me), users: users.map(pub), divisions:copy(divisions), holidays:copy(holidays), settings:copy(settings), activity: adm ? copy(activity) : [], entries: copy(entries.filter(function(e){ return adm || e.username === me.username; })),
-      lastWrite: lastWrite, travelOrders: copy(tos), events: copy(events), tevs: copy(tevs.filter(function(v){ return adm || v.username === me.username; })), leaves: copy(leaves.filter(function(l){ return adm || l.username === me.username; })), credits: copy(credits.filter(function(c){ return adm || c.username === me.username; })), board: board }; }
+      lastWrite: lastWrite, travelOrders: copy(tos), events: copy(events), inventory: (canInv(me) ? copy(inventory) : []), tevs: copy(tevs.filter(function(v){ return adm || v.username === me.username; })), leaves: copy(leaves.filter(function(l){ return adm || l.username === me.username; })), credits: copy(credits.filter(function(c){ return adm || c.username === me.username; })), board: board }; }
   /* Shared with the Firebase layer: the same rules run in the browser, and the changes are written to Firestore. */
   var OP = '', K = 0, extBoard = null;
   function nid(){ return OP ? OP.replace(/[^A-Za-z0-9_-]/g, '') + '-' + (++K) : Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + (++K); }
@@ -4234,8 +4406,8 @@ var Mock = (function(){
   }
   return { bump: function(){ lastWrite = Date.now(); },
     engine: {
-      load: function(o){ users = o.users; entries = o.entries; divisions = o.divisions; holidays = o.holidays; settings = o.settings; activity = o.activity; tos = o.tos; events = o.events || []; leaves = o.leaves; credits = o.credits; tevs = o.tevs; extBoard = o.board || null; sessions = {}; },
-      dump: function(){ return { users: users, entries: entries, divisions: divisions, holidays: holidays, settings: settings, activity: activity, tos: tos, events: events, leaves: leaves, credits: credits, tevs: tevs }; },
+      load: function(o){ users = o.users; entries = o.entries; divisions = o.divisions; holidays = o.holidays; settings = o.settings; activity = o.activity; tos = o.tos; events = o.events || []; inventory = o.inventory || []; leaves = o.leaves; credits = o.credits; tevs = o.tevs; extBoard = o.board || null; sessions = {}; },
+      dump: function(){ return { users: users, entries: entries, divisions: divisions, holidays: holidays, settings: settings, activity: activity, tos: tos, events: events, inventory: inventory, leaves: leaves, credits: credits, tevs: tevs }; },
       board: boardOf,
       run: function(username, a, p){ sessions.fb = username; return Mock.api(a, p, 'fb'); },
       data: function(username){ var me = find(username); return me ? data(me) : null; }
@@ -4255,7 +4427,7 @@ var Mock = (function(){
       var who = adm && p.username ? p.username : me.username, f = earn(p);
       if (entries.some(function(e){ return e.username === who && e.type === 'EARN' && e.date === f.date && e.category === f.category && e.status !== 'Rejected'; })) return fail('An offset for this date and type is already logged.');
       var auto = adm && (who !== me.username || others(me) === 0);
-      entries.push(Object.assign({ id:'e' + nid(), username:who, type:'EARN', status: auto ? 'Confirmed' : 'Pending', note:'', createdBy:me.username, createdAt:now, reviewedBy: auto ? me.username : '', reviewedAt: auto ? now : '' }, f));
+      entries.push(Object.assign({ id:'e' + nid(), username:who, type:'EARN', status: auto ? 'Confirmed' : 'Pending', note:'', createdBy:me.username, createdAt:now, reviewedBy: auto ? me.username : '', reviewedAt: auto ? now : '' }, f)); if (auto) autoTO(entries[entries.length - 1], me, now);
       log(me, auto ? 'Added a confirmed offset' : 'Logged an offset', who, f.event + ' · ' + f.date + ' · ' + f.days + ' day(s)'); return ok(me);
     }
     if (a === 'editEntry'){ var x = entries.filter(function(e){ return e.id === p.id; })[0]; if (!x || x.status !== 'Pending') return fail('Only entries waiting for review can be edited.'); if (!adm && x.username !== me.username) return fail('You can only edit your own entries.');
@@ -4266,7 +4438,26 @@ var Mock = (function(){
       log(me, 'Requested a day off', me.username, p.date + ' · ' + dd + ' day(s)'); return ok(me); }
     if (a === 'deleteEntry'){ var i = entries.findIndex(function(e){ return e.id === p.id; }); if (i < 0) return fail('Entry not found.'); var e = entries[i]; if (!adm && !(e.username === me.username && e.status === 'Pending')) return fail('You can only remove your own pending entries.'); entries.splice(i,1); log(me, 'Removed an entry', e.username, e.date + ' · ' + e.days + ' day(s)'); return ok(me); }
     if (a === 'changePin'){ if (p.oldPin !== me.pin) return fail('Current PIN is wrong.'); if (!/^\d{4,6}$/.test(p.newPin)) return fail('PIN must be 4 to 6 digits.'); me.pin = p.newPin; log(me, 'Changed own PIN', me.username); return ok(me); }
-    if (a === 'saveEvent' || a === 'setEventStatus' || a === 'deleteEvent'){
+    if (a === 'saveItem' || a === 'checkoutItem' || a === 'checkinItem' || a === 'setItemStatus' || a === 'deleteItem'){
+      if (!canInv(me)) return fail('Inventory is for the Production team and admins.');
+      if (a === 'saveItem'){
+        var itN = String(p.name || '').trim(); if (itN.length < 2) return fail('Write the item name.');
+        var itX = p.id ? inventory.filter(function(x){ return x.id === p.id; })[0] : null; if (p.id && !itX) return fail('That item was not found.');
+        var itF = { name: itN, category: String(p.category || 'Other').slice(0, 40), tag: String(p.tag || '').trim().slice(0, 40), serial: String(p.serial || '').trim().slice(0, 60), note: String(p.note || '').trim().slice(0, 300), updatedBy: me.username, updatedAt: now };
+        if (itX){ Object.assign(itX, itF); log(me, 'Edited equipment', itN); return ok(me, { id: itX.id }); }
+        var itNew = Object.assign({ id: 'i' + nid(), status: 'Available', holder: '', eventId: '', dueBack: '', outAt: '', history: [], createdBy: me.username, createdAt: now }, itF);
+        inventory.push(itNew); log(me, 'Added equipment', itN); return ok(me, { id: itNew.id });
+      }
+      var itO = inventory.filter(function(x){ return x.id === p.id; })[0]; if (!itO) return fail('That item was not found.');
+      var itH = function(act, who, note){ itO.history = [{ at: now, by: me.username, act: act, who: who || '', note: String(note || '').slice(0, 200) }].concat(itO.history || []).slice(0, 20); itO.updatedBy = me.username; itO.updatedAt = now; };
+      if (a === 'deleteItem'){ if (me.role !== 'admin') return fail('Only an admin can delete equipment.'); inventory.splice(inventory.indexOf(itO), 1); log(me, 'Deleted equipment', itO.name); return ok(me); }
+      if (a === 'checkoutItem'){ if (itO.status !== 'Available') return fail('This item is not available.'); var itU = find(p.holder); if (!itU) return fail('Pick who is borrowing it.');
+        itO.status = 'Out'; itO.holder = itU.username; itO.eventId = String(p.eventId || ''); itO.dueBack = /^\d{4}-\d\d-\d\d$/.test(p.dueBack || '') ? p.dueBack : ''; itO.outAt = now; itH('Checked out', itU.username, p.note); log(me, 'Checked out equipment', itO.name, itU.username); return ok(me); }
+      if (a === 'checkinItem'){ if (itO.status !== 'Out') return fail('This item is not checked out.'); var itB = itO.holder; itO.status = 'Available'; itO.holder = ''; itO.eventId = ''; itO.dueBack = ''; itO.outAt = ''; itH('Returned', itB, p.note); log(me, 'Returned equipment', itO.name, itB); return ok(me); }
+      if (['Available', 'Repair', 'Missing'].indexOf(p.status) < 0) return fail('Unknown status.');
+      itO.status = p.status; itO.holder = ''; itO.eventId = ''; itO.dueBack = ''; itO.outAt = ''; itH(p.status === 'Available' ? 'Marked available' : p.status === 'Repair' ? 'Sent for repair' : 'Marked missing', '', p.note); log(me, 'Updated equipment', itO.name, p.status); return ok(me);
+    }
+    if (a === 'saveEvent' || a === 'setEventStatus' || a === 'deleteEvent' || a === 'assignEvent'){
       if (!(adm || me.role === 'scheduler')) return fail('Only the event scheduler or an admin can do that.');
       if (a === 'saveEvent'){
         var evT = String(p.title || '').trim(), evV = String(p.venue || '').trim(), ev1 = String(p.date || ''), ev2 = String(p.dateTo || '') || ev1;
@@ -4276,12 +4467,17 @@ var Mock = (function(){
         if (!evV) return fail('Write where the event is.');
         var evX = p.id ? events.filter(function(x){ return x.id === p.id; })[0] : null;
         if (p.id && !evX) return fail('That event was not found.');
-        var evF = { title: evT, venue: evV, date: ev1, dateTo: ev2, time: /^\d\d:\d\d$/.test(p.time || '') ? p.time : '', requester: String(p.requester || '').trim().slice(0, 120), needs: (Array.isArray(p.needs) ? p.needs : []).map(String).filter(Boolean).slice(0, 12), note: String(p.note || '').trim().slice(0, 400), updatedBy: me.username, updatedAt: now };
+        var evF = { title: evT, venue: evV, date: ev1, dateTo: ev2, time: /^\d\d:\d\d$/.test(p.time || '') ? p.time : '', requester: String(p.requester || '').trim().slice(0, 120), needs: (Array.isArray(p.needs) ? p.needs : []).map(String).filter(Boolean).slice(0, 12), note: String(p.note || '').trim().slice(0, 400), timeEnd: /^\d\d:\d\d$/.test(p.timeEnd || '') ? p.timeEnd : '', kind: p.kind === 'tasking' ? 'tasking' : 'travel', contact: String(p.contact || '').trim().slice(0, 120), needOther: String(p.needOther || '').trim().slice(0, 120), updatedBy: me.username, updatedAt: now };
+        if (evF.time && evF.timeEnd && ev1 === ev2 && evF.timeEnd <= evF.time) return fail('The end time is before the start time.');
         if (evX){ Object.assign(evX, evF); if (!adm && evX.status === 'Confirmed'){ evX.status = 'Pending'; evX.confirmedBy = ''; evX.confirmedAt = ''; } log(me, 'Edited an event', evT, ev1); return ok(me, { id: evX.id }); }
         var evN = Object.assign({ id: 'ev' + nid(), status: adm ? 'Confirmed' : 'Pending', createdBy: me.username, createdAt: now, confirmedBy: adm ? me.username : '', confirmedAt: adm ? now : '' }, evF);
         events.push(evN); log(me, 'Added an event', evT, ev1 + ' · ' + evV); return ok(me, { id: evN.id });
       }
       var evO = events.filter(function(x){ return x.id === p.id; })[0]; if (!evO) return fail('That event was not found.');
+      if (a === 'assignEvent'){ if (evO.status === 'Cancelled') return fail('This event is cancelled.');
+        var evW = (Array.isArray(p.users) ? p.users : []).map(String).filter(function(u, i, arr){ return arr.indexOf(u) === i && users.some(function(x){ return x.username === u && x.active; }); });
+        evO.assigned = evW; evO.assignedBy = me.username; evO.assignedAt = now; evO.updatedBy = me.username; evO.updatedAt = now;
+        log(me, 'Updated a dispatch order', evO.title, evW.length + ' person(s)'); return ok(me, { id: evO.id }); }
       if (a === 'deleteEvent'){ if (!adm && evO.status !== 'Pending') return fail('Only an admin can delete a confirmed event.'); events.splice(events.indexOf(evO), 1); log(me, 'Deleted an event', evO.title, evO.date); return ok(me); }
       if (['Confirmed', 'Pending', 'Cancelled'].indexOf(p.status) < 0) return fail('Unknown status.');
       if (p.status === 'Confirmed' && !adm) return fail('Only an admin can confirm an event.');
@@ -4348,7 +4544,7 @@ var Mock = (function(){
     if (a === 'review' || a === 'reviewMany'){ var ids = a === 'review' ? [p.id] : p.ids, c = 0;
       if (a === 'review' && entries.some(function(e){ return e.id === p.id && e.username === me.username; }) && others(me)) return fail('Another admin needs to review your own entry.');
       entries.forEach(function(e){ if (ids.indexOf(e.id) < 0 || e.status !== 'Pending' || (e.username === me.username && others(me))) return; if (e.type === 'USE' && p.decision === 'Confirmed' && e.days > bal(e.username)) return;
-        e.status = p.decision; e.reviewedBy = me.username; e.reviewedAt = now; if (p.decision === 'Rejected') e.note = p.note || ''; c++; log(me, (p.decision === 'Confirmed' ? 'Approved ' : 'Rejected ') + (e.type === 'USE' ? 'a day-off request' : 'an offset'), e.username, e.date + (p.note ? ' · Reason: ' + p.note : '')); });
+        e.status = p.decision; e.reviewedBy = me.username; e.reviewedAt = now; if (p.decision === 'Rejected') e.note = p.note || ''; autoTO(e, me, now); c++; log(me, (p.decision === 'Confirmed' ? 'Approved ' : 'Rejected ') + (e.type === 'USE' ? 'a day-off request' : 'an offset'), e.username, e.date + (p.note ? ' · Reason: ' + p.note : '')); });
       return c ? ok(me, c) : fail('Nothing was reviewed.'); }
     if (a === 'recordUse'){ var dy = Number(p.days), b = bal(p.username); if (!(dy >= 0.5) || dy > 30 || dy * 2 !== Math.round(dy * 2)) return fail('Days must be in half-day steps, from ½ to 30.'); if (dy > b) return fail(find(p.username).name + ' has only ' + fD(b) + ' available.');
       entries.push({ id:'e' + nid(), username:p.username, type:'USE', date:p.date, category:'Used', days:dy, event:'', venue:'', endTime:'', status:'Confirmed', note:'', createdBy:me.username, createdAt:now, reviewedBy:me.username, reviewedAt:now }); log(me, 'Recorded offset use', p.username, p.date + ' · ' + dy + ' day(s)'); return ok(me); }
