@@ -809,6 +809,7 @@ var ICONS = {
   upload:'<path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
   download:'<path d="M12 4v12M7 11l5 5 5-5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
   print:'<path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   refresh:'<path d="M20 11a8 8 0 0 0-14.6-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.6 4.5L20 16M20 20v-4h-4"/>',
   eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   cog:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
@@ -972,7 +973,7 @@ function navItems(){
   return [['dashboard','grid','Dashboard','Overview'],['log','plus','Log offset','Offsets'],['travel','route','Travel orders','Field work'],
        ['calendar','cal','Calendar','Overview'],tev,['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets']].concat(wlOnly() ? [['leaves','plane','Wellness leave','Leaves']] : []);
 }
-var SHORT = { travel: 'Travel', availability: 'Who’s in', log: 'Log', leaves: 'Leaves', approvals: 'Review' };
+var SHORT = { dashboard: 'Home', travel: 'Travel', availability: 'Who’s in', log: 'Log', leaves: 'Leaves', approvals: 'Review' };
 function sideNav(nav, navBtn){
   var order = ['Overview','Field work','Offsets','Leaves','Admin'], html = '';
   order.forEach(function(g){ var items = nav.filter(function(n){ return n[3] === g; }); if (items.length) html += '<div class="nav-h">' + g + '</div>' + items.map(navBtn).join(''); });
@@ -1015,23 +1016,23 @@ function render(){
   var html = banner + '<a class="skip" href="#main">Skip to content</a>' +
     '<div class="shell">' +
       '<div class="drawer-scrim" data-act="drawerClose"></div><aside class="side" id="sidenav"><div class="brand"><img src="' + LOGO + '" alt="Provincial Information Office seal"><div><b>PIO Overwatch</b><small>Camarines Norte</small></div></div>' +
-        '<nav class="nav" aria-label="Main">' + sideNav(nav, navBtn) + '</nav>' +
+        '<nav class="nav" aria-label="Main">' + '<button data-act="search" class="side-search" aria-keyshortcuts="/">' + ic('search') + '<span>Search</span><kbd>/</kbd></button>' + sideNav(nav, navBtn) + '</nav>' +
         '<div class="side-foot"><div class="who">' + (myDiv ? divBadge(myDiv, 36) : '<span class="avatar">' + esc(initials(S.me.name)) + '</span>') +
           '<div style="min-width:0"><b>' + esc(S.me.name) + '</b><small><span class="cap">' + esc(S.me.role === 'scheduler' ? 'event scheduler' : S.me.role) + '</span> · ' + (myDiv ? esc(myDiv.short) : '@' + esc(S.me.username)) + '</small></div></div>' +
         '<div class="nav">' + (S.view === 'dashboard' ? '<button data-act="customize" class="show-sm">' + ic('sliders') + '<span>Customize dashboard</span></button>' : '') + bellBtn(true) + '<button data-act="refresh">' + ic('refresh') + '<span>Refresh</span></button><button data-act="changePin">' + ic('key') + '<span>Change PIN</span></button><button data-act="logout">' + ic('out') + '<span>Sign out</span></button></div></div>' +
       '</aside>' +
       '<div style="min-width:0">' +
-        '<header class="topbar"><button data-act="drawer" aria-label="Open menu" aria-controls="sidenav" aria-expanded="false">' + ic('menu') + '</button><img src="' + LOGO + '" alt=""><b>PIO Overwatch</b>' + bellBtn(false) + '<button data-act="refresh" aria-label="Refresh">' + ic('refresh') + '</button></header>' +
+        '<header class="topbar"><button data-act="drawer" aria-label="Open menu" aria-controls="sidenav" aria-expanded="false">' + ic('menu') + '</button><img src="' + LOGO + '" alt=""><b>PIO Overwatch</b>' + '<button data-act="search" aria-label="Search">' + ic('search') + '</button>' + bellBtn(false) + '<button data-act="refresh" aria-label="Refresh">' + ic('refresh') + '</button></header>' +
         '<main class="main" id="main" tabindex="-1">' +
           '<section class="band"><div class="band-in"><div><p class="eyebrow">' + (v.eyebrow || 'PIO Overwatch') + '</p><h1>' + v.title + '</h1>' + (v.sub ? '<p' + (S.view === 'dashboard' ? ' class="keep-sub"' : '') + '>' + v.sub + '</p>' : '') + '</div>' + (v.actions ? '<div class="row-btns no-print">' + v.actions + '</div>' : '') + '</div></section>' +
           '<div class="wrap">' + v.body + '</div>' +
         '</main>' +
       '</div>' +
-      '<nav class="tabbar" aria-label="Main">' + tabs.map(function(n){ return navBtn([n[0], n[1], SHORT[n[0]] || n[2]]); }).join('') + '</nav>' +
+      '<nav class="tabbar" aria-label="Quick links">' + tabs.map(function(n){ return navBtn([n[0], n[1], SHORT[n[0]] || n[2]]); }).join('') + '</nav>' +
     '</div>';
   if (same){
     // same page: change only what changed, so background updates do not flash or jump
-    var tpl = document.createElement('div'); tpl.innerHTML = html; groupify(tpl);
+    var tpl = document.createElement('div'); tpl.innerHTML = html; groupify(tpl); if (typeof a11yFix === 'function') a11yFix(tpl);
     morphKids(app, tpl); resetControls(app, kept);
     if (kept) restoreForm(kept);
     var dr = app.querySelector('[data-act="drawer"]'), ex = String(document.body.classList.contains('drawer-open')); if (dr && dr.getAttribute('aria-expanded') !== ex) dr.setAttribute('aria-expanded', ex);
@@ -1039,8 +1040,9 @@ function render(){
     app.innerHTML = html;
     document.body.classList.remove('drawer-open');
     window.scrollTo(0, y);
-    groupify(app);
+    groupify(app); if (typeof a11yFix === 'function') a11yFix(app);
   }
+  if (typeof navSync === 'function') navSync();
   if (S.view === 'log') checkEarnForm(document, true);
 }
 
@@ -1934,14 +1936,17 @@ function prepPrompt(t, tev, pr){
 }
 /* ----- Events, dispatch orders and the shared calendar ----- */
 var EV_NEEDS = ['Photo Documentation', 'Video Documentation', 'Livestreaming', 'News and Write-up', 'Emcee or Hosting', 'Other'];
-var EV_LABEL = { need: 'Needs dispatching', wait: 'Dispatch in progress', ok: 'Dispatched', off: 'Cancelled' };
+var EV_LABEL = { need: 'Incomplete', wait: 'Waiting for TO', ok: 'Ready', off: 'Cancelled' };
+/* An event is incomplete until it has a place and the people who will cover it. It can be saved incomplete. */
+function evMissing(e){ var m = []; if (!String(e.venue || '').trim()) m.push('place'); if (!evPeople(e).length) m.push('people'); else if (evKind(e) === 'tasking' && e.crewOpen) m.push('more people'); return m; }
 function inProd(){ if (!S.me) return false; if (isAdmin()) return true; var d = divOf(S.me.division); return !!(d && /production/i.test(d.name)); }
 function dayDiff(a, b){ return Math.round((pd(a) - pd(b)) / 864e5); }
 function evKind(e){ return e.kind === 'tasking' ? 'tasking' : 'travel'; }
 function evLinked(e){ return S.travelOrders.filter(function(t){ return t.eventId === e.id && t.status !== 'Cancelled'; }); }
 function evState(e){
   if (e.status === 'Cancelled') return 'off';
-  if (evKind(e) === 'tasking') return (e.assigned || []).length ? 'ok' : 'need';
+  if (!String(e.venue || '').trim()) return 'need';
+  if (evKind(e) === 'tasking') return (e.assigned || []).length && !e.crewOpen ? 'ok' : 'need';
   var ts = evLinked(e);
   return !ts.length ? 'need' : ts.some(function(t){ return t.status === 'Prepared'; }) ? 'ok' : 'wait';
 }
@@ -1986,7 +1991,7 @@ function evModal(id){
   modal(e.id ? 'Edit event' : 'Add an event',
     '<input type="hidden" name="id" value="' + esc(e.id || '') + '">' +
     '<div class="field"><label for="evt">Event name</label><input class="input" id="evt" name="title" maxlength="160" value="' + esc(e.title) + '" placeholder="e.g. Provincial Board regular session" required></div>' +
-    '<div class="field"><label for="evv">Location</label><input class="input" id="evv" name="venue" maxlength="160" value="' + esc(e.venue) + '" placeholder="e.g. Capitol Gym, Daet" required></div>' +
+    '<div class="field"><label for="evv">Location <span class="hint">(you can add it later)</span></label><input class="input" id="evv" name="venue" maxlength="160" value="' + esc(e.venue) + '" placeholder="e.g. Capitol Gym, Daet"></div>' +
     '<div class="two"><div class="field"><label for="evd1">When</label><input class="input" id="evd1" name="date" type="date" value="' + esc(e.date) + '" required></div><div class="field"><label for="evd2">Until when <span class="hint">(if more than one day)</span></label><input class="input" id="evd2" name="dateTo" type="date" value="' + (e.dateTo && e.dateTo !== e.date ? esc(e.dateTo) : '') + '"></div></div>' +
     '<div class="two"><div class="field"><label for="evtm">Time of the event</label><input class="input" id="evtm" name="time" type="time" value="' + esc(e.time || '') + '"></div><div class="field"><label for="evte">Until what time</label><input class="input" id="evte" name="timeEnd" type="time" value="' + esc(e.timeEnd || '') + '"></div></div>' +
     '<fieldset class="field" style="border:0;padding:0;margin:0 0 12px"><legend class="label" style="margin-bottom:6px">How will staff be sent?</legend><div class="seg">' + kinds.map(function(o, i){ return '<input type="radio" name="kind" id="evk' + i + '" value="' + o[0] + '"' + (evKind(e) === o[0] ? ' checked' : '') + '><label for="evk' + i + '"><b>' + o[1] + '</b><small>' + o[2] + '</small></label>'; }).join('') + '</div></fieldset>' +
@@ -2026,7 +2031,7 @@ function evCard(e){
     if (adm || e.status === 'Pending') acts += '<button type="button" class="btn btn-sm btn-danger" data-act="evDelete" data-id="' + e.id + '">' + ic('trash') + 'Delete</button>';
   }
   return '<article class="dcard ' + st + '"><h4>' + esc(e.title) + ' <span class="pill e-' + st + '">' + EV_LABEL[st] + '</span>' + (e.status === 'Pending' ? '<span class="pill Pending">Unconfirmed</span>' : '') + (mine ? '<span class="pill Confirmed">You</span>' : '') + '</h4><dl>' +
-    row('Date', esc(evDates(e))) + (evTimes(e) ? row('Time', esc(evTimes(e))) : '') + row('Place', esc(e.venue)) +
+    row('Date', esc(evDates(e))) + (evTimes(e) ? row('Time', esc(evTimes(e))) : '') + row('Place', e.venue ? esc(e.venue) : '<span class="pill e-need">Not set yet</span>') +
     row('Sent by', tasking ? 'Dispatch order <span class="hint">(within the Capitol)</span>' : 'Travel order') + row('Dispatched', people) +
     row('Needed', evNeedsText(e).length ? evNeedsText(e).map(function(n){ return '<span class="pill off">' + esc(n) + '</span>'; }).join(' ') : '<span class="hint">Not specified</span>') +
     (e.requester ? row('Requested by', esc(e.requester)) : '') + (e.contact ? row('Contact', esc(e.contact)) : '') + (e.note ? row('Notes', esc(e.note)) : '') +
@@ -2094,13 +2099,13 @@ function viewCalendar(){
   var unconf = up.filter(function(e){ return e.status === 'Pending'; }).length, nx = up[0], nn = up.filter(function(e){ return evState(e) === 'need'; })[0];
   var tiles = '<div class="tiles cal4" style="margin-bottom:16px">' + [
     ['upcoming', 'Upcoming', 'cal', String(up.length), (nx ? 'Next: ' + evRelText(nx) : 'Nothing scheduled') + (cs && unconf ? ' · ' + unconf + ' unconfirmed' : ''), ''],
-    ['need', 'Needs dispatch', 'megaphone', String(cnt.need), cnt.need ? 'Next: ' + evRelText(nn) : 'All covered', cnt.need ? 'bad' : ''],
-    ['wait', 'In progress', 'clock', String(cnt.wait), 'Travel order not prepared', cnt.wait ? 'warn' : ''],
-    ['ok', 'Dispatched', 'check', String(cnt.ok), 'Dispatch order or travel order ready', 'ok']
+    ['need', 'Incomplete', 'megaphone', String(cnt.need), cnt.need ? 'No place or people yet · next ' + evRelText(nn) : 'Nothing missing', cnt.need ? 'bad' : ''],
+    ['wait', 'Waiting for TO', 'clock', String(cnt.wait), 'People named, travel order not prepared', cnt.wait ? 'warn' : ''],
+    ['ok', 'Ready', 'check', String(cnt.ok), 'People assigned, papers done', 'ok']
   ].map(function(x){ return tile(x[1], x[3], x[4], x[5], x[2], 'data-act="evTile" data-f="' + x[0] + '"'); }).join('') + '</div>';
   var st = { to: 0, leave: 0, off: 0 }, act = S.users.filter(function(u){ return u.active; }); act.forEach(function(u){ var s = statusOn(u.username, td); if (s) st[s.kind === 'off' ? 'off' : s.kind]++; });
   var strip = '<div class="mcstrip"><span><b>' + (act.length - st.to - st.leave - st.off) + '</b> in the office today</span><span><b>' + st.to + '</b> on travel</span><span><b>' + (st.leave + st.off) + '</b> on leave or day off</span><button type="button" class="btn btn-sm btn-ghost" data-act="dayPop" data-d="' + td + '">See who</button></div>';
-  var legend = '<div class="legend lgscroll" style="padding:0"><span><i class="lg b-need"></i>Needs dispatching</span><span><i class="lg b-wait"></i>Dispatch in progress</span><span><i class="lg b-ok"></i>Dispatched</span><span><i class="lg b-to"></i>On travel</span><span><i class="lg b-lv"></i>Leave or day off</span><span><i class="lg b-un"></i>Unconfirmed</span><span>★ Yours</span></div>';
+  var legend = '<div class="legend lgscroll" style="padding:0"><b class="lgh">Events</b><span><i class="lg b-need"></i>! Incomplete</span><span><i class="lg b-wait"></i>… Waiting for TO</span><span><i class="lg b-ok"></i>✓ Ready</span><span class="lgsep" aria-hidden="true"></span><b class="lgh">People</b><span><i class="lg b-to"></i>On travel</span><span><i class="lg b-lv"></i>Leave or day off</span><span class="lgsep" aria-hidden="true"></span><span><i class="lg b-un"></i>Not yet confirmed</span><span>★ Yours</span></div>';
   return { eyebrow: 'Calendar', title: first.toLocaleDateString('en-PH', { month:'long', year:'numeric' }), sub: 'Events, travel, leaves and days off in one place. Tap a day to see everything about it.',
     actions: '<button type="button" class="btn btn-glass" data-act="calPrev" aria-label="Previous month">' + ic('left') + '</button><button type="button" class="btn btn-glass" data-act="calToday">Today</button><button type="button" class="btn btn-glass" data-act="calNext" aria-label="Next month">' + ic('right') + '</button>' + (cs ? '<button type="button" class="btn btn-sun" data-act="evNew">' + ic('plus') + 'Add event</button>' : ''),
     body: tiles + '<section class="panel"><div class="mcbar">' + strip + '<label class="keep" style="font-size:13.5px"><input type="checkbox" id="calMine"' + (S.calMine ? ' checked' : '') + '>Only mine</label></div><div class="mcbar" style="padding-top:0">' + legend + '</div>' +
@@ -2114,7 +2119,7 @@ function myAlerts(){
   S.events.forEach(function(e){
     if (e.status === 'Cancelled' || e.dateTo < td) return;
     if (evMine(e, me)){ out.push({ id: 'asg:' + e.id, e: e, kind: 'assigned', text: 'You are dispatched: ' + e.title }); var n = dayDiff(e.date, td); if (n >= 0 && n <= 1) out.push({ id: 'rem:' + e.id + ':' + td, e: e, kind: 'reminder', text: (n === 0 ? 'Today: ' : 'Tomorrow: ') + e.title }); }
-    else if (canSched() && evState(e) === 'need' && dayDiff(e.date, td) <= 7) out.push({ id: 'need:' + e.id, e: e, kind: 'need', text: 'Needs dispatching ' + evRelText(e) + ': ' + e.title });
+    else if (canSched() && evState(e) === 'need' && dayDiff(e.date, td) <= 7) out.push({ id: 'need:' + e.id, e: e, kind: 'need', text: 'Incomplete event ' + evRelText(e) + ': ' + e.title });
   });
   S.travelOrders.forEach(function(t){ if (t.status === 'Prepared' && t.dateTo >= td && (t.usernames || []).indexOf(me) >= 0) out.push({ id: 'to:' + t.id, kind: 'to', text: 'Travel order ready: ' + t.event }); });
   return out;
@@ -2133,7 +2138,7 @@ function checkNotify(){
   var done = nGet('notified'), fresh = myAlerts().filter(function(a){ return done.indexOf(a.id) < 0; });
   if (!fresh.length) return;
   nSet('notified', done.concat(fresh.map(function(a){ return a.id; })).slice(-200));
-  fresh.slice(0, 3).forEach(function(a){ showSys(a.kind === 'assigned' ? 'New dispatch' : a.kind === 'reminder' ? 'Reminder' : a.kind === 'need' ? 'Needs dispatching' : 'Travel order ready', a.text, a.id); });
+  fresh.slice(0, 3).forEach(function(a){ showSys(a.kind === 'assigned' ? 'New dispatch' : a.kind === 'reminder' ? 'Reminder' : a.kind === 'need' ? 'Incomplete event' : 'Travel order ready', a.text, a.id); });
 }
 function notifModal(){
   var al = myAlerts(), seen = nGet('seen'), ds = devNotifState();
@@ -2147,7 +2152,7 @@ function bellBtn(side){ var n = unreadCount(); return side ? '<button data-act="
 function needSoon(){ var td = today(), lim = addDays(td, 7); return S.events.filter(function(e){ return e.status !== 'Cancelled' && e.dateTo >= td && e.date <= lim && evState(e) === 'need'; }).length; }
 function navBadge(id, pc){
   if (id === 'approvals') return pc ? '<span class="badge">' + pc + '</span>' : '';
-  if (id === 'calendar' && canSched()){ var n = needSoon(); return n ? '<span class="badge bad">' + n + '<span class="sr"> events need dispatching soon</span></span>' : ''; }
+  if (id === 'calendar' && canSched()){ var n = needSoon(); return n ? '<span class="badge bad">' + n + '<span class="sr"> events are incomplete</span></span>' : ''; }
   if (id === 'travel' && isAdmin()){ var k = S.travelOrders.filter(function(t){ return t.status === 'Filed'; }).length; return k ? '<span class="badge">' + k + '<span class="sr"> travel orders to prepare</span></span>' : ''; }
   return '';
 }
@@ -2159,7 +2164,7 @@ function comingWidget(n){
   var body = '';
   if (cs && win.length) body += '<div class="mcbar" style="padding-bottom:4px"><span class="mcstrip"><span><b>' + covered + ' of ' + win.length + '</b> events in the next 2 weeks have people assigned</span>' + (win.length - covered ? '<span class="pill e-need">' + (win.length - covered) + ' still need dispatching</span>' : '<span class="pill e-ok">All covered</span>') + '</span></div>';
   if (mine.length) body += '<div class="dsec" style="padding:0 16px">My taskings</div><ul class="evlist">' + mine.slice(0, 5).map(evLine).join('') + '</ul>';
-  if (cs && need.length) body += '<div class="dsec" style="padding:0 16px">Needs dispatching</div><ul class="evlist">' + need.slice(0, 4).map(evLine).join('') + '</ul>';
+  if (cs && need.length) body += '<div class="dsec" style="padding:0 16px">Incomplete</div><ul class="evlist">' + need.slice(0, 4).map(evLine).join('') + '</ul>';
   if (!cs && !mine.length && up.length) body += '<div class="dsec" style="padding:0 16px">Coming up in the office</div><ul class="evlist">' + up.slice(0, 4).map(evLine).join('') + '</ul>';
   if (!body && !cs) return '';
   if (!body) body = empty('megaphone', 'No events or taskings coming up', cs ? 'Add events from request letters so the office sees them early.' : 'You have nothing assigned right now.', cs ? '<button class="btn btn-primary" data-act="evNew">' + ic('plus') + 'Add event</button>' : '');
@@ -4484,10 +4489,9 @@ var Mock = (function(){
         if (evT.length < 3) return fail('Write the event name.');
         if (!/^\d{4}-\d\d-\d\d$/.test(ev1)) return fail('Pick the event date.');
         if (ev2 < ev1) return fail('The end date is before the start date.');
-        if (!evV) return fail('Write where the event is.');
         var evX = p.id ? events.filter(function(x){ return x.id === p.id; })[0] : null;
         if (p.id && !evX) return fail('That event was not found.');
-        var evF = { title: evT, venue: evV, date: ev1, dateTo: ev2, time: /^\d\d:\d\d$/.test(p.time || '') ? p.time : '', requester: String(p.requester || '').trim().slice(0, 120), needs: (Array.isArray(p.needs) ? p.needs : []).map(String).filter(Boolean).slice(0, 12), note: String(p.note || '').trim().slice(0, 400), timeEnd: /^\d\d:\d\d$/.test(p.timeEnd || '') ? p.timeEnd : '', kind: p.kind === 'tasking' ? 'tasking' : 'travel', contact: String(p.contact || '').trim().slice(0, 120), needOther: String(p.needOther || '').trim().slice(0, 120), updatedBy: me.username, updatedAt: now };
+        var evF = { title: evT, venue: evV, date: ev1, dateTo: ev2, time: /^\d\d:\d\d$/.test(p.time || '') ? p.time : '', requester: String(p.requester || '').trim().slice(0, 120), needs: (Array.isArray(p.needs) ? p.needs : []).map(String).filter(Boolean).slice(0, 12), note: String(p.note || '').trim().slice(0, 400), timeEnd: /^\d\d:\d\d$/.test(p.timeEnd || '') ? p.timeEnd : '', kind: p.kind === 'tasking' && !(function(){ for (var d = ev1; d <= (ev2 || ev1); d = addDays(d, 1)){ var w = new Date(d + 'T00:00:00').getDay(); if (w === 0 || w === 6) return true; if (d > addDays(ev1, 31)) break; } return false; })() ? 'tasking' : 'travel', contact: String(p.contact || '').trim().slice(0, 120), needOther: String(p.needOther || '').trim().slice(0, 120), updatedBy: me.username, updatedAt: now };
         if (evF.time && evF.timeEnd && ev1 === ev2 && evF.timeEnd <= evF.time) return fail('The end time is before the start time.');
         if (evX){ Object.assign(evX, evF); if (!adm && evX.status === 'Confirmed'){ evX.status = 'Pending'; evX.confirmedBy = ''; evX.confirmedAt = ''; } log(me, 'Edited an event', evT, ev1); return ok(me, { id: evX.id }); }
         var evN = Object.assign({ id: 'ev' + nid(), status: adm ? 'Confirmed' : 'Pending', createdBy: me.username, createdAt: now, confirmedBy: adm ? me.username : '', confirmedAt: adm ? now : '' }, evF);
@@ -4496,7 +4500,7 @@ var Mock = (function(){
       var evO = events.filter(function(x){ return x.id === p.id; })[0]; if (!evO) return fail('That event was not found.');
       if (a === 'assignEvent'){ if (evO.status === 'Cancelled') return fail('This event is cancelled.');
         var evW = (Array.isArray(p.users) ? p.users : []).map(String).filter(function(u, i, arr){ return arr.indexOf(u) === i && users.some(function(x){ return x.username === u && x.active; }); });
-        evO.assigned = evW; evO.assignedBy = me.username; evO.assignedAt = now; evO.updatedBy = me.username; evO.updatedAt = now;
+        evO.assigned = evW; evO.crewOpen = p.open === '1' && evW.length < 2; evO.assignedBy = me.username; evO.assignedAt = now; evO.updatedBy = me.username; evO.updatedAt = now;
         log(me, 'Updated a dispatch order', evO.title, evW.length + ' person(s)'); return ok(me, { id: evO.id }); }
       if (a === 'deleteEvent'){ if (!adm && evO.status !== 'Pending') return fail('Only an admin can delete a confirmed event.'); events.splice(events.indexOf(evO), 1); log(me, 'Deleted an event', evO.title, evO.date); return ok(me); }
       if (['Confirmed', 'Pending', 'Cancelled'].indexOf(p.status) < 0) return fail('Unknown status.');
@@ -4611,6 +4615,235 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.se
     return call('status').then(function(st){ S.needsSetup = st.needsSetup; S.divisions = st.divisions || []; render(); var f = document.getElementById('lu') || document.getElementById('sn'); if (f && window.innerWidth > 860) f.focus(); });
   }).catch(function(e){ document.getElementById('app').innerHTML = '<div class="loading"><p>' + esc(e.message) + '</p><button class="btn btn-primary" onclick="location.reload()">Try again</button></div>'; });
 })();
+
+/* =====================================================================
+   v42: search, phone Back button and page links, accessibility fixes,
+   dispatch orders for events near the Capitol within office hours
+   ===================================================================== */
+
+/* ---------- every page has its own link; the phone's Back button works ---------- */
+var NAV = { init: false, fromPop: false };
+function navViews(){ return navItems().map(function(x){ return x[0]; }).concat(['log', 'records', 'inventory']); }
+function navSync(){
+  if (!S.me) return;
+  var h = '#' + S.view;
+  if (!NAV.init){
+    NAV.init = true;
+    var want = location.hash.slice(1);
+    if (want && want !== S.view && navViews().indexOf(want) >= 0){ S.view = want; history.replaceState({ v: want }, '', '#' + want); render(); return; }
+    history.replaceState({ v: S.view }, '', h); return;
+  }
+  if (NAV.fromPop){ NAV.fromPop = false; return; }
+  if (location.hash !== h){
+    history.pushState({ v: S.view }, '', h);
+    var m = document.getElementById('main'); if (m) m.focus({ preventScroll: true });   // screen readers start at the new page
+  }
+}
+window.addEventListener('popstate', function(){
+  if (!S.me) return;
+  if (document.querySelector('#modal .scrim')){            // Back closes an open window first
+    closeModal(); history.pushState({ v: S.view }, '', '#' + S.view); return;
+  }
+  var v = location.hash.slice(1);
+  if (v && v !== S.view && navViews().indexOf(v) >= 0){ NAV.fromPop = true; S.view = v; S.selDay = null; render(); window.scrollTo(0, 0); }
+});
+
+/* ---------- accessibility fixes applied to every page ---------- */
+function a11yFix(root){
+  root.querySelectorAll('th').forEach(function(th){ if (!th.textContent.trim() && !th.children.length) th.innerHTML = '<span class="sr-only">Actions</span>'; });
+  root.querySelectorAll('.table-wrap').forEach(function(w){
+    if (w.hasAttribute('tabindex')) return;
+    var h = w.closest('.panel'), t = h && h.querySelector('h2');
+    w.setAttribute('tabindex', '0'); w.setAttribute('role', 'region'); w.setAttribute('aria-label', (t ? t.textContent.trim() : 'Table') + ' (scrolls sideways)');
+  });
+  root.querySelectorAll('.lgscroll').forEach(function(w){ if (!w.hasAttribute('tabindex')){ w.setAttribute('tabindex', '0'); w.setAttribute('role', 'region'); w.setAttribute('aria-label', 'Legend (scrolls sideways)'); } });
+}
+
+/* ---------- search everything (top bar, or press / ) ---------- */
+function searchModal(){
+  modal('Search', '<div class="field"><label for="sq" class="sr-only">Search</label><input class="input" id="sq" type="search" autocomplete="off" placeholder="Name, event, place, TO number, date…" aria-describedby="sqh" aria-controls="sres"><span class="hint" id="sqh">Staff, events, travel orders, TEVs, offsets and leaves. Press Enter to open the first result.</span></div><div id="sres" role="region" aria-live="polite"></div>', '', '');
+  setTimeout(function(){ var i = document.getElementById('sq'); if (i) i.focus(); }, 30);
+  searchRun('');
+}
+function sNorm(s){ return String(s || '').toLowerCase(); }
+function searchRun(q){
+  var box = document.getElementById('sres'); if (!box) return;
+  var words = sNorm(q).split(/\s+/).filter(Boolean);
+  if (!words.length){ box.innerHTML = '<p class="hint" style="margin:8px 0 0">Type at least one word.</p>'; return; }
+  function hit(text){ text = sNorm(text); return words.every(function(w){ return text.indexOf(w) >= 0; }); }
+  var long = { month:'long', day:'numeric', year:'numeric' }, groups = [], adm = isAdmin();
+  var ppl = S.users.filter(function(u){ return hit(u.name + ' ' + u.username + ' ' + (u.empType || '') + ' ' + (u.position || '')); }).slice(0, 5);
+  if (ppl.length) groups.push(['Staff', ppl.map(function(u){ return { a: adm || u.username === S.me.username ? 'data-person="' + esc(u.username) + '"' : 'data-go="calendar"', ic: 'users', t: u.name, m: (u.empType || '') + (u.active === false ? ' · inactive' : '') }; })]);
+  var evs = (S.events || []).filter(function(e){ return hit([e.title, e.venue, e.requester, e.date, fDate(e.date, long), evKind(e) === 'tasking' ? 'dispatch order' : 'travel order', (evNeedsText(e) || []).join(' ')].join(' ')); })
+    .sort(function(a, b){ return a.date < b.date ? 1 : -1; }).slice(0, 6);
+  if (evs.length) groups.push(['Events', evs.map(function(e){ return { a: 'data-act="evPick" data-id="' + esc(e.id) + '"', ic: 'megaphone', t: e.title, m: evShort(e) + ' · ' + e.venue + ' · ' + EV_LABEL[evState(e)] }; })]);
+  var tos = S.travelOrders.filter(function(t){ return hit([t.event, t.destination, t.toNo, (t.names || []).join(' '), t.dateFrom, fDate(t.dateFrom, long), t.status].join(' ')); })
+    .sort(function(a, b){ return a.dateFrom < b.dateFrom ? 1 : -1; }).slice(0, 6);
+  if (tos.length) groups.push(['Travel orders', tos.map(function(t){ return { a: 'data-act="findTO" data-id="' + t.id + '"', ic: 'route', t: t.event, m: fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + t.destination : '') + ' · ' + t.status }; })]);
+  var tevs = (S.tevs || []).filter(function(v){ var t = toOf(v.toId) || {}; return hit([v.name, t.event, t.destination, v.chequeNo, v.status].join(' ')); }).slice(0, 6);
+  if (tevs.length) groups.push(['TEVs', tevs.map(function(v){ var t = toOf(v.toId) || {}; return { a: adm ? 'data-act="tevEdit" data-id="' + v.id + '"' : 'data-go="tev"', ic: 'peso', t: dispName(v.name) + ' · ' + (t.event || ''), m: v.status + ' · ' + peso(v.total) }; })]);
+  var ents = S.entries.filter(function(e){ return hit([userName(e.username), e.event, e.venue, e.category, e.date, fDate(e.date, long), e.type === 'USE' ? 'day off' : 'offset', e.status].join(' ')); })
+    .sort(function(a, b){ return a.date < b.date ? 1 : -1; }).slice(0, 6);
+  if (ents.length) groups.push(['Offsets and days off', ents.map(function(e){ return { a: 'data-entry="' + e.id + '"', ic: e.type === 'USE' ? 'plane' : 'plus', t: (adm ? userName(e.username) + ' · ' : '') + (e.type === 'USE' ? 'Day off' : (e.event || e.category)), m: fDate(e.date) + ' · ' + e.status }; })]);
+  var lv = S.leaves.filter(function(l){ return !/^ADJ/.test(l.type) && hit([userName(l.username), leaveName(l.type), l.dateFrom, fDate(l.dateFrom, long), l.note].join(' ')); }).slice(0, 5);
+  if (lv.length) groups.push(['Leaves', lv.map(function(l){ return { a: 'data-go="leaves"', ic: 'plane', t: (adm ? userName(l.username) + ' · ' : '') + leaveName(l.type), m: fRange(l.dateFrom, l.dateTo, { month:'short', day:'numeric', year:'numeric' }) }; })]);
+  box.innerHTML = groups.length ? groups.map(function(g){ return '<div class="label" style="margin-top:12px">' + g[0] + '</div><ul class="list sres">' + g[1].map(function(x){ return '<li class="row tap" ' + x.a + ' tabindex="0"><span class="mark act">' + ic(x.ic) + '</span><div class="body"><div class="t">' + esc(x.t) + '</div><div class="m">' + esc(x.m) + '</div></div></li>'; }).join('') + '</ul>'; }).join('')
+    : '<p class="hint" style="margin:12px 0 0">Nothing found for “' + esc(q) + '”.</p>';
+}
+document.addEventListener('input', function(ev){ if (ev.target.id === 'sq') searchRun(ev.target.value); });
+document.addEventListener('keydown', function(ev){
+  if (ev.target.id === 'sq' && ev.key === 'Enter'){ ev.preventDefault(); var f = document.querySelector('#sres .row'); if (f) f.click(); return; }
+  if (ev.target.closest && ev.target.closest('#sres') && ev.key === 'Enter' && ev.target.classList.contains('row')){ ev.preventDefault(); ev.target.click(); return; }
+  var a = document.activeElement, typing = a && (/INPUT|TEXTAREA|SELECT/.test(a.tagName) || a.isContentEditable);
+  if (ev.key === '/' && !typing && S.me && !document.querySelector('#modal .scrim')){ ev.preventDefault(); searchModal(); }
+});
+/* opening a travel order from search: go to its tab and point at it */
+function findTO(id){
+  var t = toOf(id); if (!t) return;
+  closeModal();
+  S.view = 'travel'; S.toMine = false; S.toPer = 'all'; S.toType = 'all'; S.toQ = '';
+  S.toFilter = t.status === 'Cancelled' ? 'Cancelled' : (t.dateTo || t.dateFrom) < today() ? 'past' : 'upcoming';
+  render(); window.scrollTo(0, 0);
+  setTimeout(function(){ var el = document.getElementById('to-' + id); if (el){ el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); setTimeout(function(){ el.classList.remove('flash'); }, 1800); } }, 60);
+}
+(function(){
+  var T = toRow;
+  toRow = function(t){ return T(t).replace('<li class="to-card"', '<li class="to-card" id="to-' + t.id + '"'); };
+})();
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act]'); if (!t) return;
+  if (t.dataset.act === 'search') searchModal();
+  else if (t.dataset.act === 'findTO') findTO(t.dataset.id);
+});
+
+/* ---------- events: dispatch order vs travel order ----------
+   Most coverage is at the Capitol or nearby, within 8 AM to 5 PM, and staff can come back for the
+   biometric at noon or the event is only half a day. Those need a dispatch order, not a travel order.
+   A travel order is for out-of-town, multi-day, or after-hours work. */
+var OFFICE = { start: '08:00', end: '17:00', noon: '12:00' };
+function evSuggest(d){
+  var multi = d.dateTo && d.date && d.dateTo !== d.date;
+  var early = d.time && d.time < OFFICE.start, late = d.timeEnd && d.timeEnd > OFFICE.end;
+  var wkend = d.date && [0, 6].indexOf(pd(d.date).getDay()) >= 0;
+  if (multi) return { k: 'travel', why: 'more than one day' };
+  if (early || late) return { k: 'travel', why: 'outside 8 AM to 5 PM' };
+  if (wkend) return { k: 'travel', why: 'on a weekend' };
+  return { k: 'tasking', why: 'one day, within office hours' };
+}
+function evHalf(e){
+  if (!e.time || (e.dateTo && e.dateTo !== e.date)) return '';
+  var end = e.timeEnd || '';
+  if (end && end <= '12:30') return 'Half day · morning';
+  if (e.time >= '12:00' && (!end || end <= OFFICE.end)) return 'Half day · afternoon';
+  return '';
+}
+(function(){
+  var EM = evModal;
+  evModal = function(id){
+    EM(id);
+    var f = document.querySelector('#modal form[data-form="saveEvent"]'); if (!f) return;
+    // clearer choices
+    var lab = { travel: ['Travel order', 'Out of town, more than a day, or past 5 PM'], tasking: ['Dispatch order', 'Capitol or nearby, 8 AM to 5 PM, back for the biometric'] };
+    f.querySelectorAll('input[name=kind]').forEach(function(r){ var l = f.querySelector('label[for="' + r.id + '"]'); if (l && lab[r.value]) l.innerHTML = '<b>' + lab[r.value][0] + '</b><small>' + lab[r.value][1] + '</small>'; });
+    var seg = f.querySelector('input[name=kind]'); if (!seg) return;
+    var box = seg.closest('.seg'), hint = document.createElement('p'); hint.className = 'hint'; hint.id = 'evKindHint'; hint.style.margin = '6px 0 0';
+    box.parentNode.insertBefore(hint, box.nextSibling);
+    var isNew = !(f.querySelector('input[name=id]') || {}).value;
+    // new events: nothing is picked for you; the person adding it says what is needed (required)
+    f.querySelectorAll('input[name=kind]').forEach(function(r){ r.required = true; if (isNew) r.checked = false; });
+    var leg = box.closest('fieldset') && box.closest('fieldset').querySelector('legend'); if (leg) leg.innerHTML = 'How will staff be sent? <span class="req" aria-hidden="true" style="color:var(--red)">*</span>';
+    evKindSync(f);
+  };
+})();
+function evWeekend(d1, d2){ if (!d1) return false; for (var d = d1; d <= (d2 || d1); d = addDays(d, 1)){ var w = pd(d).getDay(); if (w === 0 || w === 6) return true; if (d > addDays(d1, 31)) break; } return false; }
+function evKindSync(f){
+  var g = function(n){ var x = f.querySelector('[name=' + n + ']'); return x ? x.value : ''; };
+  var d = { date: g('date'), dateTo: g('dateTo'), time: g('time'), timeEnd: g('timeEnd') };
+  var wk = evWeekend(d.date, d.dateTo), disp = f.querySelector('input[name=kind][value=tasking]'), trav = f.querySelector('input[name=kind][value=travel]');
+  // rule: weekend events always need a travel order
+  if (disp){ disp.disabled = wk; if (wk && disp.checked){ disp.checked = false; if (trav) trav.checked = true; } if (wk && trav && !trav.checked) trav.checked = true; }
+  var h = document.getElementById('evKindHint'); if (!h) return;
+  var half = evHalf(d), s = evSuggest(d), cur = (f.querySelector('input[name=kind]:checked') || {}).value;
+  if (wk){ h.textContent = 'Weekend events always need a travel order.'; return; }
+  // a hint only: the person who knows the event decides
+  h.textContent = (s.k === 'tasking' ? 'Usually a dispatch order: ' + s.why + '. Pick travel order if it is out of town.' : 'Usually a travel order: ' + s.why + '.') + (half ? ' ' + half + '.' : '') + (!cur ? '' : '');
+}
+document.addEventListener('input', function(ev){
+  var f = ev.target.closest && ev.target.closest('form[data-form="saveEvent"]'); if (!f) return;
+  if (/^(date|dateTo|time|timeEnd|kind)$/.test(ev.target.name)) evKindSync(f);
+});
+document.addEventListener('change', function(ev){
+  var f = ev.target.closest && ev.target.closest('form[data-form="saveEvent"]'); if (!f) return;
+  if (/^(date|dateTo|kind)$/.test(ev.target.name)) evKindSync(f);
+});
+(function(){
+  var EC = evCard;
+  evCard = function(e){
+    var h = EC(e), half = evHalf(e), miss = e.status !== 'Cancelled' ? evMissing(e) : [];
+    if (miss.length){ var only = miss.length === 1 && miss[0] === 'more people'; h = h.replace('>Incomplete</span>', '>Incomplete · ' + (only ? 'more people to be added' : 'no ' + miss.join(' or ').replace('more people', 'full crew') + ' yet') + '</span>'); }
+    h = h.replace('Dispatch order <span class="hint">(within the Capitol)</span>', 'Dispatch order <span class="hint">(Capitol or nearby, office hours)</span>');
+    if (half) h = h.replace(/(<dt>Time<\/dt><dd>)([^<]*)/, '$1$2 <span class="pill off">' + half + '</span>');
+    // a travel-order event that fits office hours: say a dispatch order may be enough
+    if (evKind(e) === 'travel' && evSuggest(e).k === 'tasking' && !evLinked(e).length && e.status !== 'Cancelled' && canSched())
+      h = h.replace('<div class="acts-row">', '<div class="info-note" style="margin:0 0 10px">' + ic('flag') + '<span>Within office hours on one day. If it is at the Capitol or nearby, a dispatch order is enough. Use <b>Edit</b> to switch.</span></div><div class="acts-row">');
+    return h;
+  };
+  var EP = evPrompt;
+  evPrompt = function(e){ EP(e); var b = document.querySelector('#modal .panel-b p'); if (b && evKind(e) === 'tasking') b.innerHTML = b.innerHTML.replace('Assign the people who will cover it so it shows on their dashboards.', 'Assign the people who will cover it. No travel order is needed: it is at the Capitol or nearby, within office hours.'); };
+  var AM = assignModal;
+  assignModal = function(id){ AM(id); var e = S.events.filter(function(x){ return x.id === id; })[0], half = e && evHalf(e), sb = document.querySelector('#modal .sumbox span'); if (half && sb) sb.textContent += ' · ' + half; };
+})();
+
+/* ---------- styles ---------- */
+(function(){
+  var st = document.createElement('style');
+  st.textContent = '.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}' +
+    '#main:focus{outline:none}.table-wrap:focus-visible{outline:2px solid var(--brand);outline-offset:2px}' +
+    '.to-card.flash{animation:flash 1.6s ease-out}@keyframes flash{0%,40%{background:var(--brand-soft)}100%{background:transparent}}' +
+    '.side-search kbd{margin-left:auto;font:600 11px inherit;border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:1px 6px;opacity:.8}@media (pointer:coarse){.side-search kbd{display:none}}' +
+    '.sres .row{padding-block:10px}.sres .t{white-space:normal;overflow:visible}' +
+    // dark mode: the green button was too light for white text (3.2:1); this shade passes 4.5:1
+    '@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn-primary{background:#1B7434}:root:not([data-theme="light"]) .btn-primary:hover{background:#16602B}}:root[data-theme="dark"] .btn-primary{background:#1B7434}:root[data-theme="dark"] .btn-primary:hover{background:#16602B}' +
+    // phones and tablets: everything tappable at least 44px
+    // phones: four summary tiles become two rows so labels are not split mid-word; top bar title on one line
+    '@media (max-width:520px){.tiles.cal4{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}.tile .k{word-break:normal;overflow-wrap:normal}' +
+    '.topbar b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}' +
+    // waiting tags sit in a one-line meta row that cuts off on phones; let that row wrap so the tag stays visible
+    '.row .m:has(.age){white-space:normal;overflow:visible}' +
+    // smallest click targets at least 24px (WCAG 2.2)
+    '.legend .lgh{font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}.legend .lgsep{width:1px;align-self:stretch;min-height:16px;background:var(--line-strong);padding:0}' +
+    'button.pill{min-height:24px}.seg input:disabled+label{opacity:.5;cursor:not-allowed}' +
+    '@media (pointer:coarse){.chip,.input{min-height:44px}.icon-btn{min-width:44px;min-height:44px}.topbar button{width:44px;height:44px}button.pill{min-height:32px;padding-inline:12px}}';
+  document.head.appendChild(st);
+})();
+
+
+/* ---------- one person on a dispatch order: final, or more to come? ---------- */
+document.addEventListener('submit', function(ev){
+  var f = ev.target.closest && ev.target.closest('#modal form[data-form="assignEvent"]'); if (!f) return;
+  var n = f.querySelectorAll('input[name=user]:checked').length, open = f.querySelector('input[name=open]');
+  if (!open){ open = document.createElement('input'); open.type = 'hidden'; open.name = 'open'; open.value = ''; f.appendChild(open); }
+  if (n !== 1){ open.value = n === 0 ? '' : '0'; return; }
+  if (open.value === '0' || open.value === '1') return;          // already answered
+  ev.preventDefault(); ev.stopImmediatePropagation();
+  var who = f.querySelector('input[name=user]:checked'), lab = who && f.querySelector('label input[value="' + who.value + '"]'), name = lab ? lab.closest('label').textContent.trim().split('\n')[0] : 'one person';
+  var box = document.getElementById('crewAsk');
+  if (!box){ box = document.createElement('div'); box.id = 'crewAsk'; box.className = 'warn-note'; box.setAttribute('role', 'alertdialog'); box.setAttribute('aria-labelledby', 'crewAskT'); var pb = f.querySelector('.panel-b') || f; pb.insertBefore(box, pb.firstChild); }
+  box.innerHTML = ic('users') + '<span><b id="crewAskT">Only one person is dispatched.</b> Is that final, or will you add more people later?' +
+    '<span class="conflict-acts" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"><button type="button" class="btn btn-sm btn-primary" data-act="crewFinal">One is enough · final</button><button type="button" class="btn btn-sm btn-ghost" data-act="crewOpen">More people later</button></span></span>';
+  box.scrollIntoView({ block: 'nearest' }); var b1 = box.querySelector('[data-act=crewFinal]'); if (b1) b1.focus();
+}, true);
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act="crewFinal"],[data-act="crewOpen"]'); if (!t) return;
+  var f = t.closest('form'); if (!f) return;
+  f.querySelector('input[name=open]').value = t.dataset.act === 'crewOpen' ? '1' : '0';
+  if (f.requestSubmit) f.requestSubmit(); else f.querySelector('[type=submit]').click();
+});
+// changing who is ticked asks again
+document.addEventListener('change', function(ev){
+  if (ev.target.name !== 'user') return; var f = ev.target.closest('form[data-form="assignEvent"]'); if (!f) return;
+  var o = f.querySelector('input[name=open]'); if (o) o.value = ''; var b = document.getElementById('crewAsk'); if (b) b.remove();
+});
 </script>
 </body>
 </html>
