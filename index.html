@@ -975,7 +975,7 @@ function navItems(){
 }
 var SHORT = { dashboard: 'Home', travel: 'Travel', availability: 'Who’s in', log: 'Log', leaves: 'Leaves', approvals: 'Review' };
 function sideNav(nav, navBtn){
-  var order = ['Overview','Field work','Offsets','Leaves','Admin'], html = '';
+  var order = ['Overview','Field work','Production','Offsets','Leaves','Admin'], html = '';
   order.forEach(function(g){ var items = nav.filter(function(n){ return n[3] === g; }); if (items.length) html += '<div class="nav-h">' + g + '</div>' + items.map(navBtn).join(''); });
   return html;
 }
@@ -1018,7 +1018,7 @@ function render(){
       '<div class="drawer-scrim" data-act="drawerClose"></div><aside class="side" id="sidenav"><div class="brand"><img src="' + LOGO + '" alt="Provincial Information Office seal"><div><b>PIO Overwatch</b><small>Camarines Norte</small></div></div>' +
         '<nav class="nav" aria-label="Main">' + '<button data-act="search" class="side-search" aria-keyshortcuts="/">' + ic('search') + '<span>Search</span><kbd>/</kbd></button>' + sideNav(nav, navBtn) + '</nav>' +
         '<div class="side-foot"><div class="who">' + (myDiv ? divBadge(myDiv, 36) : '<span class="avatar">' + esc(initials(S.me.name)) + '</span>') +
-          '<div style="min-width:0"><b>' + esc(S.me.name) + '</b><small><span class="cap">' + esc(S.me.role === 'scheduler' ? 'event scheduler' : S.me.role) + '</span> · ' + (myDiv ? esc(myDiv.short) : '@' + esc(S.me.username)) + '</small></div></div>' +
+          '<div style="min-width:0"><b>' + esc(S.me.name) + '</b><small><span class="cap">' + esc(S.me.role === 'scheduler' ? 'division leader' : S.me.role) + '</span> · ' + (myDiv ? esc(myDiv.short) : '@' + esc(S.me.username)) + '</small></div></div>' +
         '<div class="nav">' + (S.view === 'dashboard' ? '<button data-act="customize" class="show-sm">' + ic('sliders') + '<span>Customize dashboard</span></button>' : '') + bellBtn(true) + '<button data-act="refresh">' + ic('refresh') + '<span>Refresh</span></button><button data-act="changePin">' + ic('key') + '<span>Change PIN</span></button><button data-act="logout">' + ic('out') + '<span>Sign out</span></button></div></div>' +
       '</aside>' +
       '<div style="min-width:0">' +
@@ -1498,7 +1498,7 @@ function viewStaff(){
 function addStaffModal(){
   modal('Add staff', '<div class="field"><label for="an">Full name</label><input class="input" id="an" name="name" required></div>' +
     '<div class="two"><div class="field"><label for="au">Username</label><input class="input" id="au" name="username" autocapitalize="none" spellcheck="false" placeholder="e.g. jdelacruz" required></div><div class="field"><label for="ap">Starting PIN</label><input class="input pin" id="ap" name="pin" inputmode="numeric" maxlength="6" placeholder="4–6 digits" required></div></div>' +
-    '<div class="two"><div class="field"><label for="ad">Division</label>' + divSelect('ad', '', 'Division', false, true) + '</div><div class="field"><label for="ar">Role</label><select class="input" id="ar" name="role"><option value="employee">Employee</option><option value="scheduler">Event scheduler</option><option value="admin">Admin</option></select></div></div>' +
+    '<div class="two"><div class="field"><label for="ad">Division</label>' + divSelect('ad', '', 'Division', false, true) + '</div><div class="field"><label for="ar">Role</label><select class="input" id="ar" name="role"><option value="employee">Employee</option><option value="scheduler">Division leader</option><option value="admin">Admin</option></select></div></div>' +
     '<div class="field"><label for="aet">Employment</label><select class="input" id="aet" name="empType"><option value="JO">JO (Job order)</option><option value="COS">COS (Contract of service)</option><option>Casual</option><option>Regular</option></select><span class="hint">Regular and casual get CSC leave credits. JO and COS get wellness leave. Everyone can log offsets.</span></div>' +
     '<span class="hint">Give the PIN to the employee in person. They can change it after signing in.</span>',
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">' + ic('plus') + 'Add staff</button>', 'addUser');
@@ -1616,7 +1616,7 @@ function personModal(username){
       '<div class="label">Account</div><div class="acct"><button type="button" class="btn btn-sm btn-ghost" data-act="pinModal" data-u="' + esc(username) + '">' + ic('key') + (u.noPin ? 'Set PIN' : 'Reset PIN') + '</button>' +
       (self ? '<span class="hint">Another admin manages your own role and status.</span>' :
         '<button type="button" class="btn btn-sm btn-ghost" data-act="setRole" data-u="' + esc(username) + '" data-r="' + (u.role === 'admin' ? 'employee' : 'admin') + '">' + ic('shield') + (u.role === 'admin' ? 'Make employee' : 'Make admin') + '</button>' +
-        (u.role !== 'admin' ? '<button type="button" class="btn btn-sm btn-ghost" data-act="setRole" data-u="' + esc(username) + '" data-r="' + (u.role === 'scheduler' ? 'employee' : 'scheduler') + '">' + ic('megaphone') + (u.role === 'scheduler' ? 'Remove event scheduler' : 'Make event scheduler') + '</button>' : '') +
+        (u.role !== 'admin' ? '<button type="button" class="btn btn-sm btn-ghost" data-act="setRole" data-u="' + esc(username) + '" data-r="' + (u.role === 'scheduler' ? 'employee' : 'scheduler') + '">' + ic('megaphone') + (u.role === 'scheduler' ? 'Remove division leader' : 'Make division leader') + '</button>' : '') +
         '<button type="button" class="btn btn-sm btn-ghost" data-act="toggleActive" data-u="' + esc(username) + '" data-a="' + (u.active ? '0' : '1') + '">' + (u.active ? 'Deactivate' : 'Activate') + '</button>' +
         '<button type="button" class="btn btn-sm btn-danger" data-act="removeUser" data-u="' + esc(username) + '">' + ic('trash') + 'Remove ' + (u.role === 'admin' ? 'admin' : 'staff') + '</button>') + '</div>' +
       (!self && st.avail > 0 ? '<div class="warn-note">' + ic('clock') + '<span>' + esc(u.name.split(' ')[0]) + ' still has ' + fD(st.avail) + ' available. Settle or record it before removing the account.</span></div>' : '') +
@@ -1738,7 +1738,7 @@ document.addEventListener('click', function(ev){
   if (a === 'confirmAll'){ if (t.dataset.sure !== '1'){ t.dataset.sure = '1'; t.innerHTML = ic('check') + 'Tap again to approve all'; return; }
     busy(t, act('reviewMany', { ids: pending(t.dataset.k).filter(canReview).map(function(e){ return e.id; }), decision: 'Confirmed' }, function(n){ return n + ' approved'; })); return; }
   if (a === 'toggleActive'){ var on2 = t.dataset.a === '1', tu = t.dataset.u; busy(t, act('setActive', { username: tu, active: on2 }, on2 ? 'Account activated' : 'Account deactivated').then(function(){ personModal(tu); }), 'merr'); return; }
-  if (a === 'setRole'){ var tu2 = t.dataset.u, r = t.dataset.r; busy(t, act('setRole', { username: tu2, role: r }, firstName(tu2) + ' is now ' + (r === 'admin' ? 'an admin' : r === 'scheduler' ? 'an event scheduler' : 'an employee')).then(function(){ personModal(tu2); }), 'merr'); return; }
+  if (a === 'setRole'){ var tu2 = t.dataset.u, r = t.dataset.r; busy(t, act('setRole', { username: tu2, role: r }, firstName(tu2) + ' is now ' + (r === 'admin' ? 'an admin' : r === 'scheduler' ? 'a division leader' : 'an employee')).then(function(){ personModal(tu2); }), 'merr'); return; }
   if (a === 'removeUser'){ if (!sure(t, 'Tap again to remove ' + esc(firstName(t.dataset.u)))) return; var nm2 = userName(t.dataset.u); busy(t, act('removeUser', { username: t.dataset.u }, nm2 + ' was removed').then(closeModal), 'merr'); return; }
 });
 document.addEventListener('keydown', function(ev){
@@ -1913,7 +1913,7 @@ function toMini(t){
     (prep ? '<button class="btn btn-sm btn-primary" data-act="toManage" data-id="' + t.id + '">' + ic('shield') + 'Prepare</button>' : '<span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + t.status + '</span>') + '</li>';
 }
 function toRow(t){
-  var adm = isAdmin(), mine = t.createdBy === S.me.username, canEdit = adm || (mine && t.status === 'Filed');
+  var adm = isAdmin(), mine = t.createdBy === S.me.username, canEdit = adm || S.me.role === 'scheduler' || (mine && t.status === 'Filed');
   return '<li class="to-card"><div class="to-date"><b>' + fDate(t.dateFrom, { month:'short' }).toUpperCase() + '</b><span class="num">' + pd(t.dateFrom).getDate() + (t.dateTo !== t.dateFrom ? '–' + pd(t.dateTo).getDate() : '') + '</span></div>' +
     '<div class="to-body"><div class="t">' + esc(t.event) + '</div><div class="m">' + fRange(t.dateFrom, t.dateTo, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') + '</div>' +
       '<div class="to-names">' + sortNames(t.names).map(function(n){ return '<span>' + esc(dispName(n)) + '</span>'; }).join('') + '</div>' +
@@ -4097,9 +4097,13 @@ var Fire = (function(){
   function staffMay(x){
     if (x.c === 'activity') return true;
     if (x.c === 'entries') return x.data.username === me;
-    if (x.c === 'events') return member.role === 'scheduler';
+    if (x.c === 'events'){ if (member.role === 'scheduler') return true; var oe = store.events.docs[x.id]; return !oe && !x.del && x.data.status === 'Pending' && x.data.createdBy === me; }   // staff: new unconfirmed event from a travel order
     if (x.c === 'inventory') return true;
-    if (x.c === 'travelOrders'){ var old = store.travelOrders.docs[x.id]; return old ? old.createdBy === me && old.status === 'Filed' && x.data.status === 'Filed' : x.data.createdBy === me && x.data.status === 'Filed'; }
+    if (x.c === 'users'){ if (member.role !== 'scheduler' || x.del) return false; var ou = store.users.docs[x.id]; if (!ou) return false;   // leaders: skills only
+      return Object.keys(Object.assign({}, ou, x.data)).every(function(k){ return k === 'skills' || k === '_t' || JSON.stringify(ou[k]) === JSON.stringify(x.data[k]); }); }
+    if (x.c === 'travelOrders'){ var old = store.travelOrders.docs[x.id];
+      if (member.role === 'scheduler') return old ? x.data.status === old.status && (x.data.tev || '') === (old.tev || '') : x.data.status === 'Filed';   // leaders: file and edit any, not prepare
+      return old ? old.createdBy === me && old.status === 'Filed' && x.data.status === 'Filed' : x.data.createdBy === me && x.data.status === 'Filed'; }
     return false;
   }
   function run(action, p, extra, patch){
@@ -4380,7 +4384,7 @@ var Mock = (function(){
   add('mbautista','USE',-9,'Used',0.5,'','','Confirmed');
   entries.forEach(function(e){ activity.unshift({ at: e.createdAt, actor: e.createdBy, action: e.type === 'USE' ? (e.status === 'Pending' ? 'Requested a day off' : 'Recorded offset use') : 'Logged an offset', target: e.username, details: (e.event ? e.event + ' · ' : '') + e.date + ' · ' + e.days + ' day(s)' }); });
   activity.sort(function(a,b){ return a.at < b.at ? 1 : -1; });
-  function pub(u){ return { username:u.username, name:u.name, role:u.role, division:u.division, active:u.active, empType:u.empType || 'JO', noPin: u.uid === '', position: u.position || '' }; }
+  function pub(u){ return { username:u.username, name:u.name, role:u.role, division:u.division, active:u.active, empType:u.empType || 'JO', noPin: u.uid === '', position: u.position || '', skills: Array.isArray(u.skills) ? u.skills.slice() : [] }; }
   function find(u){ return users.filter(function(x){ return x.username === String(u||'').toLowerCase(); })[0]; }
   function canInv(u){ if (u.role === 'admin') return true; var d = divisions.filter(function(x){ return x.id === u.division; })[0]; return !!(d && /production/i.test(d.name)); }
   // An approved offset for work on a weekday still needs a travel order, so it goes straight to "To prepare".
@@ -4483,7 +4487,7 @@ var Mock = (function(){
       itO.status = p.status; itO.holder = ''; itO.eventId = ''; itO.dueBack = ''; itO.outAt = ''; itH(p.status === 'Available' ? 'Marked available' : p.status === 'Repair' ? 'Sent for repair' : 'Marked missing', '', p.note); log(me, 'Updated equipment', itO.name, p.status); return ok(me);
     }
     if (a === 'saveEvent' || a === 'setEventStatus' || a === 'deleteEvent' || a === 'assignEvent'){
-      if (!(adm || me.role === 'scheduler')) return fail('Only the event scheduler or an admin can do that.');
+      if (!(adm || me.role === 'scheduler')) return fail('Only a division leader or an admin can do that.');
       if (a === 'saveEvent'){
         var evT = String(p.title || '').trim(), evV = String(p.venue || '').trim(), ev1 = String(p.date || ''), ev2 = String(p.dateTo || '') || ev1;
         if (evT.length < 3) return fail('Write the event name.');
@@ -4530,10 +4534,11 @@ var Mock = (function(){
         }
       }
       if (tf.eventId && !events.some(function(e){ return e.id === tf.eventId; })) tf.eventId = '';
-      if (p.id){ var ex1 = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && (ex1.createdBy !== me.username || ex1.status !== 'Filed')) return fail('Only admins can edit a travel order after it is prepared.'); Object.assign(ex1, tf); log(me, 'Edited a travel order', tf.event); }
+      if (p.id){ var ex1 = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && me.role !== 'scheduler' && (ex1.createdBy !== me.username || ex1.status !== 'Filed')) return fail('Only admins and division leaders can edit someone else’s travel order or one that is prepared.'); Object.assign(ex1, tf); log(me, 'Edited a travel order', tf.event); }
       else { tos.push(Object.assign({ id:'t' + nid(), toNo:'', status:'Filed', tev:'', createdBy:me.username, createdAt:now, usernames:[] }, tf)); log(me, 'Filed a travel order', tf.event, tf.dateFrom + ' · ' + nm.join(', ')); }
       return ok(me); }
     if (a === 'deleteTO'){ var dt = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && (dt.createdBy !== me.username || dt.status !== 'Filed')) return fail('You can only delete your own travel orders that are not yet prepared.'); if (dt.offsetDone){ entries = entries.filter(function(e){ return !(e.toId === dt.id && e.type === 'USE'); }); log(me, 'Returned offset for a deleted day-off travel order', dt.event); } tos = tos.filter(function(t){ return t !== dt; }); log(me, 'Deleted a travel order', dt.event); return ok(me); }
+    if (a === 'setSkills'){ if (!(adm || me.role === 'scheduler')) return fail('Only admins and division leaders can change skills.'); var sk = find(p.username); if (!sk) return fail('Employee not found.'); sk.skills = (Array.isArray(p.skills) ? p.skills : []).map(String).filter(function(x, i, arr){ return SKILLS.indexOf(x) >= 0 && arr.indexOf(x) === i; }); log(me, 'Changed skills', p.username, sk.skills.join(', ') || 'none'); return ok(me); }
     if (!adm) return fail('Only admins can do that.');
     if (a === 'markTOPrinted'){ (p.ids || []).forEach(function(i9){ var t9 = tos.filter(function(t){ return t.id === i9; })[0]; if (t9 && t9.status === 'Prepared' && !t9.printedAt){ t9.printedAt = now; t9.printedBy = me.username; } }); log(me, 'Printed travel orders', String((p.ids || []).length)); return ok(me); }
     if (a === 'setTOStatus'){ var st2 = tos.filter(function(t){ return t.id === p.id; })[0]; if (st2.status !== p.status) st2.statusAt = now; st2.status = p.status; st2.tev = p.tev; st2.toNo = p.toNo || ''; st2.datePrepared = p.datePrepared || st2.datePrepared || (p.status === 'Prepared' ? today() : ''); log(me, 'Updated a travel order', st2.event, 'Status: ' + p.status + ' · TEV: ' + (p.tev || 'not set'));
@@ -4740,7 +4745,7 @@ function evHalf(e){
     EM(id);
     var f = document.querySelector('#modal form[data-form="saveEvent"]'); if (!f) return;
     // clearer choices
-    var lab = { travel: ['Travel order', 'Out of town, more than a day, or past 5 PM'], tasking: ['Dispatch order', 'Capitol or nearby, 8 AM to 5 PM, back for the biometric'] };
+    var lab = { travel: ['Travel order', 'Away from the Capitol, overnight, or on a weekend'], tasking: ['Dispatch order', 'Capitol grounds or nearby; staff can come back for the biometric'] };
     f.querySelectorAll('input[name=kind]').forEach(function(r){ var l = f.querySelector('label[for="' + r.id + '"]'); if (l && lab[r.value]) l.innerHTML = '<b>' + lab[r.value][0] + '</b><small>' + lab[r.value][1] + '</small>'; });
     var seg = f.querySelector('input[name=kind]'); if (!seg) return;
     var box = seg.closest('.seg'), hint = document.createElement('p'); hint.className = 'hint'; hint.id = 'evKindHint'; hint.style.margin = '6px 0 0';
@@ -4763,7 +4768,8 @@ function evKindSync(f){
   var half = evHalf(d), s = evSuggest(d), cur = (f.querySelector('input[name=kind]:checked') || {}).value;
   if (wk){ h.textContent = 'Weekend events always need a travel order.'; return; }
   // a hint only: the person who knows the event decides
-  h.textContent = (s.k === 'tasking' ? 'Usually a dispatch order: ' + s.why + '. Pick travel order if it is out of town.' : 'Usually a travel order: ' + s.why + '.') + (half ? ' ' + half + '.' : '') + (!cur ? '' : '');
+  // no guessing from the time of day: office hours alone do not make it a dispatch order
+  h.textContent = 'Pick by where it is: a dispatch order only if it is on the Capitol grounds or nearby and staff can come back for the biometric. Anywhere else needs a travel order.' + (half ? ' ' + half + '.' : '');
 }
 document.addEventListener('input', function(ev){
   var f = ev.target.closest && ev.target.closest('form[data-form="saveEvent"]'); if (!f) return;
@@ -4781,12 +4787,10 @@ document.addEventListener('change', function(ev){
     h = h.replace('Dispatch order <span class="hint">(within the Capitol)</span>', 'Dispatch order <span class="hint">(Capitol or nearby, office hours)</span>');
     if (half) h = h.replace(/(<dt>Time<\/dt><dd>)([^<]*)/, '$1$2 <span class="pill off">' + half + '</span>');
     // a travel-order event that fits office hours: say a dispatch order may be enough
-    if (evKind(e) === 'travel' && evSuggest(e).k === 'tasking' && !evLinked(e).length && e.status !== 'Cancelled' && canSched())
-      h = h.replace('<div class="acts-row">', '<div class="info-note" style="margin:0 0 10px">' + ic('flag') + '<span>Within office hours on one day. If it is at the Capitol or nearby, a dispatch order is enough. Use <b>Edit</b> to switch.</span></div><div class="acts-row">');
     return h;
   };
   var EP = evPrompt;
-  evPrompt = function(e){ EP(e); var b = document.querySelector('#modal .panel-b p'); if (b && evKind(e) === 'tasking') b.innerHTML = b.innerHTML.replace('Assign the people who will cover it so it shows on their dashboards.', 'Assign the people who will cover it. No travel order is needed: it is at the Capitol or nearby, within office hours.'); };
+  evPrompt = function(e){ EP(e); var b = document.querySelector('#modal .panel-b p'); if (b && evKind(e) === 'tasking') b.innerHTML = b.innerHTML.replace('Assign the people who will cover it so it shows on their dashboards.', 'Assign the people who will cover it. A dispatch order was picked, so no travel order is made.'); };
   var AM = assignModal;
   assignModal = function(id){ AM(id); var e = S.events.filter(function(x){ return x.id === id; })[0], half = e && evHalf(e), sb = document.querySelector('#modal .sumbox span'); if (half && sb) sb.textContent += ' · ' + half; };
 })();
@@ -4991,6 +4995,198 @@ document.addEventListener('click', function(ev){ var b = ev.target.closest('[dat
   document.head.appendChild(st);
 })();
 
+
+/* =====================================================================
+   v46: skills, easier assigning, equipment for an event, division views
+   ===================================================================== */
+var SKILLS = ['Photographer', 'Videographer', 'Livestream', 'OBS operator', 'Writer', 'Emcee / Host', 'Graphic artist'];
+var NEED_SKILL = { 'Photo Documentation': ['Photographer'], 'Video Documentation': ['Videographer'], 'Livestreaming': ['Livestream', 'OBS operator'], 'News and Write-up': ['Writer'], 'Emcee or Hosting': ['Emcee / Host'] };
+function skillsOf(u){ u = typeof u === 'string' ? userOf(u) : u; return (u && u.skills) || []; }
+function canSkills(){ return !!S.me && (isAdmin() || S.me.role === 'scheduler'); }
+function skillChips(u){ var k = skillsOf(u); return k.length ? '<span class="skchips">' + k.map(function(x){ return '<span class="skc">' + esc(x) + '</span>'; }).join('') + '</span>' : ''; }
+
+/* who else is busy that day: on leave, on another trip, or dispatched to another event */
+function busyOn(u, d, exceptEv){
+  var s = statusOn(u, d); if (s && s.kind !== 'to') return { why: s.label || 'Out', hard: true };
+  if (s && s.kind === 'to' && !(exceptEv && s.ref && s.ref.eventId === exceptEv)) return { why: 'Travel: ' + s.label, hard: true };
+  var other = (S.events || []).filter(function(e){ return e.id !== exceptEv && e.status !== 'Cancelled' && e.date <= d && (e.dateTo || e.date) >= d && evMine(e, u); })[0];
+  return other ? { why: 'Also on: ' + other.title, hard: false } : null;
+}
+/* people for each thing the event needs, free first */
+function suggestFor(e){
+  var out = [], d = e.date;
+  (e.needs || []).forEach(function(n){
+    var sk = NEED_SKILL[n]; if (!sk) return;
+    var ppl = S.users.filter(function(u){ return u.active && skillsOf(u).some(function(x){ return sk.indexOf(x) >= 0; }); })
+      .map(function(u){ return { u: u, busy: busyOn(u.username, d, e.id) }; })
+      .sort(function(a, b){ return (a.busy ? (a.busy.hard ? 2 : 1) : 0) - (b.busy ? (b.busy.hard ? 2 : 1) : 0) || byDiv(a.u, b.u) || (a.u.name < b.u.name ? -1 : 1); });
+    out.push({ need: n, skills: sk, people: ppl });
+  });
+  return out;
+}
+
+/* ---------- dispatch order: suggested people first, by what the event needs ---------- */
+(function(){
+  var AM = assignModal;
+  assignModal = function(id){
+    AM(id);
+    var e = S.events.filter(function(x){ return x.id === id; })[0], f = document.querySelector('#modal form[data-form="assignEvent"]'); if (!e || !f) return;
+    var cur = e.assigned || [];
+    // every person's box shows their skills and whether they are free
+    f.querySelectorAll('input[name=user]').forEach(function(cb){
+      var lab = cb.closest('label'), u = userOf(cb.value), b = busyOn(cb.value, e.date, e.id), sp = lab && lab.querySelector('span');
+      if (!sp) return;
+      sp.innerHTML = esc(u ? u.name : cb.value) + (b ? ' <small class="hint' + (b.hard ? ' busy' : '') + '">' + esc(b.why) + '</small>' : '') + skillChips(u);
+      if (b && b.hard) lab.classList.add('is-busy');
+    });
+    var sug = suggestFor(e), pb = f.querySelector('.panel-b') || f, sb = f.querySelector('.sumbox');
+    var html = '';
+    if (sug.length){
+      html += '<div class="dsec">Suggested for what is needed</div>' + sug.map(function(g){
+        var list = g.people.length ? g.people.map(function(p){ var on = cur.indexOf(p.u.username) >= 0;
+          return '<button type="button" class="sugp' + (on ? ' on' : '') + (p.busy && p.busy.hard ? ' busy' : '') + '" data-act="sugPick" data-u="' + esc(p.u.username) + '" aria-pressed="' + on + '">' + (on ? ic('check') : ic('plus')) + '<span>' + esc(p.u.name) + (p.busy ? '<small>' + esc(p.busy.why) + '</small>' : '<small>Free</small>') + '</span></button>'; }).join('')
+          : '<span class="hint">Nobody has the ' + esc(g.skills.join(' or ')) + ' skill yet. Add skills from <b>Staff skills</b>.</span>';
+        return '<div class="sugrow"><b>' + esc(g.need) + '</b><div class="sugppl">' + list + '</div></div>'; }).join('');
+    } else html += '<p class="hint" style="margin:8px 0 0">Tick what the event needs (Edit event) to get suggested people by skill.</p>';
+    html += '<div class="row-btns" style="margin-top:8px">' + (canSkills() ? '<button type="button" class="btn btn-sm btn-ghost" data-act="skillsModal">' + ic('users') + 'Staff skills</button>' : '') +
+      (inProd() ? '<button type="button" class="btn btn-sm btn-ghost" data-act="gearModal" data-id="' + esc(e.id) + '">' + ic('camera') + 'Equipment to bring</button>' : '') + '</div><div class="dsec">Everyone, by division</div>';
+    var box = document.createElement('div'); box.innerHTML = html;
+    if (sb && sb.nextSibling) pb.insertBefore(box, sb.nextSibling); else pb.insertBefore(box, pb.firstChild);
+  };
+})();
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act="sugPick"]'); if (!t) return;
+  var cb = document.querySelector('#modal input[name=user][value="' + t.dataset.u + '"]'); if (!cb) return;
+  cb.checked = !cb.checked; cb.dispatchEvent(new Event('change', { bubbles: true }));
+  document.querySelectorAll('#modal [data-act="sugPick"][data-u="' + t.dataset.u + '"]').forEach(function(b){ b.classList.toggle('on', cb.checked); b.setAttribute('aria-pressed', String(cb.checked)); b.querySelector('svg').outerHTML = ic(cb.checked ? 'check' : 'plus'); });
+});
+
+/* ---------- travel order made from an event: suggested names to add ---------- */
+(function(){
+  var TM = toModal;
+  toModal = function(id, pre){
+    TM(id, pre);
+    var evId = (pre && pre.eventId) || (id && (toOf(id) || {}).eventId), e = evId && S.events.filter(function(x){ return x.id === evId; })[0];
+    var f = document.querySelector('#modal form[data-form="saveTO"]'); if (!e || !f) return;
+    var sug = suggestFor(e); if (!sug.length) return;
+    var pick = f.querySelector('#toChips'); pick = pick && pick.closest('.field'); if (!pick) return;
+    var div = document.createElement('div'); div.className = 'tosug';
+    div.innerHTML = '<span class="label" style="margin:0 0 6px">Suggested for what is needed</span>' + sug.map(function(g){
+      return '<div class="sugrow"><b>' + esc(g.need) + '</b><div class="sugppl">' + (g.people.length ? g.people.map(function(p){ return '<button type="button" class="sugp' + (p.busy && p.busy.hard ? ' busy' : '') + '" data-act="toSug" data-n="' + esc(p.u.name.toUpperCase()) + '">' + ic('plus') + '<span>' + esc(p.u.name) + '<small>' + esc(p.busy ? p.busy.why : 'Free') + '</small></span></button>'; }).join('') : '<span class="hint">Nobody has this skill yet.</span>') + '</div></div>'; }).join('');
+    pick.appendChild(div);
+  };
+})();
+document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="toSug"]'); if (!t) return; addName(t.dataset.n); t.classList.add('on'); t.querySelector('svg').outerHTML = ic('check'); });
+
+/* ---------- staff skills (admins and division leaders) ---------- */
+function skillsModal(){
+  var staff = S.users.filter(function(u){ return u.active; }).sort(byDiv), last = null;
+  modal('Staff skills', '<p class="hint" style="margin:0 0 8px">Tick what each person can do. Events then suggest free people with the skill they need. Saves as you tick.</p>' +
+    staff.map(function(u){
+      var d = divOf(u.division), head = u.division !== last ? '<div class="dsec">' + esc(d ? d.name : 'No division') + '</div>' : ''; last = u.division;
+      return head + '<fieldset class="skrow"><legend>' + esc(u.name) + '</legend><div class="skgrid">' + SKILLS.map(function(k){ return '<label class="skopt"><input type="checkbox" data-skill-u="' + esc(u.username) + '" value="' + esc(k) + '"' + (skillsOf(u).indexOf(k) >= 0 ? ' checked' : '') + '><span>' + esc(k) + '</span></label>'; }).join('') + '</div></fieldset>';
+    }).join(''), '<button type="button" class="btn btn-primary" data-act="close">Done</button>');
+}
+document.addEventListener('change', function(ev){
+  var u = ev.target.dataset && ev.target.dataset.skillU; if (!u) return;
+  var list = Array.prototype.slice.call(document.querySelectorAll('#modal input[data-skill-u="' + u + '"]:checked')).map(function(x){ return x.value; });
+  var x = userOf(u); if (x) x.skills = list;               // show it right away
+  call('setSkills', { username: u, skills: list }).catch(function(e){ toast(e.message); });
+});
+document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="skillsModal"]'); if (t) skillsModal(); });
+/* skills on a person's page (admin) */
+(function(){
+  var PM = personModal;
+  personModal = function(username){
+    PM(username);
+    var u = userOf(username), anchor = document.querySelector('#modal #ppos'); if (!u || !canSkills()) return;
+    var box = document.createElement('div'); box.className = 'field';
+    box.innerHTML = '<span class="label">Skills</span><div class="skgrid">' + SKILLS.map(function(k){ return '<label class="skopt"><input type="checkbox" data-skill-u="' + esc(u.username) + '" value="' + esc(k) + '"' + (skillsOf(u).indexOf(k) >= 0 ? ' checked' : '') + '><span>' + esc(k) + '</span></label>'; }).join('') + '</div>';
+    var at = anchor ? anchor.closest('.field') : document.querySelector('#modal .panel-b .label');
+    if (at && at.parentNode) at.parentNode.insertBefore(box, at.nextSibling); else (document.querySelector('#modal .panel-b') || document.body).appendChild(box);
+  };
+})();
+
+/* ---------- equipment to bring (Social Media and Production) ---------- */
+function gearModal(evId){
+  var e = S.events.filter(function(x){ return x.id === evId; })[0]; if (!e) return;
+  var out = S.inventory.filter(function(i){ return i.eventId === e.id && i.status === 'Out'; }), avail = S.inventory.filter(function(i){ return i.status === 'Available'; }).sort(function(a, b){ return a.name < b.name ? -1 : 1; });
+  var ppl = evPeople(e).filter(function(p){ return p.u; }), opts = (ppl.length ? ppl.map(function(p){ return userOf(p.u); }) : S.users.filter(function(u){ return u.active; })).filter(Boolean);
+  M = { gear: e.id };
+  modal('Equipment to bring', '<div class="sumbox"><b>' + esc(e.title) + '</b><span>' + esc(evShort(e)) + (e.venue ? ' · ' + esc(e.venue) : '') + '</span></div>' +
+    (out.length ? '<div class="dsec">Already going</div><ul class="list">' + out.map(function(i){ return '<li class="row"><span class="mark act">' + ic('camera') + '</span><div class="body"><div class="t">' + esc(i.name) + '</div><div class="m">With ' + esc(userName(i.holder)) + (i.dueBack ? ' · back by ' + fDate(i.dueBack) : '') + '</div></div><button type="button" class="btn btn-sm btn-ghost" data-act="gearBack" data-id="' + esc(i.id) + '">Returned</button></li>'; }).join('') + '</ul>' : '') +
+    '<div class="dsec">Available now</div>' + (avail.length ? '<div class="skgrid">' + avail.map(function(i){ return '<label class="skopt"><input type="checkbox" name="gear" value="' + esc(i.id) + '"><span>' + esc(i.name) + (i.tag ? ' <small class="hint">' + esc(i.tag) + '</small>' : '') + '</span></label>'; }).join('') + '</div>' : '<p class="hint" style="margin:0">Nothing is available right now.</p>') +
+    '<div class="two" style="margin-top:12px"><div class="field"><label for="ggw">Who brings it</label><select class="input" id="ggw" name="holder">' + opts.map(function(u){ return '<option value="' + esc(u.username) + '">' + esc(u.name) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="field"><label for="ggd">Due back</label><input class="input" id="ggd" name="dueBack" type="date" value="' + addDays(e.dateTo || e.date, 1) + '"></div></div>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Close</button>' + (avail.length ? '<button type="button" class="btn btn-primary" data-act="gearGo">' + ic('check') + 'Check out ticked items</button>' : ''));
+}
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act="gearModal"],[data-act="gearGo"],[data-act="gearBack"]'); if (!t) return;
+  var a = t.dataset.act;
+  if (a === 'gearModal') return gearModal(t.dataset.id);
+  if (a === 'gearBack'){ var evb = M.gear; t.disabled = true; return act('checkinItem', { id: t.dataset.id }, 'Marked as returned').then(function(){ gearModal(evb); }).catch(function(e){ toast(e.message); t.disabled = false; }); }
+  var ids = Array.prototype.map.call(document.querySelectorAll('#modal input[name=gear]:checked'), function(x){ return x.value; });
+  if (!ids.length) return toast('Tick at least one item.');
+  var holder = document.getElementById('ggw').value, due = document.getElementById('ggd').value, evId = M.gear; t.disabled = true;
+  ids.reduce(function(p, id){ return p.then(function(){ return call('checkoutItem', { id: id, holder: holder, dueBack: due, eventId: evId, note: '' }); }); }, Promise.resolve())
+    .then(function(){ return refresh(); }).then(function(){ toast(ids.length + ' item' + (ids.length === 1 ? '' : 's') + ' checked out to ' + firstName(holder)); gearModal(evId); })
+    .catch(function(e){ toast(e.message); t.disabled = false; });
+});
+/* event card: who has which gear, and a button for it */
+(function(){
+  var EC = evCard;
+  evCard = function(e){
+    var h = EC(e);
+    if (inProd()){
+      var gear = S.inventory.filter(function(i){ return i.eventId === e.id && i.status === 'Out'; });
+      if (gear.length) h = h.replace(/<dt>Gear<\/dt><dd>[^<]*<\/dd>/, '<dt>Gear</dt><dd>' + gear.map(function(i){ return esc(i.name) + ' <span class="hint">(' + esc(firstName(i.holder)) + ')</span>'; }).join(', ') + '</dd>');
+      if (e.status !== 'Cancelled') h = h.replace('<div class="acts-row">', '<div class="acts-row"><button type="button" class="btn btn-sm btn-ghost" data-act="gearModal" data-id="' + esc(e.id) + '">' + ic('camera') + 'Equipment</button>');
+    }
+    return h;
+  };
+})();
+
+/* ---------- calendar: Mine / My division / Everyone (not locked, just a default) ---------- */
+function calScope(){ return S.calScope || (isAdmin() || !S.me.division ? 'all' : 'div'); }
+function inMyDiv(u){ var x = userOf(u); return !!x && !!S.me.division && x.division === S.me.division; }
+(function(){
+  calItems = function(){
+    var me = S.me.username, adm = isAdmin(), items = [], live = {}, sc = calScope();
+    var keep = function(us, isEvent, e){ if (sc === 'all') return true; if (sc === 'mine') return us.indexOf(me) >= 0;
+      return us.some(inMyDiv) || us.indexOf(me) >= 0 || (isEvent && canSched() && evState(e) === 'need') || (isEvent && e.createdBy && inMyDiv(e.createdBy)); };
+    S.events.forEach(function(e){ if (e.status === 'Cancelled') return; live[e.id] = 1; var us = evPeople(e).map(function(p){ return p.u; }).filter(Boolean); if (!keep(us, true, e)) return; var st = evState(e); items.push({ s: e.date, e: e.dateTo, cls: 'b-' + st, t: e.title, un: e.status === 'Pending', mine: us.indexOf(me) >= 0, pr: st === 'need' ? 0 : st === 'wait' ? 1 : 2 }); });
+    activeTOs().forEach(function(t){ if (t.eventId && live[t.eventId]) return; var us = t.usernames || []; if (!keep(us)) return; items.push({ s: t.dateFrom, e: t.dateTo, cls: 'b-to', t: 'TO · ' + t.event, mine: us.indexOf(me) >= 0, pr: 3 }); });
+    S.leaves.forEach(function(l){ if (/^ADJ/.test(l.type) || !keep([l.username])) return; var mm = l.username === me; items.push({ s: l.dateFrom, e: l.dateTo, cls: 'b-lv', t: (adm && !mm ? firstName(l.username) + ' · ' : '') + leaveName(l.type), mine: mm, pr: 4 }); });
+    S.entries.forEach(function(e){ if (e.type !== 'USE' || e.status === 'Rejected' || !keep([e.username])) return; var mm = e.username === me; items.push({ s: e.date, e: e.date, cls: 'b-lv', t: (adm && !mm ? firstName(e.username) + ' · ' : '') + 'Day off', un: e.status === 'Pending', mine: mm, pr: 4 }); });
+    if (!adm) S.board.forEach(function(b){ if (b.username === me || !keep([b.username])) return; items.push({ s: b.from, e: b.to, cls: 'b-lv', t: firstName(b.username) + ' · ' + (b.kind === 'leave' ? 'On leave' : 'Day off'), pr: 4 }); });
+    return items;
+  };
+  var VC = viewCalendar;
+  viewCalendar = function(){
+    var v = VC(), sc = calScope();
+    var seg = '<div class="tabs calscope" role="group" aria-label="Show on the calendar">' + [['mine', 'Mine'], ['div', 'My division'], ['all', 'Everyone']].filter(function(o){ return o[0] !== 'div' || S.me.division; })
+      .map(function(o){ return '<button type="button" data-act="calScope" data-s="' + o[0] + '" aria-pressed="' + (sc === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div>';
+    v.body = v.body.replace(/<label class="keep" style="font-size:13.5px"><input type="checkbox" id="calMine"[^>]*>Only mine<\/label>/, seg);
+    if (canSkills()) v.actions = (v.actions || '') .replace('<button type="button" class="btn btn-sun" data-act="evNew">', '<button type="button" class="btn btn-glass" data-act="skillsModal">' + ic('users') + 'Staff skills</button><button type="button" class="btn btn-sun" data-act="evNew">');
+    return v;
+  };
+})();
+document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="calScope"]'); if (!t) return; S.calScope = t.dataset.s; render(); });
+
+(function(){
+  var st = document.createElement('style');
+  st.textContent = '.skchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}.skc{font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)}' +
+    '.is-busy{opacity:.7}.hint.busy{color:var(--red)}' +
+    '.sugrow{display:grid;gap:6px;margin:8px 0}.sugrow>b{font-size:13px}.sugppl{display:flex;flex-wrap:wrap;gap:6px}' +
+    '.sugp{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);border-radius:12px;padding:6px 10px;cursor:pointer;font:inherit;text-align:left;min-height:40px;transition:background .15s,transform .12s var(--ease-out,ease-out)}' +
+    '.sugp span{display:flex;flex-direction:column;line-height:1.2;font-weight:600;font-size:13.5px}.sugp small{font-weight:500;font-size:11.5px;color:var(--muted)}.sugp svg{width:16px;height:16px;flex:none}' +
+    '.sugp.on{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-strong)}.sugp.busy small{color:var(--red)}.sugp:active{transform:scale(.97)}' +
+    '.tosug{margin-top:10px;padding:10px 12px;border:1px dashed var(--line-strong);border-radius:12px}' +
+    '.skrow{border:0;padding:0;margin:0 0 10px}.skrow legend{font-weight:600;font-size:14px;margin-bottom:6px}.skgrid{display:flex;flex-wrap:wrap;gap:6px}' +
+    '.skopt{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-strong);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:13.5px;min-height:36px}.skopt:has(input:checked){background:var(--brand-soft);border-color:var(--brand);color:var(--brand-strong);font-weight:600}' +
+    '.calscope{flex:none}@media (pointer:coarse){.sugp,.skopt{min-height:44px}}';
+  document.head.appendChild(st);
+})();
 
 (function boot(){
   S.token = lGet('pio_tok') || sGet('pio_tok');
