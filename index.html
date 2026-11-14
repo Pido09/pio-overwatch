@@ -81,8 +81,8 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .input{height:44px;border:1px solid var(--line-strong);background:var(--surface);border-radius:var(--r-sm);padding:0 12px;width:100%}
 .input:focus{border-color:var(--brand);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 22%,transparent)}
 .pin{letter-spacing:.4em;font-variant-numeric:tabular-nums}
-.pinwrap{position:relative}.pinwrap .input{padding-right:48px}
-.pinwrap button{position:absolute;right:4px;top:4px;width:36px;height:36px;border:0;background:none;border-radius:8px;cursor:pointer;color:var(--muted);display:grid;place-items:center}
+.pinwrap{position:relative}.pinwrap .input{padding-right:52px}
+.pinwrap button{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:44px;height:44px;border:0;background:none;border-radius:8px;cursor:pointer;color:var(--muted);display:grid;place-items:center}
 .pinwrap button:hover{color:var(--ink);background:var(--surface-2)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 16px;border-radius:var(--r-sm);border:1px solid transparent;font-weight:600;cursor:pointer;white-space:nowrap;text-decoration:none;transition:background .15s,box-shadow .15s,transform .1s}
 .btn:active{transform:translateY(1px)}
@@ -116,6 +116,28 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .icon-btn:hover{background:var(--surface-2)}
 .icon-btn[disabled]{opacity:.4;cursor:default}
 .error{color:var(--red);font-size:13.5px;min-height:1em;margin:0}
+.ferr{color:var(--red);font-size:13.5px;font-weight:600;margin:2px 0 0}
+/* equipment type: one-tap tiles */
+.typepick{border:0;margin:0;padding:0;min-width:0}
+.typepick legend{font-size:13.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px;padding:0}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px}
+.tgrid input{position:absolute;opacity:0;pointer-events:none}
+.tgrid label{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:58px;padding:8px 4px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface);font-size:12.5px;font-weight:600;text-align:center;cursor:pointer;line-height:1.15}
+.tgrid label svg.i{width:20px;height:20px;color:var(--muted)}
+.tgrid label:hover{border-color:var(--brand)}
+.tgrid input:checked+label{background:var(--brand-soft);border-color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand);color:var(--brand-strong)}
+.tgrid input:checked+label svg.i{color:var(--brand-strong)}
+.tgrid input:focus-visible+label{outline:3px solid var(--brand-glow);outline-offset:2px}
+.inv-alert{margin:0 16px 16px;align-items:center}.inv-alert span{flex:1}
+.invsheet-bar{display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
+.invsheet-list{list-style:none;margin:0 -4px;padding:0}
+.invsheet-list .invr{padding-left:4px;padding-right:4px}
+.ivstat{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:8px 12px;border:1px dashed var(--line-strong);border-radius:12px}
+details.ivmore{border:1px solid var(--line);border-radius:12px;padding:0 12px}
+details.ivmore>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:6px;font-weight:600;font-size:14px;flex-wrap:wrap}
+details.ivmore[open]{padding-bottom:12px}
+details.ivmore[open]>summary{margin-bottom:6px}
+.input[aria-invalid="true"]{border-color:var(--red);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 16%,transparent)}
 .warn-note{display:flex;gap:8px;align-items:flex-start;background:var(--gold-soft);color:var(--gold);border-radius:var(--r-sm);padding:10px 12px;font-size:13.5px;font-weight:600}
 .info-note{display:flex;gap:8px;align-items:flex-start;background:var(--navy-soft);color:var(--navy);border-radius:var(--r-sm);padding:10px 12px;font-size:13.5px;font-weight:600}
 .seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -181,6 +203,16 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .divpick input:checked+label{border-color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand);background:var(--brand-soft)}
 .divpick input:checked+label .tick{opacity:1}
 .divpick input:focus-visible+label{outline:3px solid var(--brand-glow);outline-offset:2px}
+/* Phones: a shorter photo and compact 2 × 2 division cards, so Sign in fits on the first screen. */
+@media (max-width:560px){
+  .auth .auth-photo{min-height:160px;padding-block:14px}
+  .auth .auth-main{padding-block:18px 32px}
+  .auth-card{gap:14px}
+  .divgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .divpick label{flex-direction:row;justify-content:flex-start;text-align:left;gap:10px;padding:9px 26px 9px 10px;min-height:56px}
+  .divpick label>:first-child{flex:none;width:30px;height:30px}
+  .divpick .tick{top:50%;right:8px;transform:translateY(-50%)}
+}
 
 /* ---------- shell ---------- */
 .shell{display:grid;grid-template-columns:256px minmax(0,1fr);min-height:100vh}
@@ -219,6 +251,15 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .panel-h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .panel-h h2{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
 .panel-h h2 svg.i{color:var(--brand-strong)}
+.fold-t{all:unset;display:flex;align-items:center;gap:8px;min-height:44px;margin:-6px 0;cursor:pointer;border-radius:6px;font:inherit;color:inherit}
+.fold-t:focus-visible{outline:3px solid var(--brand-glow);outline-offset:2px}
+.fold-c{display:inline-flex;color:var(--muted);transition:transform .2s}
+.fold-t[aria-expanded="true"] .fold-c{transform:rotate(90deg)}
+.panel.folded{align-self:start}
+.grid.dash>section.panel.folded>:not(.panel-h),.panel.folded .panel-h>:not(h2){display:none}
+.panel.folded .panel-h{border-bottom:0}
+.panel.folded .panel-h h2{flex:1}.panel.folded .fold-t{flex:1}
+@media (prefers-reduced-motion: reduce){.fold-c{transition:none}}
 .panel-h select.input{height:36px;width:auto;max-width:100%}
 .panel-b{padding:18px}
 .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:20px;align-items:start}
@@ -293,8 +334,28 @@ td{padding:12px 18px;border-bottom:1px solid var(--line);vertical-align:middle;w
 tr:last-child td{border-bottom:0}
 td.r,th.r{text-align:right}
 tr.total td{border-top:2px solid var(--line-strong);background:var(--surface-2);font-weight:700}
+/* Phones: rows of "cards" tables become stacked cards (name on top, "label  value" lines below). */
+@media screen and (max-width:640px){
+  table.cards,table.cards tbody,table.cards tr{display:block}
+  table.cards thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  table.cards tr{padding:12px 16px;border-bottom:1px solid var(--line)}
+  table.cards tr:last-child{border-bottom:0}
+  table.cards td{display:flow-root;padding:4px 0;border:0;white-space:normal;text-align:right;min-width:0!important;max-width:none!important;background:none}
+  table.cards td[data-label]::before{content:attr(data-label);float:left;margin-right:12px;color:var(--muted);font-size:13px;font-weight:600;text-align:left}
+  table.cards td .hint{max-width:none!important}
+  table.cards td:first-child{text-align:left;font-size:15px;padding:0 0 6px}
+  table.cards td:first-child::before{content:none}
+  table.cards td:not([data-label]){text-align:left;padding-top:8px}
+  table.cards td:not([data-label]) .row-btns{justify-content:flex-start!important}
+  table.cards tr.grp{padding:0;border-bottom:0}
+  table.cards tr.grp td{display:block;text-align:left;padding:8px 16px;background:var(--surface-2)}
+  table.cards tr.total{background:var(--surface-2);border-top:2px solid var(--line-strong)}
+  table.cards tr.total td{border-top:0;background:none}
+  table.cards tr.tap:hover{background:var(--surface-2)}
+}
 .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .filters select{height:36px;width:auto;min-width:130px}
+.filters input[type=search]{height:36px;flex:1 1 220px;min-width:0;max-width:340px}
 .tabs{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px}
 .tabs button{border:0;background:none;padding:7px 14px;border-radius:9px;font-weight:600;font-size:13.5px;cursor:pointer;color:var(--muted)}
 .tabs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(14,30,51,.12)}
@@ -338,6 +399,9 @@ tr.total td{border-top:2px solid var(--line-strong);background:var(--surface-2);
 @keyframes pop{from{opacity:.001;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
 .modal .panel-b{display:flex;flex-direction:column;gap:14px}
 .modal-f{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--line);flex-wrap:wrap}
+/* Long forms: the title bar (with Close) and the Save/Cancel row stay in view while the fields scroll. */
+.modal>.panel-h{position:sticky;top:0;z-index:2;background:var(--surface)}
+.modal>.modal-f{position:sticky;bottom:0;z-index:2;background:var(--surface)}
 .detail-top{display:flex;align-items:center;gap:14px}
 .detail-top .mark{width:46px;height:46px;border-radius:13px}
 .big-amt{font-family:var(--f-display);font-weight:800;font-size:26px;font-variant-numeric:tabular-nums;margin-bottom:4px}
@@ -664,10 +728,10 @@ button,[role=button],a,input,select,summary,label{touch-action:manipulation}
 .mc-day.out{background:var(--surface-2);color:var(--muted)} .mc-day.hol{background:var(--navy-soft)}
 .mc-n{display:inline-grid;place-items:center;min-width:24px;height:24px;border-radius:12px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
 .mc-day.today .mc-n{background:var(--brand);color:#fff}
-.mc-hl{margin-left:4px;font-size:10.5px;font-weight:600;color:var(--navy);vertical-align:middle;display:inline-block;max-width:calc(100% - 34px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mc-more{position:absolute;right:6px;bottom:3px;font-size:11px;font-weight:700;color:var(--muted)}
+.mc-hl{margin-left:4px;font-size:12px;font-weight:600;color:var(--navy);vertical-align:middle;display:inline-block;max-width:calc(100% - 34px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mc-more{position:absolute;right:6px;bottom:3px;font-size:12px;font-weight:700;color:var(--muted)}
 .mc-bars{position:absolute;inset:0;pointer-events:none}
-.mc-bar{position:absolute;left:calc(var(--c0) * 100% / 7 + var(--il));width:calc((var(--c1) - var(--c0) + 1) * 100% / 7 - var(--il) - var(--ir));top:calc(var(--top) + var(--l) * var(--lane));height:var(--bar);padding:0 7px;font-size:11.5px;font-weight:600;line-height:var(--bar);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:5px}
+.mc-bar{position:absolute;left:calc(var(--c0) * 100% / 7 + var(--il));width:calc((var(--c1) - var(--c0) + 1) * 100% / 7 - var(--il) - var(--ir));top:calc(var(--top) + var(--l) * var(--lane));height:var(--bar);padding:0 7px;font-size:12.5px;font-weight:600;line-height:var(--bar);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:5px}
 .mc-bar.cl{border-top-left-radius:0;border-bottom-left-radius:0} .mc-bar.cr{border-top-right-radius:0;border-bottom-right-radius:0}
 .b-need{background:var(--red-soft);color:var(--red);box-shadow:inset 3px 0 0 var(--red)} .b-wait{background:var(--gold-soft);color:var(--gold);box-shadow:inset 3px 0 0 var(--gold)}
 .b-ok{background:var(--brand-soft);color:var(--brand-strong);box-shadow:inset 3px 0 0 var(--brand)} .b-to{background:var(--violet-soft);color:var(--violet);box-shadow:inset 3px 0 0 var(--violet)}
@@ -696,9 +760,15 @@ button,[role=button],a,input,select,summary,label{touch-action:manipulation}
 .nrow{list-style:none;border-top:1px solid var(--line)} .nrow:first-child{border-top:0}
 .nbtn{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;padding:12px 4px;background:none;border:0;font:inherit;color:inherit;cursor:pointer}
 .nrow.unread .nbtn b::after{content:"";display:inline-block;width:8px;height:8px;margin-left:8px;border-radius:50%;background:var(--red)}
-.badge.bad{background:var(--red);color:#fff}
+.badge.bad{background:#B42318;color:#fff} /* same deep red in both themes: white text stays readable (6.5:1) */
 .topbar .bellb{position:relative} .topbar .bellb .badge{position:absolute;top:0;right:0;margin:0;padding:0 5px}
 .evlink{cursor:pointer;border:0;font:inherit;display:inline-flex;gap:4px;align-items:center;max-width:100%} .evlink svg{width:12px;height:12px}
+/* Pill buttons look small but get a taller invisible tap area. */
+button.pill{position:relative} button.pill::after{content:"";position:absolute;inset:-8px -2px}
+/* Tab strips that scroll sideways fade at the edge that has more tabs. */
+.tabs.fade-r{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 36px),transparent)}
+.tabs.fade-l{-webkit-mask-image:linear-gradient(to right,transparent,#000 36px);mask-image:linear-gradient(to right,transparent,#000 36px)}
+.tabs.fade-l.fade-r{-webkit-mask-image:linear-gradient(to right,transparent,#000 36px,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(to right,transparent,#000 36px,#000 calc(100% - 36px),transparent)}
 @media (prefers-reduced-motion:no-preference){main.pgin{animation:pgin .22s ease-out both}@keyframes pgin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}html{scroll-behavior:smooth}}
 main:focus{outline:none} .btn:active:not(:disabled){transform:translateY(1px)}
 @media (max-width:560px){.dcard dl{grid-template-columns:1fr;gap:2px}.dcard dt{margin-top:8px}}
@@ -718,7 +788,7 @@ main:focus{outline:none} .btn:active:not(:disabled){transform:translateY(1px)}
 /* tablets (iPad portrait): keep readable event names */
 @media (min-width:641px) and (max-width:860px){
   .mc{--lane:19px;--bar:16px;--top:30px}
-  .mc-bar{font-size:11px;padding:0 5px;line-height:16px}
+  .mc-bar{font-size:12px;padding:0 5px;line-height:16px}
   .tiles.cal4{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
   .tiles.cal4 .tile .s{display:none}
 }
@@ -945,7 +1015,7 @@ function canReview(e){ return isAdmin() && e.status === 'Pending' && !(e.usernam
 function sorted(list){ return list.slice().sort(function(a,b){ return a.date === b.date ? (b.createdAt > a.createdAt ? 1 : -1) : (b.date > a.date ? 1 : -1); }); }
 function pending(type){ return sorted(S.entries.filter(function(e){ return e.status === 'Pending' && (!type || e.type === type); })); }
 function closesOn(m){ return fDate(nextMonthStart(m), { month:'long', day:'numeric' }); }
-function goRecords(f){ S.rf = Object.assign({ user:'all', div:'all', type:'all', status:'all' }, f || {}); S.recTab = 'entries'; S.view = 'records'; render(); window.scrollTo(0,0); }
+function goRecords(f){ S.rf = Object.assign({ user:'all', div:'all', type:'all', status:'all' }, f || {}); var rq = document.getElementById('rfQ'); if (rq) rq.value = S.rf.q || ''; S.recTab = 'entries'; S.view = 'records'; render(); window.scrollTo(0,0); }
 
 /* ---------- files ---------- */
 function download(name, text, type){
@@ -1022,7 +1092,7 @@ function render(){
         '<div class="nav">' + (S.view === 'dashboard' ? '<button data-act="customize" class="show-sm">' + ic('sliders') + '<span>Customize dashboard</span></button>' : '') + bellBtn(true) + '<button data-act="refresh">' + ic('refresh') + '<span>Refresh</span></button><button data-act="changePin">' + ic('key') + '<span>Change PIN</span></button><button data-act="logout">' + ic('out') + '<span>Sign out</span></button></div></div>' +
       '</aside>' +
       '<div style="min-width:0">' +
-        '<header class="topbar"><button data-act="drawer" aria-label="Open menu" aria-controls="sidenav" aria-expanded="false">' + ic('menu') + '</button><img src="' + LOGO + '" alt=""><b>PIO Overwatch</b>' + '<button data-act="search" aria-label="Search">' + ic('search') + '</button>' + bellBtn(false) + '<button data-act="refresh" aria-label="Refresh">' + ic('refresh') + '</button></header>' +
+        '<header class="topbar"><button data-act="drawer" aria-label="Open menu" aria-controls="sidenav" aria-expanded="false">' + ic('menu') + '</button><img src="' + LOGO + '" alt=""><b>PIO Overwatch</b>' + '<button data-act="search" aria-label="Search">' + ic('search') + '</button>' + bellBtn(false) + '</header>' +
         '<main class="main" id="main" tabindex="-1">' +
           '<section class="band"><div class="band-in"><div><p class="eyebrow">' + (v.eyebrow || 'PIO Overwatch') + '</p><h1>' + v.title + '</h1>' + (v.sub ? '<p' + (S.view === 'dashboard' ? ' class="keep-sub"' : '') + '>' + v.sub + '</p>' : '') + '</div>' + (v.actions ? '<div class="row-btns no-print">' + v.actions + '</div>' : '') + '</div></section>' +
           '<div class="wrap">' + v.body + '</div>' +
@@ -1032,15 +1102,15 @@ function render(){
     '</div>';
   if (same){
     // same page: change only what changed, so background updates do not flash or jump
-    var tpl = document.createElement('div'); tpl.innerHTML = html; groupify(tpl); if (typeof a11yFix === 'function') a11yFix(tpl);
-    morphKids(app, tpl); resetControls(app, kept);
+    var tpl = document.createElement('div'); tpl.innerHTML = html; groupify(tpl); cardLabels(tpl); if (typeof a11yFix === 'function') a11yFix(tpl);
+    morphKids(app, tpl); resetControls(app, kept); requestAnimationFrame(function(){ tabFades(app); });
     if (kept) restoreForm(kept);
     var dr = app.querySelector('[data-act="drawer"]'), ex = String(document.body.classList.contains('drawer-open')); if (dr && dr.getAttribute('aria-expanded') !== ex) dr.setAttribute('aria-expanded', ex);
   } else {
     app.innerHTML = html;
     document.body.classList.remove('drawer-open');
     window.scrollTo(0, y);
-    groupify(app); if (typeof a11yFix === 'function') a11yFix(app);
+    groupify(app); cardLabels(app); if (typeof a11yFix === 'function') a11yFix(app); requestAnimationFrame(function(){ tabFades(app); });
   }
   if (typeof navSync === 'function') navSync();
   if (S.view === 'log') checkEarnForm(document, true);
@@ -1182,11 +1252,16 @@ var WIDGETS = {
     ['hero', 'Balance card', 12], ['kpis', 'Summary tiles', 12], ['recent', 'Recent activity', 7], ['requests', 'My days off', 5], ['trend', 'My monthly chart', 7], ['holidays', 'Upcoming holidays', 5]
   ]
 };
+/* Admins see their own offset in the summary tiles, so the separate "Your offset" strip is not needed. */
+WIDGETS.admin = WIDGETS.admin.filter(function(w){ return w[0] !== 'mine'; });
 function ensureComing(){ Object.keys(WIDGETS).forEach(function(k){ var L = WIDGETS[k], at = 0, has = false; for (var i = 0; i < L.length; i++){ if (L[i][0] === 'coming') has = true; if (L[i][0] === 'kpis' || L[i][0] === 'leave' || L[i][0] === 'hero') at = i + 1; } if (!has) L.splice(at, 0, ['coming', 'Coming up', 12]); }); }
 function widgetPrefs(){ ensureComing();
   var role = wRole(), all = WIDGETS[role].map(function(w){ return w[0]; }), saved = null;
   try { saved = JSON.parse(lGet('pio_w_' + role) || 'null'); } catch(e){}
   // Phones start with a shorter dashboard; everything can be turned back on in Customize.
+  // Admins start with what needs action (reviews, who's out, what's coming), then the reference panels.
+  if ((!saved || !saved.order) && role === 'admin'){ var first = ['kpis','queue','out','coming','tos','daysoff','tevsum','balances'];
+    all = all.slice().sort(function(a, b){ var i = first.indexOf(a), j = first.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); }); }
   if (!saved || !saved.order) return { order: all, hidden: window.innerWidth < 700 ? (role === 'admin' ? ['balances','trend','divisions','daysoff','holidays','activity'] : role === 'regular' ? ['trend','recent','hero','holidays'] : ['trend','holidays','recent']) : [] };
   all.forEach(function(id){ if (saved.order.indexOf(id) < 0) saved.order.push(id); });
   saved.order = saved.order.filter(function(id){ return all.indexOf(id) >= 0; });
@@ -1194,6 +1269,15 @@ function widgetPrefs(){ ensureComing();
 }
 /* Dashboards: admins, regular/casual staff (leaves first) and JO/COS staff (offsets first). */
 function wRole(){ return isAdmin() ? 'admin' : hasLeaves() ? 'regular' : 'employee'; }
+/* Folded panels show only their title bar. Admins start with the reference panels folded;
+   opening or closing one is remembered on this device. */
+function wFolded(){ var role = wRole(), f = null; try { f = JSON.parse(lGet('pio_fold_' + role) || 'null'); } catch(e){}
+  return Array.isArray(f) ? f : role === 'admin' ? ['balances','trend','divisions','holidays','activity'] : []; }
+function foldable(html, id, folded){
+  if (html.indexOf('<section class="panel ') !== 0) return html;
+  return html.replace('<section class="panel ', '<section data-w="' + id + '" class="panel ' + (folded ? 'folded ' : ''))
+    .replace('<h2>', '<h2><button type="button" class="fold-t" id="wf-' + id + '" data-act="wFold" data-w="' + id + '" aria-expanded="' + !folded + '">')
+    .replace('</h2>', '<span class="fold-c" aria-hidden="true">' + ic('right') + '</span></button></h2>'); }
 function widgetDef(id){ ensureComing(); return WIDGETS[wRole()].filter(function(w){ return w[0] === id; })[0]; }
 
 /* Greeting by time of day in the Philippines. */
@@ -1256,14 +1340,18 @@ function viewDashboard(){
   var W = adm ? adminWidgets(staff) : empWidgets(); W.coming = comingWidget;
   // Pack widgets into full rows of 12 so side-by-side boxes always line up:
   // a box that would leave a gap at the end of its row is widened to fill it.
-  var items = P.order.filter(function(id){ return P.hidden.indexOf(id) < 0 && W[id] && W[id](widgetDef(id)[2]); }).map(function(id){ return { id: id, n: widgetDef(id)[2] }; });
+  // Folded panels are half width, so they pair up into tidy rows.
+  var F = wFolded();
+  var items = P.order.filter(function(id){ return P.hidden.indexOf(id) < 0 && W[id] && W[id](widgetDef(id)[2]); }).map(function(id){ var f = F.indexOf(id) >= 0; return { id: id, f: f, n: f ? 6 : widgetDef(id)[2] }; });
   var row = [], used = 0;
   function closeRow(){ if (row.length && used < 12){ var grow = 12 - used, k = row.length; row.forEach(function(it, i){ var add = Math.floor(grow / k) + (i < grow % k ? 1 : 0); it.n += add; }); } row = []; used = 0; }
   items.forEach(function(it){ if (used + it.n > 12) closeRow(); row.push(it); used += it.n; if (used === 12) closeRow(); });
   closeRow();
-  items.forEach(function(it){ html += W[it.id](it.n); });
+  items.forEach(function(it){ html += foldable(W[it.id](it.n), it.id, it.f); });
+  var toReview = adm ? pending().filter(canReview).length : 0;
   var actions = (adm
-      ? '<button class="btn btn-sun" data-go="log">' + ic('plus') + 'Add offset</button>'
+      ? (toReview ? '<button class="btn btn-glass" data-go="log">' + ic('plus') + 'Add offset</button><button class="btn btn-sun" data-go="approvals">' + ic('check') + 'Review ' + toReview + '</button>'
+                  : '<button class="btn btn-sun" data-go="log">' + ic('plus') + 'Add offset</button>')
       : (hasLeaves() ? '<button class="btn btn-glass" data-go="leaves">' + ic('plane') + 'My leaves</button>' : '') + '<button class="btn btn-sun" data-go="log">' + ic('plus') + 'Log offset</button>');
   return { eyebrow: fDate(today(), { weekday:'long', month:'long', day:'numeric', year:'numeric' }),
     title: greeting() + ', ' + esc(S.me.name.split(' ')[0]) + '!',
@@ -1279,14 +1367,15 @@ function adminWidgets(staff){
     mine: function(n){ return '<button class="mine ' + span(n) + '" data-act="requestModal"><span class="k">Your offset</span><b>' + fD(mine.avail) + ' available</b><span class="hint">' + (mine.month ? '+' + fD(mine.month) + ' this month · ' : '') + (mine.pendN + mine.reqN ? (mine.pendN + mine.reqN) + ' waiting for another admin' : 'Nothing waiting') + '</span><span class="go">Use offset' + ic('right') + '</span></button>'; },
     kpis: function(n){ return '<div class="tiles ' + span(n) + '">' +
       tile('To review', pend.length, pending('USE').length + ' day-off ' + (pending('USE').length === 1 ? 'request' : 'requests') + ' · ' + pending('EARN').length + ' offsets', pend.length ? 'warn' : '', 'clock', 'data-go="approvals"') +
-      tile('Available', fD(all.avail), 'Usable now · ' + staff.length + ' active staff', '', 'shield', 'data-go="staff"') +
+      tile('Your offset', fD(mine.avail), (mine.month ? '+' + fD(mine.month) + ' this month · ' : '') + (mine.pendN + mine.reqN ? (mine.pendN + mine.reqN) + ' waiting for another admin' : 'Tap to use offset'), '', 'shield', 'data-act="requestModal"') +
       tile(mShort(m) + ' so far', '+' + fD(all.month), 'Usable on ' + closesOn(m), '', 'month', 'data-go="monthly"') +
       tile('Used in ' + mShort(m), fD(all.usedM), 'Days off taken in ' + mShort(m), '', 'plane', 'data-rec="type:USE"') + '</div>'; },
-    balances: function(n){ return panel('Staff balances', 'users', rows.length ? '<div class="table-wrap"><table><thead><tr><th>Employee</th><th class="r">Available</th><th class="r">This month</th><th></th></tr></thead><tbody>' +
+    balances: function(n){ return panel('Staff balances', 'users', rows.length ? '<div class="table-wrap"><table class="cards"><thead><tr><th>Employee</th><th class="r">Available</th><th class="r">This month</th><th></th></tr></thead><tbody>' +
         rows.map(function(r){ return '<tr class="tap" data-grp="' + esc(r.u.division) + '" data-person="' + esc(r.u.username) + '" tabindex="0"><td><b>' + esc(r.u.name) + '</b><div class="hint">' + esc(r.u.empType) + '</div></td><td class="r num"><b>' + fD(r.s.avail) + '</b>' + (r.s.reqDays ? '<div class="hint">' + fD(r.s.reqDays) + ' requested</div>' : '') + '</td><td class="r num">' + (r.s.month ? '+' + fD(r.s.month) : '—') + '</td>' +
           '<td class="r"><button class="btn btn-sm btn-ghost" data-act="useModal" data-u="' + esc(r.u.username) + '"' + (r.s.avail > 0 && r.u.username !== S.me.username ? '' : ' disabled') + ' aria-label="Record offset use for ' + esc(r.u.name) + '">' + ic('minus') + 'Use</button></td></tr>'; }).join('') + '</tbody></table></div>'
         : empty('users', 'No staff here yet', 'Add employees in Staff, or pick another division.'), divSelect('dashDiv', S.dashDiv, 'Filter by division', true), span(n)); },
-    queue: function(n){ return panel('Waiting for review', 'clock', pend.length ? '<ul class="list">' + pend.slice(0, 4).map(function(e){ return entryRow(e, { showName: true, review: true }); }).join('') + '</ul>' : empty('check', 'All caught up', 'New offsets and day-off requests appear here.'),
+    // shown only when something is waiting; the "To review" tile already says when nothing is
+    queue: function(n){ if (!pend.length) return ''; return panel('Waiting for review', 'clock', pend.length ? '<ul class="list">' + pend.slice(0, 4).map(function(e){ return entryRow(e, { showName: true, review: true }); }).join('') + '</ul>' : empty('check', 'All caught up', 'New offsets and day-off requests appear here.'),
         pend.length > 4 ? '<button class="btn btn-sm btn-ghost" data-go="approvals">All ' + pend.length + '</button>' : '', span(n)); },
     trend: function(n){ return panel('Earned vs used, last 6 months', 'chart', trendChart(trendData(staff.map(function(u){ return u.username; }), 6)), '', span(n)); },
     divisions: function(n){
@@ -1429,7 +1518,7 @@ function viewMonthly(){
     rows.forEach(function(r){ Object.keys(tot).forEach(function(k){ tot[k] += r.s[k]; }); });
     function cells(x){ return '<td class="r num">' + (x.open ? fD(x.open) : '—') + '</td>' + (cap ? '<td class="r num minus">' + (x.forfeit ? '−' + fD(x.forfeit) : '—') + '</td>' : '') + '<td class="r num plus">' + (x.earned ? '+' + fD(x.earned) : '—') + '</td><td class="r num minus">' + (x.used ? '−' + fD(x.used) : '—') + '</td><td class="r num"><b>' + fD(x.close) + '</b></td><td class="r num">' + (x.pending ? fD(x.pending) : '—') + '</td>'; }
     body = head + '<section class="panel"><div class="panel-h no-print">' + nav + '<div class="filters">' + divSelect('dashDiv', S.dashDiv, 'Filter by division', true) + status + '</div></div>' +
-      '<div class="table-wrap"><table><thead><tr><th>Employee</th><th>Employment</th><th class="r">Carried over</th>' + (cap ? '<th class="r">Forfeited</th>' : '') + '<th class="r">Earned</th><th class="r">Used</th><th class="r">Balance ' + nm + '</th><th class="r">Pending</th></tr></thead><tbody>' +
+      '<div class="table-wrap"><table class="cards"><thead><tr><th>Employee</th><th>Employment</th><th class="r">Carried over</th>' + (cap ? '<th class="r">Forfeited</th>' : '') + '<th class="r">Earned</th><th class="r">Used</th><th class="r">Balance ' + nm + '</th><th class="r">Pending</th></tr></thead><tbody>' +
       rows.map(function(r){ return '<tr class="tap" data-grp="' + esc(r.u.division) + '" data-person="' + esc(r.u.username) + '" tabindex="0"><td><b>' + esc(r.u.name) + '</b></td><td>' + esc(r.u.empType) + '</td>' + cells(r.s) + '</tr>'; }).join('') +
       '<tr class="total"><td>Total</td><td>' + rows.length + ' staff</td>' + cells(tot) + '</tr></tbody></table></div></section>';
   } else {
@@ -1441,7 +1530,7 @@ function viewMonthly(){
       tile('Balance on ' + nm, fD(s.close), open ? 'If nothing else changes' : 'Carried into ' + mShort(shiftMonth(m, 1)), '', 'shield') + '</div></div>' +
       (list.length ? '<ul class="list" style="border-top:1px solid var(--line)">' + list.map(function(e){ return entryRow(e); }).join('') + '</ul>' : '<div class="empty">No offsets recorded in ' + fMonth(m) + '.</div>') + '</section>';
   }
-  return { eyebrow: 'Monthly summary', title: fMonth(m), sub: 'Carried over + earned − used = balance on the 1st. ' + (cap ? 'Carry-over is capped at ' + fD(cap) + '.' : 'Unused offsets carry over.'),
+  return { eyebrow: 'Offsets', title: 'Monthly summary', sub: 'Carried over + earned − used = balance on the 1st. ' + (cap ? 'Carry-over is capped at ' + fD(cap) + '.' : 'Unused offsets carry over.'),
     actions: '<button class="btn btn-glass" data-act="exportMonth">' + ic('download') + 'Download CSV</button><button class="btn btn-sun" data-act="print">' + ic('print') + 'Print report</button>', body: body };
 }
 
@@ -1457,7 +1546,7 @@ function viewRecords(){
   var list = filteredRecords();
   var net = list.reduce(function(s, e){ return e.status === 'Confirmed' ? s + (e.type === 'USE' ? -e.days : e.days) : s; }, 0);
   function sel(id, label, opts, val){ return '<select class="input" id="' + id + '" aria-label="' + label + '">' + opts.map(function(o){ return '<option value="' + esc(o[0]) + '"' + (val === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; }
-  var filters = '<div class="filters">' + tabs + (adm ? divSelect('rfDiv', f.div, 'Division', true) + sel('rfUser', 'Employee', [['all','All staff']].concat(S.users.map(function(u){ return [u.username, u.name]; })), f.user) : '') +
+  var filters = '<div class="filters">' + tabs + '<input class="input" type="search" id="rfQ" placeholder="Search name, event, venue" aria-label="Search records" autocomplete="off" enterkeyhint="search" value="' + esc(f.q || '') + '">' + (adm ? divSelect('rfDiv', f.div, 'Division', true) + sel('rfUser', 'Employee', [['all','All staff']].concat(S.users.map(function(u){ return [u.username, u.name]; })), f.user) : '') +
     sel('rfType', 'Type', [['all','Earned and used'],['EARN','Earned only'],['USE','Days off only']], f.type) + sel('rfStatus', 'Status', [['all','Any status'],['Confirmed','Confirmed'],['Pending','Pending'],['Rejected','Rejected']], f.status) + '</div>';
   var rows = list.map(function(e){
     return '<tr class="tap" data-entry="' + e.id + '" tabindex="0"><td class="num">' + fDate(e.date, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + '</td>' + (adm ? '<td>' + esc(userName(e.username)) + '</td>' : '') +
@@ -1468,13 +1557,15 @@ function viewRecords(){
   return { eyebrow: 'Records', title: adm ? 'All records' : 'My records', sub: 'Every offset earned and every day off. Tap a row for details.',
     actions: '<button class="btn btn-glass" data-act="exportRecords">' + ic('download') + 'Download CSV</button>',
     body: '<section class="panel"><div class="panel-h">' + filters + '<span class="hint num">' + list.length + (list.length === 1 ? ' entry' : ' entries') + ' · net ' + fD(net) + ' confirmed</span></div>' +
-      (list.length ? '<div class="table-wrap"><table><thead><tr><th>Date</th>' + (adm ? '<th>Employee</th>' : '') + '<th>Event</th><th>Venue</th><th class="r">Days</th><th>Status</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+      (list.length ? '<div class="table-wrap"><table class="cards"><thead><tr><th>Date</th>' + (adm ? '<th>Employee</th>' : '') + '<th>Event</th><th>Venue</th><th class="r">Days</th><th>Status</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
         : empty('list', 'No matching entries', 'Try different filters.', '<button class="btn btn-sm btn-ghost" data-act="clearFilters">Clear filters</button>')) + '</section>' };
 }
 function filteredRecords(){
-  var adm = isAdmin(), f = S.rf;
+  var adm = isAdmin(), f = S.rf, q = (f.q || '').trim().toLowerCase();
+  // the search box matches the person, event, venue, note or category (or "day off")
+  function hit(e){ if (!q) return true; return [userName(e.username), e.event, e.venue, e.note, e.category, e.type === 'USE' ? 'day off' : ''].some(function(s){ return s && String(s).toLowerCase().indexOf(q) >= 0; }); }
   return sorted(S.entries.filter(function(e){ var u = userOf(e.username);
-    return (!adm || f.user === 'all' || e.username === f.user) && (!adm || f.div === 'all' || (u && u.division === f.div)) && (f.type === 'all' || e.type === f.type) && (f.status === 'all' || e.status === f.status); }));
+    return (!adm || f.user === 'all' || e.username === f.user) && (!adm || f.div === 'all' || (u && u.division === f.div)) && (f.type === 'all' || e.type === f.type) && (f.status === 'all' || e.status === f.status) && hit(e); }));
 }
 
 /* ----- staff & divisions ----- */
@@ -1490,8 +1581,8 @@ function viewStaff(){
     return '<li class="row tap" data-act="divModal" data-id="' + esc(d.id) + '" tabindex="0">' + divBadge(d, 38) + '<div class="body"><div class="t">' + esc(d.name) + '</div><div class="m">' + n + ' active staff · shown as “' + esc(d.short) + '”</div></div><span class="hint">' + ic('edit') + '</span></li>'; }).join('');
   return { eyebrow: 'People', title: 'Staff', sub: 'Tap a person to change their division or employment type, reset their PIN, or manage their account.',
     actions: '<button class="btn btn-sun" data-act="focusAdd">' + ic('plus') + 'Add staff</button>',
-    body: '<div class="grid">' + panel('Accounts', 'users', '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Employment</th><th>Status</th><th class="r">Offsets</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>', (function(){ var np = S.users.filter(function(u){ return u.noPin; }).length; return np ? '<button class="btn btn-sm btn-primary" data-act="setPins">' + ic('key') + 'Set PINs for ' + np + '</button>' : '<span class="hint num">' + S.users.length + ' total</span>'; })(), 'span-12') +
-      panel('Divisions', 'pie', (divs ? '<ul class="list">' + divs + '</ul>' : empty('pie', 'No divisions', 'Add the PIO divisions so staff can choose theirs at sign-in.')) + '<div class="panel-b hint" style="border-top:1px solid var(--line)">Staff pick their division on the sign-in page. To change someone’s division or employment type, tap Manage.</div>', '<button class="btn btn-sm btn-primary" data-act="divModal">' + ic('plus') + 'Add division</button>', 'span-12') +
+    body: '<div class="grid">' + panel('Accounts', 'users', '<div class="table-wrap"><table class="cards"><thead><tr><th>Name</th><th>Employment</th><th>Status</th><th class="r">Offsets</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>', (function(){ var np = S.users.filter(function(u){ return u.noPin; }).length; return np ? '<button class="btn btn-sm btn-primary" data-act="setPins">' + ic('key') + 'Set PINs for ' + np + '</button>' : '<span class="hint num">' + S.users.length + ' total</span>'; })(), 'span-12') +
+      panel('Divisions', 'pie', (divs ? '<ul class="list">' + divs + '</ul>' : empty('pie', 'No divisions', 'Add the PIO divisions so staff can choose theirs at sign-in.')) + '<div class="panel-b hint" style="border-top:1px solid var(--line)">Staff pick their division on the sign-in page.</div>', '<button class="btn btn-sm btn-primary" data-act="divModal">' + ic('plus') + 'Add division</button>', 'span-12') +
 '</div>' };
 }
 
@@ -1714,7 +1805,8 @@ document.addEventListener('click', function(ev){
   if (a === 'backupDrive'){ busy(t, call('backupToDrive').then(function(r){ modal('Backup saved', '<p style="margin:0">A copy named <b>' + esc(r.name) + '</b> was saved to the admin’s Google Drive.</p><a class="btn btn-ghost" href="' + esc(r.url) + '" target="_blank" rel="noopener">' + ic('drive') + 'Open in Google Drive</a>', '<button type="button" class="btn btn-primary" data-act="close">Done</button>'); render(); })); return; }
   if (a === 'customize'){ document.body.classList.remove('drawer-open'); return customizeModal(); }
   if (a === 'wUp' || a === 'wDown'){ var i = +t.dataset.i, j = a === 'wUp' ? i - 1 : i + 1, tmp = M.order[i]; M.order[i] = M.order[j]; M.order[j] = tmp; M.draw(); return; }
-  if (a === 'wReset'){ lSet('pio_w_' + M.role, null); closeModal(); render(); toast('Dashboard reset'); return; }
+  if (a === 'wFold'){ var fl = wFolded(), fw = t.dataset.w, fi = fl.indexOf(fw); if (fi < 0) fl.push(fw); else fl.splice(fi, 1); lSet('pio_fold_' + wRole(), JSON.stringify(fl)); render(); var fb = document.getElementById('wf-' + fw); if (fb) fb.focus({ preventScroll: true }); return; }
+  if (a === 'wReset'){ lSet('pio_w_' + M.role, null); lSet('pio_fold_' + M.role, null); closeModal(); render(); toast('Dashboard reset'); return; }
   if (a === 'wSave'){ M.hidden = []; document.querySelectorAll('#wl input[data-w]').forEach(function(x){ if (!x.checked) M.hidden.push(x.dataset.w); }); lSet('pio_w_' + M.role, JSON.stringify({ order: M.order, hidden: M.hidden })); closeModal(); render(); toast('Layout saved'); return; }
   if (a === 'useModal') return useModal(t.dataset.u, t.dataset.date);
   if (a === 'requestModal') return requestModal(t.dataset.date);
@@ -1751,6 +1843,49 @@ document.addEventListener('keydown', function(ev){
       if (ev.shiftKey && document.activeElement === first){ ev.preventDefault(); last.focus(); } else if (!ev.shiftKey && document.activeElement === last){ ev.preventDefault(); first.focus(); } }
   }
 });
+/* Required or badly filled fields: instead of the browser's own bubble, show a message in the app's
+   style under the field, mark it for screen readers, and move to the first one that needs fixing.
+   Nothing is sent while a field is invalid; the browser still blocks the form. */
+var fieldErrFirst = null;
+function fieldName(el){
+  var l = el.labels && el.labels[0], g = el.closest('fieldset'), lg = g && g.querySelector('legend');
+  var t = (el.type === 'radio' && lg ? lg.textContent : l ? l.textContent : el.getAttribute('aria-label') || '') || '';
+  return t.replace(/\*/g, '').replace(/\(.*?\)/g, '').trim();
+}
+function fieldErrMsg(el){
+  var v = el.validity, n = fieldName(el);
+  if (v.valueMissing) return el.type === 'radio' ? 'Pick one.' : el.type === 'checkbox' ? 'Tick this to continue.' : el.tagName === 'SELECT' ? 'Choose an option.' : (n ? n + ' is required.' : 'This is required.');
+  if (v.rangeUnderflow) return 'Must be at least ' + el.min + '.';
+  if (v.rangeOverflow) return 'Must be at most ' + el.max + '.';
+  if (v.tooShort) return 'Use at least ' + el.minLength + ' characters.';
+  return el.validationMessage || 'Check this field.';
+}
+function fieldErrBox(el){ return (el.type === 'radio' || el.type === 'checkbox') && el.closest('fieldset, [role=radiogroup], .field') || el.closest('.field') || el.parentElement; }
+function clearFieldErr(el){
+  var box = fieldErrBox(el), p = box && box.querySelector(':scope > .ferr'); if (p) p.remove();
+  (box || document).querySelectorAll('[aria-invalid="true"]').forEach(function(x){ if (x.name === el.name || x === el){ x.removeAttribute('aria-invalid'); var d = (x.getAttribute('aria-describedby') || '').split(' ').filter(function(s){ return s && s.indexOf('ferr-') !== 0; }).join(' '); if (d) x.setAttribute('aria-describedby', d); else x.removeAttribute('aria-describedby'); } });
+}
+document.addEventListener('invalid', function(ev){
+  var el = ev.target; if (!el.form) return;
+  ev.preventDefault();
+  var box = fieldErrBox(el), id = 'ferr-' + (el.id || el.name || Math.random().toString(36).slice(2));
+  var p = box.querySelector(':scope > .ferr');
+  if (!p){ p = document.createElement('p'); p.className = 'ferr'; p.id = id; box.appendChild(p); }
+  p.textContent = fieldErrMsg(el);
+  el.setAttribute('aria-invalid', 'true');
+  if ((el.getAttribute('aria-describedby') || '').indexOf(p.id) < 0) el.setAttribute('aria-describedby', ((el.getAttribute('aria-describedby') || '') + ' ' + p.id).trim());
+  if (!fieldErrFirst){ fieldErrFirst = el; setTimeout(function(){ var f = fieldErrFirst; fieldErrFirst = null; if (f && document.body.contains(f)){ f.focus({ preventScroll: true }); f.scrollIntoView({ block: 'center', behavior: 'smooth' }); } }, 0); }
+}, true);
+function fieldFixed(ev){ var el = ev.target; if (el.getAttribute && el.getAttribute('aria-invalid') === 'true' && el.checkValidity()) clearFieldErr(el); }
+document.addEventListener('input', fieldFixed, true);
+document.addEventListener('change', fieldFixed, true);
+/* Records search: filters as you type (after a short pause, so typing stays smooth). */
+document.addEventListener('input', function(ev){
+  if (ev.target.id !== 'rfQ') return;
+  var v = ev.target.value; clearTimeout(rfQTimer);
+  rfQTimer = setTimeout(function(){ S.rf.q = v; render(); }, 180);
+});
+var rfQTimer = null;
 document.addEventListener('change', function(ev){
   var el = ev.target, id = el.id;
   if (id === 'calUser'){ S.calUser = el.value; render(); }
@@ -1778,7 +1913,7 @@ document.addEventListener('submit', function(ev){
   var f = ev.target.closest('form[data-form]'); if (!f) return;
   ev.preventDefault();
   var d = {}; new FormData(f).forEach(function(v, k){ if (typeof v === 'string') d[k] = v; });
-  var kind = f.dataset.form, btn = f.querySelector('[type=submit]'), inModal = !!f.closest('#modal'), errId = kind === 'holiday' ? 'herr' : (inModal ? 'merr' : 'err');
+  var kind = f.dataset.form, btn = (ev.submitter && ev.submitter.type === 'submit' ? ev.submitter : null) || f.querySelector('[type=submit]'), again = !!(ev.submitter && ev.submitter.dataset.again), inModal = !!f.closest('#modal'), errId = kind === 'holiday' ? 'herr' : (inModal ? 'merr' : 'err');
   var err = document.getElementById(errId); if (err) err.textContent = '';
   var p;
   if (kind === 'login' || kind === 'setup'){
@@ -1797,7 +1932,8 @@ document.addEventListener('submit', function(ev){
     p = act('saveEvent', d, wasNew ? 'Event added' : 'Event saved').then(function(r){ closeModal(); var ne = S.events.filter(function(x){ return x.id === (r && r.id); })[0];
       if (ne){ var dd = pd(ne.date); S.cal = { y: dd.getFullYear(), m: dd.getMonth() }; S.selDay = ''; S.pop = ''; render(); if (wasNew) setTimeout(function(){ evPrompt(ne); }, 250); } }); }
   else if (kind === 'assignEvent'){ d.users = [].map.call(f.querySelectorAll('input[name=user]:checked'), function(x){ return x.value; }); d.id = M.id; p = act('assignEvent', d, 'Dispatch order saved').then(function(){ closeModal(); }); }
-  else if (kind === 'saveItem') p = act('saveItem', d, d.id ? 'Equipment saved' : 'Equipment added').then(closeModal);
+  else if (kind === 'saveItem'){ if (d.category) lSet('pio_inv_cat', d.category);
+    p = act('saveItem', d, d.id ? 'Equipment saved' : d.name + ' added').then(function(){ if (again && !d.id) invNext(f); else closeModal(); }); }
   else if (kind === 'checkoutItem') p = act('checkoutItem', d, 'Checked out').then(closeModal);
   else if (kind === 'reject') p = act('review', { id: M.id, decision: 'Rejected', note: d.note }, 'Rejected').then(closeModal);
   else if (kind === 'addUser') p = act('addUser', d, d.name + ' can now sign in');
@@ -1873,6 +2009,25 @@ function statusOn(u, d){
 }
 var KIND = { to: ['Travel order', 'route', 'to'], leave: ['On leave', 'plane', 'lv'], off: ['Day off', 'sun', 'off'] };
 /* Puts a division heading above each group of rows marked with data-div (tables and lists). */
+/* Tab strips wider than the screen fade at whichever edge has more tabs, so people know to swipe. */
+function tabFade(el){
+  var max = el.scrollWidth - el.clientWidth;
+  el.classList.toggle('fade-l', max > 1 && el.scrollLeft > 1);
+  el.classList.toggle('fade-r', max > 1 && el.scrollLeft < max - 1);
+}
+function tabFades(root){ (root || document).querySelectorAll('.tabs').forEach(tabFade); }
+document.addEventListener('scroll', function(ev){ var el = ev.target; if (el && el.classList && el.classList.contains('tabs')) tabFade(el); }, true);
+window.addEventListener('resize', function(){ tabFades(); });
+/* Wide tables marked "cards" turn each row into a small card on phones.
+   Each cell is given its column name, which the phone styles show as a label. */
+function cardLabels(root){
+  (root || document).querySelectorAll('table.cards').forEach(function(t){
+    var heads = Array.prototype.map.call(t.querySelectorAll('thead th'), function(th){ return th.textContent.trim(); });
+    t.querySelectorAll('tbody tr:not(.grp)').forEach(function(tr){
+      Array.prototype.forEach.call(tr.children, function(td, i){ if (heads[i]) td.setAttribute('data-label', heads[i]); else td.removeAttribute('data-label'); });
+    });
+  });
+}
 function groupify(root){
   var seen = [];
   (root || document).querySelectorAll('[data-grp]').forEach(function(el){ if (seen.indexOf(el.parentElement) < 0) seen.push(el.parentElement); });
@@ -1974,6 +2129,13 @@ function evLinkHtml(t){
   return '<input type="hidden" name="eventId" value="' + esc(t.eventId) + '">' + (e ? '<div class="info-note">' + ic('megaphone') + '<span>For the event <b>' + esc(e.title) + '</b> · ' + esc(e.venue) + ' · ' + esc(evDates(e)) + (evNeedsText(e).length ? '<br>Needed: ' + esc(evNeedsText(e).join(', ')) : '') + '</span></div>' : '');
 }
 function evChip(t){ var e = t.eventId && S.events.filter(function(x){ return x.id === t.eventId; })[0]; return e ? '<button type="button" class="pill off evlink" data-act="evPick" data-id="' + esc(e.id) + '" title="Open this event">' + ic('megaphone') + esc(e.title) + '</button>' : ''; }
+/* "Cancel this event?" in the app's own pop-up (it replaces the day pop-up; Keep event goes back to it). */
+function evCancelAsk(id){
+  var e = S.events.filter(function(x){ return x.id === id; })[0]; if (!e) return;
+  modal('Cancel this event?', '<p style="margin:0"><b>' + esc(e.title) + '</b> · ' + fDate(e.date) + '</p><p class="hint" style="margin:8px 0 0">Travel orders already filed for it stay as they are.</p>',
+    '<button type="button" class="btn btn-ghost" data-act="evBack">Keep event</button><button type="button" class="btn btn-danger" data-act="evCancelYes" data-id="' + esc(e.id) + '">' + ic('x') + 'Cancel event</button>');
+}
+function evBackToDay(){ if (S.pop) dayPop(S.pop); else closeModal(); }
 function evDispatch(e){
   var n0 = (e.needs || [])[0] || '', pre = /^Photo|^Video/.test(n0) ? 'To document ' : n0 === 'Livestreaming' ? 'To livestream ' : n0 === 'Emcee or Hosting' ? 'To serve as emcee for ' : 'To cover ';
   toModal('', { event: pre + e.title, destination: e.venue, dateFrom: e.date, dateTo: e.dateTo || '', eventId: e.id });
@@ -2176,7 +2338,7 @@ var INV_ST = { Available: ['Available', 'e-ok'], Out: ['Checked out', 'e-wait'],
 function invOverdue(i){ return i.status === 'Out' && i.dueBack && i.dueBack < today(); }
 function invRow(i){
   var st = INV_ST[i.status] || INV_ST.Available, u = i.holder && userOf(i.holder), ev = i.eventId && S.events.filter(function(x){ return x.id === i.eventId; })[0], b = '';
-  if (i.status === 'Available') b += '<button type="button" class="btn btn-sm btn-primary" data-act="invOut" data-id="' + i.id + '">Check out</button><button type="button" class="btn btn-sm btn-ghost" data-act="invStatus" data-id="' + i.id + '" data-s="Repair">Repair</button>';
+  if (i.status === 'Available') b += '<button type="button" class="btn btn-sm btn-primary" data-act="invOut" data-id="' + i.id + '">Check out</button>';
   else if (i.status === 'Out') b += '<button type="button" class="btn btn-sm btn-primary" data-act="invIn" data-id="' + i.id + '">Return</button>';
   else b += '<button type="button" class="btn btn-sm btn-ghost" data-act="invStatus" data-id="' + i.id + '" data-s="Available">Mark available</button>';
   b += '<button type="button" class="btn btn-sm btn-ghost" data-act="invEdit" data-id="' + i.id + '" aria-label="Edit ' + esc(i.name) + '">' + ic('edit') + '</button>';
@@ -2352,11 +2514,11 @@ function viewLeaves(){
   var recent = S.leaves.slice().sort(function(x,y){ return x.createdAt < y.createdAt ? 1 : -1; }).slice(0, 30);
   return { eyebrow: 'Leaves', title: 'Leave credits', sub: 'Regular and casual employees. Vacation and sick leave grow by 1.25 days a month from each starting balance. Leaves are filed on paper; record them here.',
     actions: '<button class="btn btn-sun" data-act="leaveNew">' + ic('plus') + 'Record leave</button>',
-    body: '<div class="grid">' + panel('Balances', 'shield', staff.length ? '<div class="table-wrap"><table><thead><tr><th>Employee</th><th class="r">Vacation</th><th class="r">Sick</th><th class="r">SPL left</th><th class="r">Wellness left</th><th class="r">Forced taken</th><th></th></tr></thead><tbody>' +
+    body: '<div class="grid">' + panel('Balances', 'shield', staff.length ? '<div class="table-wrap"><table class="cards"><thead><tr><th>Employee</th><th class="r">Vacation</th><th class="r">Sick</th><th class="r">SPL left</th><th class="r">Wellness left</th><th class="r">Forced taken</th><th></th></tr></thead><tbody>' +
         staff.map(function(u){ var c = creditCells(u); return '<tr data-grp="' + esc(u.division) + '"><td><b>' + esc(u.name) + '</b><div class="hint">' + esc(u.empType) + (c.b.set ? ' · as of ' + mShort(c.b.asOf) + ' ' + c.b.asOf.slice(0,4) : ' · <b style="color:var(--gold)">balances not set</b>') + '</div></td>' + c.html +
           '<td class="r"><div class="row-btns" style="justify-content:flex-end"><button class="btn btn-sm btn-ghost" data-act="leaveNew" data-u="' + esc(u.username) + '">' + ic('plus') + 'Leave</button><button class="btn btn-sm btn-ghost" data-act="credits" data-u="' + esc(u.username) + '">' + ic('edit') + 'Balances</button></div></td></tr>'; }).join('') + '</tbody></table></div>'
         : empty('users', 'No regular or casual staff', 'Set each person’s employment type in Staff. Leave credits apply to regular and casual employees.'), divSelect('dashDiv', S.dashDiv, 'Filter by division', true), 'span-12') +
-      panel('Wellness leave · Job order and COS', 'plane', wl.length ? '<div class="table-wrap"><table><thead><tr><th>Employee</th><th class="r">Used in ' + yr + '</th><th class="r">Left</th><th></th></tr></thead><tbody>' +
+      panel('Wellness leave · Job order and COS', 'plane', wl.length ? '<div class="table-wrap"><table class="cards"><thead><tr><th>Employee</th><th class="r">Used in ' + yr + '</th><th class="r">Left</th><th></th></tr></thead><tbody>' +
         wl.map(function(u){ var b = leaveBal(u.username); return '<tr data-grp="' + esc(u.division) + '"><td><b>' + esc(u.name) + '</b><div class="hint">' + esc(u.empType || 'JO') + '</div></td><td class="r num">' + fD(b.used.WL || 0) + '</td><td class="r num"><b>' + fD(b.left('WL')) + '</b> / ' + wellCap() + '</td>' +
           '<td class="r"><button class="btn btn-sm btn-ghost" data-act="leaveNew" data-u="' + esc(u.username) + '">' + ic('plus') + 'Wellness</button></td></tr>'; }).join('') + '</tbody></table></div>'
         : empty('users', 'No job order or COS staff', 'Wellness leave for JO and COS shows here.'), '', 'span-12') +
@@ -2455,13 +2617,16 @@ document.addEventListener('click', function(ev){
   else if (a === 'invEdit') invModal(t.dataset.id);
   else if (a === 'invOut') invOutModal(t.dataset.id);
   else if (a === 'invIn') act('checkinItem', { id: t.dataset.id }, 'Returned').catch(function(e){ toast(e.message); });
+  else if (a === 'invRepair'){ busy(t, act('setItemStatus', { id: t.dataset.id, status: 'Repair' }, 'Sent for repair').then(closeModal)); }
   else if (a === 'invStatus') act('setItemStatus', { id: t.dataset.id, status: t.dataset.s }, 'Updated').catch(function(e){ toast(e.message); });
   else if (a === 'invDel'){ act('deleteItem', { id: t.dataset.id }, 'Equipment deleted').then(closeModal).catch(function(e){ toast(e.message); }); }
-  else if (a === 'invF'){ S.invF = S.invF === t.dataset.f ? 'all' : t.dataset.f; render(); }
+  else if (a === 'invF'){ var fromAlert = !!t.closest('.inv-alert'); S.invF = fromAlert ? t.dataset.f : (S.invF === t.dataset.f ? 'all' : t.dataset.f); render(); if (fromAlert){ var gl = document.getElementById('invQ'); if (gl) gl.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }
   else if (a === 'evNew'){ if (t.dataset.d) S.selDay = t.dataset.d; closeModal(); evModal(); }
   else if (a === 'evEdit') evModal(t.dataset.id);
   else if (a === 'evDispatch'){ var de = S.events.filter(function(x){ return x.id === t.dataset.id; })[0]; if (de){ closeModal(); evDispatch(de); } }
-  else if (a === 'evConfirm' || a === 'evCancel' || a === 'evReopen'){ var es = a === 'evConfirm' ? 'Confirmed' : a === 'evCancel' ? 'Cancelled' : 'Pending'; if (a === 'evCancel' && !confirm('Cancel this event? Travel orders already filed for it stay as they are.')) return; act('setEventStatus', { id: t.dataset.id, status: es }, es === 'Confirmed' ? 'Event confirmed' : es === 'Cancelled' ? 'Event cancelled' : 'Event reopened').then(refreshPop).catch(function(e){ toast(e.message); }); }
+  else if (a === 'evBack') evBackToDay();
+  else if (a === 'evCancelYes'){ busy(t, act('setEventStatus', { id: t.dataset.id, status: 'Cancelled' }, 'Event cancelled').then(evBackToDay).catch(function(e){ toast(e.message); })); }
+  else if (a === 'evConfirm' || a === 'evCancel' || a === 'evReopen'){ var es = a === 'evConfirm' ? 'Confirmed' : a === 'evCancel' ? 'Cancelled' : 'Pending'; if (a === 'evCancel') return evCancelAsk(t.dataset.id); act('setEventStatus', { id: t.dataset.id, status: es }, es === 'Confirmed' ? 'Event confirmed' : es === 'Cancelled' ? 'Event cancelled' : 'Event reopened').then(refreshPop).catch(function(e){ toast(e.message); }); }
   else if (a === 'evDelete'){ act('deleteEvent', { id: t.dataset.id }, 'Event deleted').then(refreshPop).catch(function(e){ toast(e.message); }); }
   else if (a === 'toMarkPrinted'){ var mp = S.travelOrders.filter(function(x){ return x.id === t.dataset.id; })[0]; if (mp) markPrinted([mp]); }
   else if (a === 'toNew') toModal();
@@ -2533,9 +2698,9 @@ function tevYear(v){ var t = toOf(v.toId); return (v.releasedOn || (t && t.dateF
 function tevTiles(list, budget, cls){
   var s = tevSums(list), left = budget ? budget - s.released - s.pending : null;
   return '<div class="tiles' + (budget == null ? ' three ' : ' ') + (cls || '') + '">' +
-    tile('Released', peso(s.released), s.relN + ' claimed', '', 'check', 'data-act="tevTab" data-t="Claimed"') +
-    tile('Pending', peso(s.pending), s.pendN + ' waiting for the cheque', s.pendN ? 'warn' : '', 'clock', 'data-act="tevTab" data-t="Pending"') +
-    tile('To prepare', String(s.prepN), s.prep ? peso(s.prep) + ' drafted' : 'Not yet submitted', '', 'edit', 'data-act="tevTab" data-t="To prepare"') +
+    tile('Released', peso(s.released), s.relN + ' claimed', '', 'check', '') +
+    tile('Pending', peso(s.pending), s.pendN + ' waiting for the cheque', s.pendN ? 'warn' : '', 'clock', '') +
+    tile('To prepare', String(s.prepN), s.prep ? peso(s.prep) + ' drafted' : 'Not yet submitted', '', 'edit', '') +
     (budget != null ? tile('Left for spending', budget ? peso(left) : '—', budget ? 'Of ' + peso(budget) + ' this year' : (isAdmin() ? 'Set the TEV budget in Settings' : 'No budget set'), left != null && left < 0 ? 'warn' : '', 'peso', isAdmin() && !budget ? 'data-go="settings"' : '') : '') + '</div>';
 }
 function tevRow(v){
@@ -5248,14 +5413,21 @@ viewInventory = function(){
     ['attention', 'Needs attention', 'flag', String(n.bad + n.over), 'Repair, missing or overdue', n.bad + n.over ? 'bad' : '']
   ].map(function(x){ return tile(x[1], x[3], x[4], x[5], x[2], 'data-act="invF" data-f="' + x[0] + '" aria-pressed="' + (F === x[0]) + '"'); }).join('') + '</div>';
 
+  // The counts and filters live on the equipment list (tabs) and problems show inside "What is free",
+  // so there is no separate row of summary tiles.
+  var stTabs = '<div class="tabs" role="group" aria-label="Show equipment">' + [['all', 'All', all.length], ['Available', 'Available', n.Available], ['Out', 'Checked out', n.Out], ['attention', 'Needs attention', n.bad + n.over]]
+    .map(function(x){ return '<button type="button" data-act="invF" data-f="' + x[0] + '" aria-pressed="' + (F === x[0]) + '">' + x[1] + ' · ' + x[2] + '</button>'; }).join('') + '</div>';
+  var probs = [n.over ? n.over + ' overdue' : '', n.bad ? n.bad + ' in repair or missing' : ''].filter(Boolean).join(' · ');
+  var alertNote = probs ? '<div class="warn-note inv-alert">' + ic('flag') + '<span><b>Needs attention:</b> ' + probs + '</span><button type="button" class="btn btn-sm btn-ghost" data-act="invSheet" data-c="attention" aria-haspopup="dialog">Show</button></div>' : '';
+
   // the kit: Camera + Lens + SD card + Battery, how many of each are free on the chosen day
   var st = stockOn(D), kits = Math.min.apply(null, KIT.map(function(c){ return st[c].free; }));
   var card = function(c, big){ var x = st[c], pct = x.total ? Math.round(100 * x.free / x.total) : 0, low = x.total && x.free === 0;
-    return '<button type="button" class="kcard' + (big ? ' big' : '') + (C === c ? ' on' : '') + (low ? ' low' : '') + '" data-act="invCat" data-c="' + esc(c) + '" aria-pressed="' + (C === c) + '">' +
+    return '<button type="button" class="kcard' + (big ? ' big' : '') + (low ? ' low' : '') + '" data-act="invSheet" data-c="' + esc(c) + '" aria-haspopup="dialog">' +
       '<span class="kic">' + ic(CAT_IC[c] || 'camera') + '</span><span class="kname">' + esc(CAT_PLURAL[c]) + '</span>' +
       '<span class="knum"><b>' + x.free + '</b><small> of ' + x.total + ' free</small></span><span class="kbar" aria-hidden="true"><i style="width:' + pct + '%"></i></span></button>'; };
   var others = INV_CATS.filter(function(c){ return KIT.indexOf(c) < 0 && st[c].total; });
-  var kitPanel = '<section class="panel kitpanel"><div class="panel-h"><h2>' + ic('camera') + 'What is free</h2><div class="row-btns"><label class="hint" for="invDay" style="margin:0">On</label><input class="input" type="date" id="invDay" value="' + D + '" style="width:auto;margin:0">' + (D !== td ? '<button type="button" class="btn btn-sm btn-ghost" data-act="invToday">Today</button>' : '') + '</div></div>' +
+  var kitPanel = '<section class="panel kitpanel"><div class="panel-h"><h2>' + ic('camera') + 'What is free</h2><div class="row-btns"><button type="button" class="btn btn-sm btn-ghost" data-act="invSheet" data-c="all" aria-haspopup="dialog">' + ic('list') + 'All equipment</button><label class="hint" for="invDay" style="margin:0">On</label><input class="input" type="date" id="invDay" value="' + D + '" style="width:auto;margin:0">' + (D !== td ? '<button type="button" class="btn btn-sm btn-ghost" data-act="invToday">Today</button>' : '') + '</div></div>' +
     '<div class="kitrow">' + KIT.map(function(c, i){ return (i ? '<span class="kplus" aria-hidden="true">+</span>' : '') + card(c, true); }).join('') + '</div>' +
     '<div class="kitsum"><b>' + kits + '</b> full kit' + (kits === 1 ? '' : 's') + ' ready ' + (D === td ? 'today' : 'on ' + fDate(D, { weekday:'short', month:'short', day:'numeric' })) + ' <span class="hint">(camera + lens + SD card + battery)</span></div>' +
     (others.length ? '<div class="kitrow small"><span class="hint" style="align-self:center">Also</span>' + others.map(function(c){ return card(c, false); }).join('') + '</div>' : '') + '</section>';
@@ -5283,11 +5455,12 @@ viewInventory = function(){
   var groups = INV_CATS.map(function(c){ var g = list.filter(function(i){ return catOf(i) === c; }); if (!g.length) return '';
     var fr = g.filter(function(i){ return gearFree(i, td); }).length;
     return '<li class="invgrp"><span class="kic">' + ic(CAT_IC[c] || 'camera') + '</span><b>' + esc(CAT_PLURAL[c]) + '</b><span class="hint">' + fr + ' of ' + g.length + ' free today</span></li>' + g.map(invRow).join(''); }).join('');
-  var body = '<div class="mcbar"><input class="input" id="invQ" type="search" value="' + esc(S.invQ || '') + '" placeholder="Search name, tag, serial or person" aria-label="Search equipment" style="max-width:340px;margin:0">' + (C ? '<button type="button" class="btn btn-sm btn-ghost" data-act="invCat" data-c="">' + ic('x') + 'Showing ' + esc(CAT_PLURAL[C]) + '</button>' : '') + '</div>' +
+  var body = '<div class="mcbar"><input class="input" id="invQ" type="search" value="' + esc(S.invQ || '') + '" placeholder="Search name, tag, serial or person" aria-label="Search equipment" style="max-width:340px;margin:0">' + stTabs + (C ? '<button type="button" class="btn btn-sm btn-ghost" data-act="invCat" data-c="">' + ic('x') + 'Showing ' + esc(CAT_PLURAL[C]) + '</button>' : '') + '</div>' +
     (list.length ? '<ul style="list-style:none;margin:0;padding:0">' + groups + '</ul>' : empty('camera', all.length ? 'No equipment matches' : 'No equipment yet', all.length ? 'Try another filter or search.' : 'Add cameras first, then lenses, SD cards and batteries, then drones, tripods and the rest.', '<button type="button" class="btn btn-primary" data-act="invNew">' + ic('plus') + 'Add equipment</button>'));
   return { eyebrow: 'Production', title: 'Inventory', sub: 'Build kits as camera + lens + SD card + battery. See how many are free on any day, and which dates need equipment.',
     actions: '<button type="button" class="btn btn-sun" data-act="invNew">' + ic('plus') + 'Add equipment</button>',
-    body: tiles + kitPanel + needPanel + panel('Equipment', 'camera', body, '', '') };
+    // the equipment list lives in sheets now (tap a card, "All equipment" or the notice); the page keeps only an empty-state prompt
+    body: kitPanel.replace(/<\/section>$/, alertNote + '</section>') + needPanel + (all.length ? '' : panel('Equipment', 'camera', empty('camera', 'No equipment yet', 'Add cameras first, then lenses, SD cards and batteries, then drones, tripods and the rest.', '<button type="button" class="btn btn-primary" data-act="invNew">' + ic('plus') + 'Add equipment</button>'), '', '')) };
 };
 document.addEventListener('click', function(ev){
   var t = ev.target.closest('[data-act="invCat"],[data-act="invToday"]'); if (!t) return;
@@ -5386,8 +5559,93 @@ document.addEventListener('click', function(ev){
 
 (function(){
   var IR = invRow; invRow = function(i){ var h = IR(i); return i.category === catOf(i) ? h : h.replace('<div class="hint">' + esc(i.category), '<div class="hint">' + esc(catOf(i))); };
-  var IM = invModal; invModal = function(id){ IM(id); var i = id && S.inventory.filter(function(x){ return x.id === id; })[0], sel = document.getElementById('ivc'); if (i && sel) sel.value = catOf(i); };
 })();
+
+/* Add or edit equipment. The type is one tap (no dropdown to scroll), it starts on the last type used
+   (or the type the page is filtered by), optional details are folded away, and "Add & add another"
+   keeps the form open with the same type so several items can be entered in a row. */
+var INV_SHORT = { 'Tripod and Support': 'Tripod' };
+invModal = function(id){
+  var i = id ? S.inventory.filter(function(x){ return x.id === id; })[0] : null;
+  var cat = i ? catOf(i) : (S.invCat || lGet('pio_inv_cat') || 'Camera'); if (INV_CATS.indexOf(cat) < 0) cat = 'Camera';
+  var hist = i ? (i.history || []).slice(0, 5).map(function(h){ var u = h.who && userOf(h.who); return '<li class="hint">' + esc(fDate(String(h.at).slice(0, 10), { month:'short', day:'numeric' })) + ' · ' + esc(h.act) + (u ? ' · ' + esc(u.name) : '') + (h.note ? ' · ' + esc(h.note) : '') + '</li>'; }).join('') : '';
+  var more = i && (i.tag || i.serial || i.note); M.added = 0;
+  var types = '<fieldset class="typepick"><legend>Type</legend><div class="tgrid">' + INV_CATS.map(function(c, k){
+    return '<input type="radio" name="category" id="ivc' + k + '" value="' + esc(c) + '"' + (c === cat ? ' checked' : '') + ' required><label for="ivc' + k + '">' + ic(CAT_IC[c] || 'camera') + '<span>' + esc(INV_SHORT[c] || c) + '</span></label>'; }).join('') + '</div></fieldset>';
+  modal(i ? 'Edit equipment' : 'Add equipment',
+    '<input type="hidden" name="id" value="' + esc(i ? i.id : '') + '">' + types +
+    '<div class="field"><label for="ivn">Name</label><input class="input" id="ivn" name="name" maxlength="120" value="' + esc(i ? i.name : '') + '" placeholder="e.g. Sony A7 III" autocomplete="off" required></div>' +
+    '<details class="ivmore"' + (more ? ' open' : '') + '><summary>More details <span class="hint">(optional: asset tag, serial number, notes)</span></summary>' +
+      '<div class="two"><div class="field"><label for="ivt">Asset tag</label><input class="input" id="ivt" name="tag" maxlength="40" value="' + esc(i ? i.tag || '' : '') + '"></div>' +
+      '<div class="field"><label for="ivs">Serial number</label><input class="input" id="ivs" name="serial" maxlength="60" value="' + esc(i ? i.serial || '' : '') + '"></div></div>' +
+      '<div class="field"><label for="ivo">Notes</label><input class="input" id="ivo" name="note" maxlength="300" value="' + esc(i ? i.note || '' : '') + '" placeholder="Condition, what is in the bag, etc."></div></details>' +
+    (i && i.status === 'Available' ? '<div class="ivstat"><span class="hint">Damaged or not working?</span><button type="button" class="btn btn-sm btn-ghost" data-act="invRepair" data-id="' + esc(i.id) + '">' + ic('flag') + 'Send for repair</button></div>' : '') +
+    (hist ? '<div class="dsec">Recent history</div><ul style="margin:0;padding-left:18px">' + hist + '</ul>' : '') +
+    (i ? '' : '<p class="hint" id="ivDone" aria-live="polite" style="margin:0"></p>'),
+    (i && isAdmin() ? '<button type="button" class="btn btn-danger" data-act="invDel" data-id="' + i.id + '">' + ic('trash') + 'Delete</button>' : '') +
+    (i ? '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Save</button>'
+       : '<button class="btn btn-ghost" type="submit" data-again="1" title="Save it and keep this form open for the next item">' + ic('plus') + 'Add another</button><button class="btn btn-primary" type="submit">Add equipment</button>'), 'saveItem');
+  if (!i){ var n = document.getElementById('ivn'); if (n) n.focus(); }
+};
+/* Equipment sheets: tapping a type card (Cameras, Lenses...), "All equipment" or the attention notice opens
+   the items in a sheet with their actions. The sheet redraws itself when data changes (return, check out...). */
+function invSheetItems(mode, f, q){
+  q = (q || '').trim().toLowerCase();
+  return S.inventory.filter(function(i){
+    if (mode === 'attention') { if (!(i.status === 'Repair' || i.status === 'Missing' || invOverdue(i))) return false; }
+    else if (mode !== 'all' && catOf(i) !== mode) return false;
+    if (mode === 'all' && f === 'Available' && i.status !== 'Available') return false;
+    if (mode === 'all' && f === 'Out' && i.status !== 'Out') return false;
+    if (mode === 'all' && f === 'attention' && !(i.status === 'Repair' || i.status === 'Missing' || invOverdue(i))) return false;
+    if (q){ var u = i.holder && userOf(i.holder); if ((i.name + ' ' + catOf(i) + ' ' + (i.tag || '') + ' ' + (i.serial || '') + ' ' + (u ? u.name : '')).toLowerCase().indexOf(q) < 0) return false; }
+    return true;
+  }).sort(function(a, b){ return INV_CATS.indexOf(catOf(a)) - INV_CATS.indexOf(catOf(b)) || (a.name < b.name ? -1 : 1); });
+}
+function invSheetList(){
+  var items = invSheetItems(M.sheet, M.sheetF, M.sheetQ), grouped = M.sheet === 'all' || M.sheet === 'attention', last = '', html = '';
+  items.forEach(function(i){ var c = catOf(i); if (grouped && c !== last){ last = c; html += '<li class="invgrp"><span class="kic">' + ic(CAT_IC[c] || 'camera') + '</span><b>' + esc(CAT_PLURAL[c]) + '</b></li>'; }
+    // the sheet title or group heading already names the type, so the row does not repeat it
+    var cn = esc(c), row = invRow(i).replace('<div class="hint">' + cn + ' · ', '<div class="hint">').replace('<div class="hint">' + cn + '</div>', '');
+    html += row; });
+  return html || '<li class="hint" style="padding:18px 4px;text-align:center">' + (M.sheetQ ? 'No equipment matches.' : M.sheet === 'attention' || M.sheetF === 'attention' ? 'Nothing needs attention.' : M.sheetF === 'Out' ? 'Nothing is checked out.' : M.sheetF === 'Available' ? 'Nothing is available right now.' : 'None yet. Use Add to put the first one on the list.') + '</li>';
+}
+function invSheetTabs(){
+  var all = S.inventory, cnt = function(f){ return invSheetItems('all', f, '').length; };
+  return '<div class="tabs" role="group" aria-label="Show equipment">' + [['all', 'All', all.length], ['Available', 'Available', cnt('Available')], ['Out', 'Checked out', cnt('Out')], ['attention', 'Needs attention', cnt('attention')]]
+    .map(function(x){ return '<button type="button" data-act="invSheetF" data-f="' + x[0] + '" aria-pressed="' + ((M.sheetF || 'all') === x[0]) + '">' + x[1] + ' · ' + x[2] + '</button>'; }).join('') + '</div>';
+}
+function invSheet(mode){
+  M = { sheet: mode, sheetF: 'all', sheetQ: '' };
+  var isCat = mode !== 'all' && mode !== 'attention', n = isCat ? S.inventory.filter(function(i){ return catOf(i) === mode; }) : [];
+  var title = mode === 'all' ? 'All equipment' : mode === 'attention' ? 'Needs attention' : esc(CAT_PLURAL[mode] || mode);
+  var sub = isCat ? '<p class="hint" style="margin:0 0 10px">' + n.filter(function(i){ return gearFree(i, today()); }).length + ' of ' + n.length + ' free today</p>' : '';
+  modal(title, '<div class="invsheet">' + sub + (mode === 'all' ? '<div class="invsheet-bar"><input class="input" type="search" id="invSheetQ" placeholder="Search name, tag, serial or person" aria-label="Search equipment" autocomplete="off"><div id="invSheetTabs">' + invSheetTabs() + '</div></div>' : '') +
+      '<ul id="invSheetList" class="invsheet-list">' + invSheetList() + '</ul></div>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Close</button>' + (mode !== 'attention' ? '<button type="button" class="btn btn-primary" data-act="invNewIn" data-c="' + esc(isCat ? mode : '') + '">' + ic('plus') + (isCat ? 'Add ' + esc((INV_SHORT[mode] || mode).toLowerCase()) : 'Add equipment') + '</button>' : ''));
+  requestAnimationFrame(function(){ tabFades(document.getElementById('modal')); });
+}
+function invSheetRedraw(){
+  var l = document.getElementById('invSheetList'); if (!l || !M.sheet) return;
+  l.innerHTML = invSheetList(); var tb = document.getElementById('invSheetTabs'); if (tb) tb.innerHTML = invSheetTabs();
+}
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act="invSheet"],[data-act="invSheetF"],[data-act="invNewIn"]'); if (!t) return;
+  var a = t.dataset.act;
+  if (a === 'invSheet') invSheet(t.dataset.c);
+  else if (a === 'invSheetF'){ M.sheetF = t.dataset.f; invSheetRedraw(); }
+  else if (a === 'invNewIn'){ var keep = S.invCat; S.invCat = t.dataset.c || ''; invModal(); S.invCat = keep; }
+});
+document.addEventListener('input', function(ev){ if (ev.target.id === 'invSheetQ' && M.sheet){ M.sheetQ = ev.target.value; invSheetRedraw(); } });
+(function(){ var R = render; render = function(){ R.apply(this, arguments); invSheetRedraw(); }; })();
+/* after "Add & add another": keep the type, clear the rest, and go back to Name */
+function invNext(f){
+  var cat = (f.querySelector('input[name=category]:checked') || {}).value, nm = f.querySelector('#ivn').value;
+  ['ivn', 'ivt', 'ivs', 'ivo'].forEach(function(k){ var el = f.querySelector('#' + k); if (el){ el.value = ''; el.removeAttribute('aria-invalid'); } });
+  f.querySelectorAll('.ferr').forEach(function(p){ p.remove(); });
+  M.added = (M.added || 0) + 1;
+  var done = document.getElementById('ivDone'); if (done) done.textContent = '✓ ' + nm + ' added' + (M.added > 1 ? ' · ' + M.added + ' added so far' : '') + '. Add the next ' + (INV_SHORT[cat] || cat || 'item').toLowerCase() + '.';
+  f.querySelector('#ivn').focus();
+}
 
 (function boot(){
   S.token = lGet('pio_tok') || sGet('pio_tok');
