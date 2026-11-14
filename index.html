@@ -4097,7 +4097,9 @@ var Fire = (function(){
   function staffMay(x){
     if (x.c === 'activity') return true;
     if (x.c === 'entries') return x.data.username === me;
-    if (x.c === 'events'){ if (member.role === 'scheduler') return true; var oe = store.events.docs[x.id]; return !oe && !x.del && x.data.status === 'Pending' && x.data.createdBy === me; }   // staff: new unconfirmed event from a travel order
+    if (x.c === 'events'){ if (member.role === 'scheduler') return true; var oe = store.events.docs[x.id];
+      if (oe && !x.del) return Object.keys(Object.assign({}, oe, x.data)).every(function(k){ return ['gear', 'gearHolder', 'gearBy', 'gearAt', '_t'].indexOf(k) >= 0 || JSON.stringify(oe[k]) === JSON.stringify(x.data[k]); });
+      return !oe && !x.del && x.data.status === 'Pending' && x.data.createdBy === me; }   // staff: new unconfirmed event from a travel order
     if (x.c === 'inventory') return true;
     if (x.c === 'users'){ if (member.role !== 'scheduler' || x.del) return false; var ou = store.users.docs[x.id]; if (!ou) return false;   // leaders: skills only
       return Object.keys(Object.assign({}, ou, x.data)).every(function(k){ return k === 'skills' || k === '_t' || JSON.stringify(ou[k]) === JSON.stringify(x.data[k]); }); }
@@ -4539,6 +4541,12 @@ var Mock = (function(){
       return ok(me); }
     if (a === 'deleteTO'){ var dt = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && (dt.createdBy !== me.username || dt.status !== 'Filed')) return fail('You can only delete your own travel orders that are not yet prepared.'); if (dt.offsetDone){ entries = entries.filter(function(e){ return !(e.toId === dt.id && e.type === 'USE'); }); log(me, 'Returned offset for a deleted day-off travel order', dt.event); } tos = tos.filter(function(t){ return t !== dt; }); log(me, 'Deleted a travel order', dt.event); return ok(me); }
     if (a === 'setSkills'){ if (!(adm || me.role === 'scheduler')) return fail('Only admins and division leaders can change skills.'); var sk = find(p.username); if (!sk) return fail('Employee not found.'); sk.skills = (Array.isArray(p.skills) ? p.skills : []).map(String).filter(function(x, i, arr){ return SKILLS.indexOf(x) >= 0 && arr.indexOf(x) === i; }); log(me, 'Changed skills', p.username, sk.skills.join(', ') || 'none'); return ok(me); }
+    if (a === 'planGear'){ var gp = events.filter(function(x){ return x.id === p.id; })[0]; if (!gp) return fail('Event not found.');
+      var prodDiv = divisions.some(function(d){ return d.id === me.division && /production/i.test(d.name || ''); });
+      if (!(adm || me.role === 'scheduler' || prodDiv)) return fail('Only Social Media and Production, division leaders or admins can plan equipment.');
+      gp.gear = (Array.isArray(p.items) ? p.items : []).map(String).filter(function(id, i, arr){ return arr.indexOf(id) === i && inventory.some(function(x){ return x.id === id; }); });
+      gp.gearHolder = String(p.holder || ''); gp.gearBy = me.username; gp.gearAt = now;
+      log(me, 'Planned equipment for an event', gp.title, gp.gear.length + ' item(s)'); return ok(me, { id: gp.id }); }
     if (!adm) return fail('Only admins can do that.');
     if (a === 'markTOPrinted'){ (p.ids || []).forEach(function(i9){ var t9 = tos.filter(function(t){ return t.id === i9; })[0]; if (t9 && t9.status === 'Prepared' && !t9.printedAt){ t9.printedAt = now; t9.printedBy = me.username; } }); log(me, 'Printed travel orders', String((p.ids || []).length)); return ok(me); }
     if (a === 'setTOStatus'){ var st2 = tos.filter(function(t){ return t.id === p.id; })[0]; if (st2.status !== p.status) st2.statusAt = now; st2.status = p.status; st2.tev = p.tev; st2.toNo = p.toNo || ''; st2.datePrepared = p.datePrepared || st2.datePrepared || (p.status === 'Prepared' ? today() : ''); log(me, 'Updated a travel order', st2.event, 'Status: ' + p.status + ' · TEV: ' + (p.tev || 'not set'));
@@ -5186,6 +5194,199 @@ document.addEventListener('click', function(ev){ var t = ev.target.closest('[dat
     '.skopt{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-strong);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:13.5px;min-height:36px}.skopt:has(input:checked){background:var(--brand-soft);border-color:var(--brand);color:var(--brand-strong);font-weight:600}' +
     '.calscope{flex:none}@media (pointer:coarse){.sugp,.skopt{min-height:44px}}';
   document.head.appendChild(st);
+})();
+
+/* =====================================================================
+   v47: inventory as kits (Camera + Lens + SD card + Battery + others),
+   how many are left on any date, and which dates need equipment
+   ===================================================================== */
+INV_CATS = ['Camera', 'Lens', 'SD card', 'Battery', 'Drone', 'Tripod and Support', 'Audio', 'Lighting', 'Computer', 'Accessory', 'Other'];
+var KIT = ['Camera', 'Lens', 'SD card', 'Battery'];
+var CAT_PLURAL = { 'Camera': 'Cameras', 'Lens': 'Lenses', 'SD card': 'SD cards', 'Battery': 'Batteries', 'Drone': 'Drones', 'Tripod and Support': 'Tripods', 'Audio': 'Audio', 'Lighting': 'Lights', 'Computer': 'Computers', 'Accessory': 'Accessories', 'Other': 'Other' };
+var GEAR_NEEDS = ['Photo Documentation', 'Video Documentation', 'Livestreaming'];
+ICONS.lens = '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="M12 4v4M18.9 8l-3.5 2M18.9 16l-3.5-2"/>';
+ICONS.sd = '<path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M10 3v4M13 3v4M16 5v2"/>';
+ICONS.battery = '<rect x="3" y="7" width="16" height="10" rx="2"/><path d="M21 10v4"/><path d="M7 10v4M11 10v4"/>';
+ICONS.drone = '<circle cx="5.5" cy="5.5" r="2.5"/><circle cx="18.5" cy="5.5" r="2.5"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/><path d="M8 8l2.5 2.5M16 8l-2.5 2.5M8 16l2.5-2.5M16 16l-2.5-2.5"/><rect x="10" y="10" width="4" height="4" rx="1"/>';
+ICONS.tripod = '<path d="M12 4v6M12 10l-6 10M12 10l6 10M12 10v10"/><rect x="9" y="3" width="6" height="3" rx="1"/>';
+ICONS.mic = '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>';
+ICONS.bulb = '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>';
+ICONS.laptop = '<rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/>';
+var CAT_IC = { 'Camera': 'camera', 'Lens': 'lens', 'SD card': 'sd', 'Battery': 'battery', 'Drone': 'drone', 'Tripod and Support': 'tripod', 'Audio': 'mic', 'Lighting': 'bulb', 'Computer': 'laptop', 'Accessory': 'plus', 'Other': 'plus' };
+function catOf(i){ var c = i.category || 'Other'; if (c === 'Storage and Cards') return 'SD card'; return INV_CATS.indexOf(c) >= 0 ? c : 'Other'; }
+
+/* is this item free on a date? (out and not due back yet, broken, or planned for another event that day) */
+function gearPlannedOn(itemId, d, exceptEv){
+  return (S.events || []).filter(function(e){ return e.id !== exceptEv && e.status !== 'Cancelled' && (e.gear || []).indexOf(itemId) >= 0 && e.date <= d && (e.dateTo || e.date) >= d; })[0] || null;
+}
+function gearFree(i, d, exceptEv){
+  if (i.status === 'Repair' || i.status === 'Missing') return false;
+  if (i.status === 'Out'){ if (!(exceptEv && i.eventId === exceptEv) && (!i.dueBack || i.dueBack >= d)) return false; }
+  return !gearPlannedOn(i.id, d, exceptEv);
+}
+function gearFreeRange(i, d1, d2, exceptEv){ for (var d = d1; d <= (d2 || d1); d = addDays(d, 1)){ if (!gearFree(i, d, exceptEv)) return false; if (d > addDays(d1, 31)) break; } return true; }
+function stockOn(d){
+  var o = {}; INV_CATS.forEach(function(c){ o[c] = { total: 0, free: 0 }; });
+  S.inventory.forEach(function(i){ var c = catOf(i); o[c].total++; if (gearFree(i, d)) o[c].free++; });
+  return o;
+}
+function kitText(ids){
+  var by = {}; ids.forEach(function(id){ var i = S.inventory.filter(function(x){ return x.id === id; })[0]; if (!i) return; var c = catOf(i); by[c] = (by[c] || 0) + 1; });
+  return INV_CATS.filter(function(c){ return by[c]; }).map(function(c){ return (by[c] > 1 ? by[c] + ' ' + CAT_PLURAL[c].toLowerCase() : c); }).join(' + ');
+}
+function needsGear(e){ return (e.needs || []).some(function(n){ return GEAR_NEEDS.indexOf(n) >= 0; }); }
+
+/* ---------- the Inventory page ---------- */
+viewInventory = function(){
+  var F = S.invF || 'all', C = S.invCat || '', Q = (S.invQ || '').toLowerCase(), td = today(), D = S.invDay || td;
+  var all = S.inventory.slice().sort(function(a, b){ return INV_CATS.indexOf(catOf(a)) - INV_CATS.indexOf(catOf(b)) || (a.name < b.name ? -1 : 1); });
+  var n = { Available: 0, Out: 0, bad: 0, over: 0 }; all.forEach(function(i){ if (i.status === 'Available') n.Available++; else if (i.status === 'Out') n.Out++; else n.bad++; if (invOverdue(i)) n.over++; });
+  var tiles = '<div class="tiles cal4" style="margin-bottom:16px">' + [
+    ['all', 'Equipment', 'camera', String(all.length), 'Items on the list', ''],
+    ['Available', 'Available now', 'check', String(n.Available), 'On the shelf', 'ok'],
+    ['Out', 'Checked out', 'clock', String(n.Out), n.over ? n.over + ' overdue' : 'None overdue', n.over ? 'warn' : ''],
+    ['attention', 'Needs attention', 'flag', String(n.bad + n.over), 'Repair, missing or overdue', n.bad + n.over ? 'bad' : '']
+  ].map(function(x){ return tile(x[1], x[3], x[4], x[5], x[2], 'data-act="invF" data-f="' + x[0] + '" aria-pressed="' + (F === x[0]) + '"'); }).join('') + '</div>';
+
+  // the kit: Camera + Lens + SD card + Battery, how many of each are free on the chosen day
+  var st = stockOn(D), kits = Math.min.apply(null, KIT.map(function(c){ return st[c].free; }));
+  var card = function(c, big){ var x = st[c], pct = x.total ? Math.round(100 * x.free / x.total) : 0, low = x.total && x.free === 0;
+    return '<button type="button" class="kcard' + (big ? ' big' : '') + (C === c ? ' on' : '') + (low ? ' low' : '') + '" data-act="invCat" data-c="' + esc(c) + '" aria-pressed="' + (C === c) + '">' +
+      '<span class="kic">' + ic(CAT_IC[c] || 'camera') + '</span><span class="kname">' + esc(CAT_PLURAL[c]) + '</span>' +
+      '<span class="knum"><b>' + x.free + '</b><small> of ' + x.total + ' free</small></span><span class="kbar" aria-hidden="true"><i style="width:' + pct + '%"></i></span></button>'; };
+  var others = INV_CATS.filter(function(c){ return KIT.indexOf(c) < 0 && st[c].total; });
+  var kitPanel = '<section class="panel kitpanel"><div class="panel-h"><h2>' + ic('camera') + 'What is free</h2><div class="row-btns"><label class="hint" for="invDay" style="margin:0">On</label><input class="input" type="date" id="invDay" value="' + D + '" style="width:auto;margin:0">' + (D !== td ? '<button type="button" class="btn btn-sm btn-ghost" data-act="invToday">Today</button>' : '') + '</div></div>' +
+    '<div class="kitrow">' + KIT.map(function(c, i){ return (i ? '<span class="kplus" aria-hidden="true">+</span>' : '') + card(c, true); }).join('') + '</div>' +
+    '<div class="kitsum"><b>' + kits + '</b> full kit' + (kits === 1 ? '' : 's') + ' ready ' + (D === td ? 'today' : 'on ' + fDate(D, { weekday:'short', month:'short', day:'numeric' })) + ' <span class="hint">(camera + lens + SD card + battery)</span></div>' +
+    (others.length ? '<div class="kitrow small"><span class="hint" style="align-self:center">Also</span>' + others.map(function(c){ return card(c, false); }).join('') + '</div>' : '') + '</section>';
+
+  // which dates need equipment (next 3 weeks)
+  var lim = addDays(td, 21), ups = (S.events || []).filter(function(e){ return e.status !== 'Cancelled' && (e.dateTo || e.date) >= td && e.date <= lim && (needsGear(e) || (e.gear || []).length); }).sort(evSort);
+  var byDay = {}; ups.forEach(function(e){ var k = e.date < td ? td : e.date; (byDay[k] = byDay[k] || []).push(e); });
+  var needs = Object.keys(byDay).sort().map(function(d){
+    var evs = byDay[d], s2 = stockOn(d), want = evs.filter(function(e){ return needsGear(e) && !(e.gear || []).length; }).length, short = want > 0 && s2.Camera.free < want;
+    return '<div class="nday"><div class="ndate' + (short ? ' bad' : '') + '"><b>' + fDate(d, { day:'numeric' }) + '</b><span>' + fDate(d, { month:'short' }) + '</span><small>' + fDate(d, { weekday:'short' }) + '</small></div><div class="nlist">' +
+      evs.map(function(e){ var g = e.gear || [], who = e.gearHolder && userOf(e.gearHolder);
+        return '<div class="nev"><div class="grow"><b>' + esc(e.title) + '</b><div class="hint">' + esc((e.needs || []).filter(function(x){ return GEAR_NEEDS.indexOf(x) >= 0; }).join(', ') || 'Equipment planned') + (e.venue ? ' · ' + esc(e.venue) : '') + '</div>' +
+          (g.length ? '<div class="kitline">' + ic('check') + esc(kitText(g)) + (who ? ' <span class="hint">· ' + esc(who.name) + '</span>' : '') + '</div>' : '<div class="kitline none">' + ic('flag') + 'No equipment planned yet</div>') + '</div>' +
+          '<button type="button" class="btn btn-sm ' + (g.length ? 'btn-ghost' : 'btn-primary') + '" data-act="gearModal" data-id="' + esc(e.id) + '">' + (g.length ? 'Change' : 'Plan kit') + '</button></div>'; }).join('') +
+      '<div class="hint nstock">' + s2.Camera.free + ' camera' + (s2.Camera.free === 1 ? '' : 's') + ' free that day' + (short ? ' · <b style="color:var(--red)">not enough for ' + want + ' event' + (want === 1 ? '' : 's') + '</b>' : '') + '</div></div></div>'; }).join('');
+  var needPanel = panel('Dates that need equipment', 'cal', needs ? '<div class="ndays">' + needs + '</div>' : empty('cal', 'Nothing coming up', 'Events in the next 3 weeks that need photo, video or livestream show here.'), '<span class="hint">Next 3 weeks</span>', '');
+
+  // the list, grouped in kit order
+  var list = all.filter(function(i){
+    if (C && catOf(i) !== C) return false;
+    if ((F === 'Available' || F === 'Out') && i.status !== F) return false;
+    if (F === 'attention' && !(i.status === 'Repair' || i.status === 'Missing' || invOverdue(i))) return false;
+    if (Q){ var u = i.holder && userOf(i.holder); if ((i.name + ' ' + catOf(i) + ' ' + (i.tag || '') + ' ' + (i.serial || '') + ' ' + (u ? u.name : '')).toLowerCase().indexOf(Q) < 0) return false; }
+    return true; });
+  var groups = INV_CATS.map(function(c){ var g = list.filter(function(i){ return catOf(i) === c; }); if (!g.length) return '';
+    var fr = g.filter(function(i){ return gearFree(i, td); }).length;
+    return '<li class="invgrp"><span class="kic">' + ic(CAT_IC[c] || 'camera') + '</span><b>' + esc(CAT_PLURAL[c]) + '</b><span class="hint">' + fr + ' of ' + g.length + ' free today</span></li>' + g.map(invRow).join(''); }).join('');
+  var body = '<div class="mcbar"><input class="input" id="invQ" type="search" value="' + esc(S.invQ || '') + '" placeholder="Search name, tag, serial or person" aria-label="Search equipment" style="max-width:340px;margin:0">' + (C ? '<button type="button" class="btn btn-sm btn-ghost" data-act="invCat" data-c="">' + ic('x') + 'Showing ' + esc(CAT_PLURAL[C]) + '</button>' : '') + '</div>' +
+    (list.length ? '<ul style="list-style:none;margin:0;padding:0">' + groups + '</ul>' : empty('camera', all.length ? 'No equipment matches' : 'No equipment yet', all.length ? 'Try another filter or search.' : 'Add cameras first, then lenses, SD cards and batteries, then drones, tripods and the rest.', '<button type="button" class="btn btn-primary" data-act="invNew">' + ic('plus') + 'Add equipment</button>'));
+  return { eyebrow: 'Production', title: 'Inventory', sub: 'Build kits as camera + lens + SD card + battery. See how many are free on any day, and which dates need equipment.',
+    actions: '<button type="button" class="btn btn-sun" data-act="invNew">' + ic('plus') + 'Add equipment</button>',
+    body: tiles + kitPanel + needPanel + panel('Equipment', 'camera', body, '', '') };
+};
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act="invCat"],[data-act="invToday"]'); if (!t) return;
+  if (t.dataset.act === 'invToday'){ S.invDay = ''; render(); return; }
+  S.invCat = S.invCat === t.dataset.c ? '' : t.dataset.c; render();
+  var l = document.querySelector('.invgrp'); if (l && S.invCat) l.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+document.addEventListener('change', function(ev){ if (ev.target.id === 'invDay'){ S.invDay = ev.target.value; render(); } });
+
+/* ---------- plan a kit for an event: Camera + Lens + SD card + Battery + others ---------- */
+gearModal = function(evId){
+  var e = S.events.filter(function(x){ return x.id === evId; })[0]; if (!e) return;
+  var d1 = e.date, d2 = e.dateTo || e.date, plan = (e.gear || []).slice(), out = S.inventory.filter(function(i){ return i.eventId === e.id && i.status === 'Out'; });
+  var ppl = evPeople(e).filter(function(p){ return p.u; }).map(function(p){ return userOf(p.u); }).filter(Boolean), opts = ppl.length ? ppl : S.users.filter(function(u){ return u.active; });
+  var holder = e.gearHolder || (ppl[0] && ppl[0].username) || S.me.username;
+  if (!opts.some(function(u){ return u.username === holder; }) && userOf(holder)) opts = [userOf(holder)].concat(opts);
+  M = { gear: e.id };
+  var step = function(c, i){
+    var items = S.inventory.filter(function(x){ return catOf(x) === c && (plan.indexOf(x.id) >= 0 || gearFreeRange(x, d1, d2, e.id)); });
+    var busy = S.inventory.filter(function(x){ return catOf(x) === c && items.indexOf(x) < 0; }).length;
+    if (!items.length && !busy && KIT.indexOf(c) < 0) return '';
+    return '<div class="kstep"><div class="kstep-h"><span class="kn">' + (i < KIT.length ? i + 1 : '+') + '</span><span class="kic">' + ic(CAT_IC[c] || 'camera') + '</span><b>' + esc(c) + '</b><span class="hint">' + items.length + ' free' + (busy ? ' · ' + busy + ' busy' : '') + '</span></div>' +
+      (items.length ? '<div class="kchips">' + items.map(function(x){ var on = plan.indexOf(x.id) >= 0; return '<label class="kchip"><input type="checkbox" name="gear" value="' + esc(x.id) + '"' + (on ? ' checked' : '') + '><span>' + esc(x.name) + (x.tag ? '<small>' + esc(x.tag) + '</small>' : '') + '</span></label>'; }).join('') + '</div>'
+        : '<p class="hint" style="margin:4px 0 0">None free on ' + (d1 === d2 ? 'that day' : 'those days') + '.</p>') + '</div>';
+  };
+  var steps = KIT.map(step).join('<div class="kjoin" aria-hidden="true">+</div>') + '<div class="kjoin" aria-hidden="true">+</div><div class="dsec" style="margin-top:4px">Others</div>' + INV_CATS.filter(function(c){ return KIT.indexOf(c) < 0; }).map(function(c){ return step(c, 99); }).join('');
+  var started = d1 <= today();
+  modal('Equipment for this event', '<div class="sumbox"><b>' + esc(e.title) + '</b><span>' + esc(evShort(e)) + (e.venue ? ' · ' + esc(e.venue) : '') + '</span></div>' +
+    '<div class="kformula" id="kformula" aria-live="polite"></div>' +
+    (out.length ? '<div class="dsec">Handed out</div><ul class="list">' + out.map(function(i){ return '<li class="row"><span class="mark act">' + ic(CAT_IC[catOf(i)] || 'camera') + '</span><div class="body"><div class="t">' + esc(i.name) + '</div><div class="m">With ' + esc(userName(i.holder)) + (i.dueBack ? ' · back by ' + fDate(i.dueBack) : '') + '</div></div><button type="button" class="btn btn-sm btn-ghost" data-act="gearBack" data-id="' + esc(i.id) + '">Returned</button></li>'; }).join('') + '</ul>' : '') +
+    steps +
+    '<div class="field" style="margin-top:12px"><label for="ggw">Who brings it</label><select class="input" id="ggw">' + opts.map(function(u){ return '<option value="' + esc(u.username) + '"' + (u.username === holder ? ' selected' : '') + '>' + esc(u.name) + '</option>'; }).join('') + '</select></div>' +
+    '<p class="hint" style="margin:0">Planning keeps these free for this event. ' + (started ? 'Hand out marks them checked out now.' : 'Hand them out on the day.') + '</p>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Close</button>' + (started ? '<button type="button" class="btn btn-ghost" data-act="gearHand">' + ic('check') + 'Hand out now</button>' : '') + '<button type="button" class="btn btn-primary" data-act="gearSave">Save plan</button>');
+  kitFormula();
+};
+function kitFormula(){
+  var box = document.getElementById('kformula'); if (!box) return;
+  var ids = Array.prototype.map.call(document.querySelectorAll('#modal input[name=gear]:checked'), function(x){ return x.value; });
+  var by = {}; ids.forEach(function(id){ var i = S.inventory.filter(function(x){ return x.id === id; })[0]; if (i){ var c = catOf(i); by[c] = (by[c] || 0) + 1; } });
+  box.innerHTML = KIT.map(function(c){ var n = by[c] || 0; return '<span class="kf' + (n ? ' on' : '') + '">' + ic(CAT_IC[c]) + esc(c) + (n > 1 ? ' ×' + n : '') + '</span>'; }).join('<span class="kfp">+</span>') +
+    INV_CATS.filter(function(c){ return KIT.indexOf(c) < 0 && by[c]; }).map(function(c){ return '<span class="kfp">+</span><span class="kf on">' + esc(c) + (by[c] > 1 ? ' ×' + by[c] : '') + '</span>'; }).join('') +
+    '<span class="kfsum">' + (ids.length ? ids.length + ' item' + (ids.length === 1 ? '' : 's') : 'Nothing picked yet') + (KIT.every(function(c){ return by[c]; }) ? ' · full kit' : '') + '</span>';
+}
+document.addEventListener('change', function(ev){ if (ev.target.name === 'gear' && ev.target.closest('#modal')) kitFormula(); });
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act="gearSave"],[data-act="gearHand"]'); if (!t) return;
+  var evId = M.gear, ids = Array.prototype.map.call(document.querySelectorAll('#modal input[name=gear]:checked'), function(x){ return x.value; }), holder = (document.getElementById('ggw') || {}).value || '';
+  var e = S.events.filter(function(x){ return x.id === evId; })[0]; if (!e) return;
+  t.disabled = true;
+  var p = call('planGear', { id: evId, items: ids, holder: holder });
+  if (t.dataset.act === 'gearHand') p = p.then(function(){ return ids.filter(function(id){ var i = S.inventory.filter(function(x){ return x.id === id; })[0]; return i && i.status === 'Available'; })
+    .reduce(function(q, id){ return q.then(function(){ return call('checkoutItem', { id: id, holder: holder, dueBack: addDays(e.dateTo || e.date, 1), eventId: evId, note: '' }); }); }, Promise.resolve()); });
+  p.then(function(){ return refresh(); }).then(function(){ toast(t.dataset.act === 'gearHand' ? 'Handed out to ' + firstName(holder) : (ids.length ? 'Kit planned: ' + kitText(ids) : 'Plan cleared')); closeModal(); })
+    .catch(function(err){ toast(err.message); t.disabled = false; });
+});
+/* event card: the planned kit */
+(function(){
+  var EC = evCard;
+  evCard = function(e){
+    var h = EC(e), g = e.gear || [];
+    if (g.length && inProd()) h = h.replace(/(<dt>Needed<\/dt><dd>)/, '<dt>Kit</dt><dd>' + esc(kitText(g)) + (e.gearHolder ? ' <span class="hint">(' + esc(firstName(e.gearHolder)) + ')</span>' : '') + '</dd>$1');
+    return h;
+  };
+})();
+
+(function(){
+  var st = document.createElement('style');
+  st.textContent =
+    '.kitpanel .panel-h .row-btns{gap:8px;align-items:center}' +
+    '.kitrow{display:flex;align-items:stretch;gap:8px;padding:14px 18px 6px;flex-wrap:wrap}.kitrow.small{padding-top:4px;padding-bottom:16px}.kitrow.small .kcard{flex:0 1 150px}' +
+    '.kplus{align-self:center;font:800 22px/1 var(--f-display,inherit);color:var(--muted)}' +
+    '.kcard{flex:1 1 140px;display:grid;grid-template-columns:auto 1fr;grid-template-areas:"ic name" "num num" "bar bar";gap:6px 8px;text-align:left;border:1px solid var(--line-strong);background:var(--surface);border-radius:14px;padding:12px;cursor:pointer;font:inherit;color:var(--ink);transition:transform .12s var(--ease-out,ease-out),border-color .15s}' +
+    '.kcard:active{transform:scale(.97)}.kcard.on{border-color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand)}.kcard.low .knum b{color:var(--red)}' +
+    '.kic{grid-area:ic;display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--brand-soft);color:var(--brand-strong)}.kic svg{width:18px;height:18px}' +
+    '.kname{grid-area:name;align-self:center;font-weight:700;font-size:13px}.knum{grid-area:num}.knum b{font:800 26px/1 var(--f-display,inherit);font-variant-numeric:tabular-nums}.kcard:not(.big) .knum b{font-size:18px}.knum small{color:var(--muted);font-size:12px}' +
+    '.kbar{grid-area:bar;height:5px;border-radius:99px;background:var(--surface-2);overflow:hidden}.kbar i{display:block;height:100%;background:var(--brand)}.kcard.low .kbar i{background:var(--red)}' +
+    '.kitsum{padding:4px 18px 14px;font-size:14px}.kitsum b{font-variant-numeric:tabular-nums}' +
+    '.ndays{display:grid}.nday{display:grid;grid-template-columns:64px 1fr;gap:12px;padding:12px 18px;border-top:1px solid var(--line)}.nday:first-child{border-top:0}' +
+    '.ndate{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;border-radius:12px;background:var(--surface-2);padding:6px 4px;height:max-content}.ndate b{font:800 22px/1 var(--f-display,inherit)}.ndate span{font-size:12px;font-weight:700;text-transform:uppercase}.ndate small{font-size:11px;color:var(--muted)}.ndate.bad{background:var(--red-soft);color:var(--red)}' +
+    '.nlist{display:grid;gap:8px;min-width:0}.nev{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}.nev .grow{min-width:0}' +
+    '.kitline{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--brand-strong);margin-top:4px;flex-wrap:wrap}.kitline svg{width:14px;height:14px}.kitline.none{color:var(--gold)}' +
+    '.invgrp{display:flex;align-items:center;gap:10px;padding:14px 4px 6px;border-top:1px solid var(--line);margin-top:6px}.invgrp:first-child{border-top:0;margin-top:0}.invgrp .hint{margin-left:auto}' +
+    '.kformula{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:10px 12px;border-radius:12px;background:var(--surface-2);margin:10px 0;position:sticky;top:0;z-index:2}' +
+    '.kf{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;border:1px dashed var(--line-strong);color:var(--muted)}.kf svg{width:14px;height:14px}.kf.on{border-style:solid;border-color:var(--brand);background:var(--brand-soft);color:var(--brand-strong)}' +
+    '.kfp{font-weight:800;color:var(--muted)}.kfsum{margin-left:auto;font-size:12.5px;color:var(--muted)}' +
+    '.kstep{border:1px solid var(--line);border-radius:14px;padding:10px 12px}.kstep-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}.kstep-h .hint{margin-left:auto}.kstep-h .kic{width:26px;height:26px}' +
+    '.kn{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--surface);font-size:11px;font-weight:800}' +
+    '.kjoin{text-align:center;font:800 18px/1 var(--f-display,inherit);color:var(--muted);margin:4px 0}' +
+    '.kchips{display:flex;flex-wrap:wrap;gap:6px}.kchip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-strong);border-radius:12px;padding:8px 12px;cursor:pointer;font-size:13.5px;min-height:40px}' +
+    '.kchip span{display:flex;flex-direction:column;line-height:1.2;font-weight:600}.kchip small{font-weight:500;color:var(--muted);font-size:11.5px}.kchip:has(input:checked){background:var(--brand-soft);border-color:var(--brand);color:var(--brand-strong)}' +
+    '@media (max-width:640px){.kitrow{padding:12px 12px 4px}.kplus{display:none}.kcard{flex:1 1 calc(50% - 8px)}.nday{grid-template-columns:52px 1fr;padding:12px}.nev{flex-direction:column}}' +
+    '@media (pointer:coarse){.kchip{min-height:44px}}';
+  document.head.appendChild(st);
+})();
+
+(function(){
+  var IR = invRow; invRow = function(i){ var h = IR(i); return i.category === catOf(i) ? h : h.replace('<div class="hint">' + esc(i.category), '<div class="hint">' + esc(catOf(i))); };
+  var IM = invModal; invModal = function(id){ IM(id); var i = id && S.inventory.filter(function(x){ return x.id === id; })[0], sel = document.getElementById('ivc'); if (i && sel) sel.value = catOf(i); };
 })();
 
 (function boot(){
