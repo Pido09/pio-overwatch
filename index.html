@@ -1993,7 +1993,7 @@ function evModal(id){
     '<div class="field"><label for="evt">Event name</label><input class="input" id="evt" name="title" maxlength="160" value="' + esc(e.title) + '" placeholder="e.g. Provincial Board regular session" required></div>' +
     '<div class="field"><label for="evv">Location <span class="hint">(you can add it later)</span></label><input class="input" id="evv" name="venue" maxlength="160" value="' + esc(e.venue) + '" placeholder="e.g. Capitol Gym, Daet"></div>' +
     '<div class="two"><div class="field"><label for="evd1">When</label><input class="input" id="evd1" name="date" type="date" value="' + esc(e.date) + '" required></div><div class="field"><label for="evd2">Until when <span class="hint">(if more than one day)</span></label><input class="input" id="evd2" name="dateTo" type="date" value="' + (e.dateTo && e.dateTo !== e.date ? esc(e.dateTo) : '') + '"></div></div>' +
-    '<div class="two"><div class="field"><label for="evtm">Time of the event</label><input class="input" id="evtm" name="time" type="time" value="' + esc(e.time || '') + '"></div><div class="field"><label for="evte">Until what time</label><input class="input" id="evte" name="timeEnd" type="time" value="' + esc(e.timeEnd || '') + '"></div></div>' +
+    '<div class="field"><label for="evtm">Time of the event</label><input class="input" id="evtm" name="time" type="time" value="' + esc(e.time || '') + '"><input type="hidden" name="timeEnd" value="' + esc(e.timeEnd || '') + '"></div>' +
     '<fieldset class="field" style="border:0;padding:0;margin:0 0 12px"><legend class="label" style="margin-bottom:6px">How will staff be sent?</legend><div class="seg">' + kinds.map(function(o, i){ return '<input type="radio" name="kind" id="evk' + i + '" value="' + o[0] + '"' + (evKind(e) === o[0] ? ' checked' : '') + '><label for="evk' + i + '"><b>' + o[1] + '</b><small>' + o[2] + '</small></label>'; }).join('') + '</div></fieldset>' +
     '<fieldset class="field" style="border:0;padding:0;margin:0 0 12px"><legend class="label" style="margin-bottom:6px">What is needed?</legend><div style="display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">' + EV_NEEDS.map(function(n){ return '<label class="check" style="padding:10px 12px"><input type="checkbox" name="need" value="' + esc(n) + '"' + ((e.needs || []).indexOf(n) >= 0 ? ' checked' : '') + '><span>' + esc(n) + '</span></label>'; }).join('') + '</div><input class="input" name="needOther" maxlength="120" value="' + esc(e.needOther || '') + '" placeholder="If Other, what is needed?" aria-label="Other, what is needed" style="margin-top:8px"></fieldset>' +
     '<div class="field"><label for="evr">Requested by <span class="hint">(optional)</span></label><input class="input" id="evr" name="requester" maxlength="120" value="' + esc(e.requester || '') + '" placeholder="Office or group on the request letter"></div>' +
@@ -4613,19 +4613,6 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.se
   setTimeout(function(){ var s = document.getElementById('splash'); if (!s) return; s.classList.add('out'); setTimeout(function(){ s.remove(); }, 400); }, reduce ? 600 : 2000);
 })();
 
-(function boot(){
-  S.token = lGet('pio_tok') || sGet('pio_tok');
-  if (!LIVE && S.token && S.token.charAt(0) !== 't'){ clearSession(); S.token = null; }
-  var cached = null;
-  try { cached = JSON.parse(lGet('pio_cache') || 'null'); } catch(e){}
-  if (S.token && cached && LIVE){ apply(cached); render(); }
-  var first = S.token ? refresh().catch(function(e){ if (!S.me){ clearSession(); S.token = null; } else toast(e.message); }) : Promise.resolve();
-  first.then(function(){
-    if (S.me) return;
-    return call('status').then(function(st){ S.needsSetup = st.needsSetup; S.divisions = st.divisions || []; render(); var f = document.getElementById('lu') || document.getElementById('sn'); if (f && window.innerWidth > 860) f.focus(); });
-  }).catch(function(e){ document.getElementById('app').innerHTML = '<div class="loading"><p>' + esc(e.message) + '</p><button class="btn btn-primary" onclick="location.reload()">Try again</button></div>'; });
-})();
-
 /* =====================================================================
    v42: search, phone Back button and page links, accessibility fixes,
    dispatch orders for events near the Capitol within office hours
@@ -4635,7 +4622,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.se
 var NAV = { init: false, fromPop: false };
 function navViews(){ return navItems().map(function(x){ return x[0]; }).concat(['log', 'records', 'inventory']); }
 function navSync(){
-  if (!S.me) return;
+  if (!S.me || typeof NAV === 'undefined' || !NAV) return;
   var h = '#' + S.view;
   if (!NAV.init){
     NAV.init = true;
@@ -4733,7 +4720,7 @@ document.addEventListener('click', function(ev){
 var OFFICE = { start: '08:00', end: '17:00', noon: '12:00' };
 function evSuggest(d){
   var multi = d.dateTo && d.date && d.dateTo !== d.date;
-  var early = d.time && d.time < OFFICE.start, late = d.timeEnd && d.timeEnd > OFFICE.end;
+  var early = d.time && d.time < OFFICE.start, late = (d.timeEnd && d.timeEnd > OFFICE.end) || (d.time && d.time >= OFFICE.end);
   var wkend = d.date && [0, 6].indexOf(pd(d.date).getDay()) >= 0;
   if (multi) return { k: 'travel', why: 'more than one day' };
   if (early || late) return { k: 'travel', why: 'outside 8 AM to 5 PM' };
@@ -5002,6 +4989,20 @@ document.addEventListener('click', function(ev){ var b = ev.target.closest('[dat
     '.undo-bar{position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--sun);transform-origin:left;animation:undoBar 6s linear forwards}@keyframes undoBar{to{transform:scaleX(0)}}' +
     '@media (pointer:coarse){.undo-btn{min-height:44px}}';
   document.head.appendChild(st);
+})();
+
+
+(function boot(){
+  S.token = lGet('pio_tok') || sGet('pio_tok');
+  if (!LIVE && S.token && S.token.charAt(0) !== 't'){ clearSession(); S.token = null; }
+  var cached = null;
+  try { cached = JSON.parse(lGet('pio_cache') || 'null'); } catch(e){}
+  if (S.token && cached && LIVE){ apply(cached); render(); }
+  var first = S.token ? refresh().catch(function(e){ if (!S.me){ clearSession(); S.token = null; } else toast(e.message); }) : Promise.resolve();
+  first.then(function(){
+    if (S.me) return;
+    return call('status').then(function(st){ S.needsSetup = st.needsSetup; S.divisions = st.divisions || []; render(); var f = document.getElementById('lu') || document.getElementById('sn'); if (f && window.innerWidth > 860) f.focus(); });
+  }).catch(function(e){ document.getElementById('app').innerHTML = '<div class="loading"><p>' + esc(e.message) + '</p><button class="btn btn-primary" onclick="location.reload()">Try again</button></div>'; });
 })();
 </script>
 </body>
