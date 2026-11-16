@@ -2843,8 +2843,9 @@ function loadZip(){
   return new Promise(function(ok, no){ var sc = document.createElement('script'); sc.src = JSZIP_URL; sc.onload = function(){ ok(window.JSZip); }; sc.onerror = function(){ no(new Error('Could not load the document tool. Check your internet connection.')); }; document.head.appendChild(sc); });
 }
 function xmlEsc(v){ return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-/* The Provincial Information Officer does not recommend her own travel. */
-function selfRecommend(t){ return t.names.some(function(n){ return /SARAH/i.test(n) && /AVIADO/i.test(n); }); }
+/* The Provincial Information Officer does not recommend her own travel. When she travels with other
+   employees, their travel still needs her recommendation, so it is left out only when she goes alone. */
+function selfRecommend(t){ var n = t.names || []; return n.length === 1 && /SARAH/i.test(n[0]) && /AVIADO/i.test(n[0]); }
 function toDocXml(x, t){
   var o = { month:'long', day:'numeric', year:'numeric' }, names = sortNames(t.names);
   // one line per extra person: copy the second name line
@@ -3435,7 +3436,7 @@ function toPrintDialog(id){
   modal('Print travel order', '<div class="sumbox"><b>' + esc(t.event) + '</b><span>' + esc(t.destination || '') + ' · ' + fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric', year:'numeric' }) + ' · ' + t.names.length + ' ' + (t.names.length === 1 ? 'person' : 'people') + '</span></div>' +
     '<div class="two"><div class="field"><label for="tpDate">Date prepared</label><input class="input" type="date" id="tpDate" value="' + esc(t.datePrepared || today()) + '"><span class="hint">Printed at the top right.</span></div>' +
     '<div class="field"><span class="label">TEV box</span><div class="hint" style="margin-top:8px">' + (t.tev === 'Yes' ? 'X on “entitled to collect traveling expenses”' : t.tev === 'No' ? 'X on “official time only”' : 'Both boxes empty (TEV not decided yet)') + '</div></div></div>' +
-    (selfRecommend(t) ? '<div class="info-note">' + ic('shield') + '<span>Sarah Marie P. Aviado is on this travel order, so Recommending Approval is left out.</span></div>' : '') +
+    (selfRecommend(t) ? '<div class="info-note">' + ic('shield') + '<span>Sarah Marie P. Aviado is the only person on this travel order, so Recommending Approval is left out.</span></div>' : '') +
     '',
     '<button type="button" class="btn btn-ghost" data-act="toDocx" style="margin-right:auto">' + ic('download') + 'Word file</button><button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button type="button" class="btn btn-primary" data-act="toPrintGo">' + ic('print') + 'Print</button>');
 }
