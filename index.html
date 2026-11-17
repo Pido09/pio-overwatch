@@ -117,6 +117,12 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .icon-btn[disabled]{opacity:.4;cursor:default}
 .error{color:var(--red);font-size:13.5px;min-height:1em;margin:0}
 .ferr{color:var(--red);font-size:13.5px;font-weight:600;margin:2px 0 0}
+/* offset options: use this month's early / admin override */
+.check.opt{margin:4px 0}.check.opt input{margin-top:3px;width:18px;height:18px;flex:none}
+.check.opt span{display:flex;flex-direction:column;gap:2px}.check.opt small{color:var(--muted);font-size:13px;line-height:1.35}
+.check.warnopt{border-color:color-mix(in srgb,var(--gold) 45%,var(--line));background:var(--gold-soft)}
+.check.warnopt:has(input:checked){border-color:var(--gold)}
+.shortnote{display:block;color:var(--gold);font-size:12.5px;font-weight:600;margin-top:4px}
 /* equipment type: one-tap tiles */
 .typepick{border:0;margin:0;padding:0;min-width:0}
 .typepick legend{font-size:13.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px;padding:0}
@@ -1200,7 +1206,7 @@ function entryRow(e, opts){
   var acts = '';
   if (e._saving) acts = '';
   else if (opts.review && !canReview(e)) acts = '<div class="acts"><span class="pill off">Needs another admin</span></div>';
-  else if (opts.review) acts = '<div class="acts"><button class="btn btn-sm btn-primary" data-act="review" data-id="' + e.id + '" data-d="Confirmed">' + (use ? 'Approve' : 'Confirm') + '</button><button class="btn btn-sm btn-danger" data-act="rejectModal" data-id="' + e.id + '">Reject</button></div>';
+  else if (opts.review) acts = '<div class="acts">' + shortNote(e) + '<button class="btn btn-sm btn-primary" data-act="review" data-id="' + e.id + '" data-d="Confirmed"' + (useShort(e) ? ' data-override="1"' : '') + '>' + (use ? (useShort(e) ? 'Approve anyway' : 'Approve') : 'Confirm') + '</button><button class="btn btn-sm btn-danger" data-act="rejectModal" data-id="' + e.id + '">Reject</button></div>';
   else if (use && e.status === 'Confirmed' && !e.toId && e.date >= today() && (isAdmin() || e.username === S.me.username)) acts = '<div class="acts"><button class="btn btn-sm btn-ghost" data-act="moveUse" data-id="' + e.id + '">Reschedule</button></div>';
   return '<li class="row tap' + (opts.review ? ' rv' : '') + '" data-entry="' + e.id + '" tabindex="0"><span class="mark ' + cls + '">' + ic(use ? 'plane' : (CAT_ICON[e.category] || 'plus')) + '</span>' +
     '<div class="body"><div class="t">' + title + '</div><div class="m">' + meta + '</div></div>' +
@@ -1399,7 +1405,7 @@ function empWidgets(){
     hero: function(n){ return '<section class="hero ' + span(n) + '"><button class="hero-main" data-go="monthly"><span class="k">Available offset</span><span class="big">' + fD(st.avail) + '</span>' +
       '<span class="sub">' + (st.reqDays ? fD(st.reqDays) + ' requested · ' + fD(Math.max(st.free, 0)) + ' free to request' : 'Tap to see each month') + '</span></button>' +
       '<div class="hero-r"><button class="box" data-go="monthly"><span>' + fMonth(m) + ' so far</span><b>+' + fD(st.month) + '</b><span>Usable on ' + closesOn(m) + '</span></button>' +
-      '<button class="btn btn-sun" data-act="requestModal"' + (st.free > 0 ? '' : ' disabled') + '>' + ic('plane') + 'Use offset</button></div></section>'; },
+      '<button class="btn btn-sun" data-act="requestModal"' + (st.free > 0 || st.month > 0 ? '' : ' disabled') + '>' + ic('plane') + 'Use offset</button></div></section>'; },
     kpis: function(n){ return '<div class="tiles three ' + span(n) + '">' +
       tile('To review', fD(st.pending + st.reqDays), (st.pendN + st.reqN) + ' not yet reviewed', st.pendN + st.reqN ? 'warn' : '', 'clock', 'data-rec="status:Pending"') +
       tile('Earned this year', fD(st.earnedY), 'Confirmed in ' + td.slice(0,4), '', 'plus', 'data-rec="type:EARN"') +
@@ -1659,7 +1665,7 @@ function entryModal(id){
   if (e._saving){ modal(esc(e.event || 'Saving'), body + '<div class="info-note">' + ic('clock') + '<span>Still saving. You can open it again in a moment.</span></div>', '<button type="button" class="btn btn-ghost" data-act="close">Close</button>'); return; }
   if (adm || (mine && pend)) foot += '<button type="button" class="btn btn-danger" data-act="del" data-id="' + e.id + '" style="margin-right:auto">' + ic('trash') + 'Remove</button>';
   if (pend && (adm || mine)) foot += '<button type="button" class="btn btn-ghost" data-act="editEntry" data-id="' + e.id + '">' + ic('edit') + 'Edit</button>';
-  if (pend && canReview(e)) foot += '<button type="button" class="btn btn-ghost" data-act="rejectModal" data-id="' + e.id + '">Reject</button><button type="button" class="btn btn-primary" data-act="review" data-id="' + e.id + '" data-d="Confirmed">' + ic('check') + (use ? 'Approve' : 'Confirm') + '</button>';
+  if (pend && canReview(e)) foot += '<button type="button" class="btn btn-ghost" data-act="rejectModal" data-id="' + e.id + '">Reject</button><button type="button" class="btn btn-primary" data-act="review" data-id="' + e.id + '" data-d="Confirmed"' + (useShort(e) ? ' data-override="1"' : '') + '>' + ic('check') + (use ? (useShort(e) ? 'Approve anyway' : 'Approve') : 'Confirm') + '</button>';
   else if (pend && adm) foot += '<span class="hint" style="align-self:center">Another admin needs to review your own entry.</span>';
   else foot += '<button type="button" class="btn btn-ghost" data-act="close">Close</button>';
   modal(use ? (pend ? 'Day-off request' : 'Day off') : esc(e.event || 'Offset'), body, foot);
@@ -1678,18 +1684,28 @@ function daysFields(date, days){
 }
 function requestModal(date){
   var st = stats(S.me.username);
-  modal('Use offset', '<div class="mini-tiles"><div><span>Available</span><b>' + fD(st.avail) + '</b></div><div><span>Free to request</span><b>' + fD(Math.max(st.free, 0)) + '</b></div></div>' + daysFields(date) +
+  modal('Use offset', '<div class="mini-tiles"><div><span>Free to request</span><b>' + fD(Math.max(st.free, 0)) + '</b></div><div><span>Earned this month</span><b>' + fD(st.month) + '</b></div></div>' + daysFields(date) +
+    (st.month > 0 ? earlyBox(st.month, st.free <= 0) : '') +
     '<span class="hint">' + (isAdmin() && otherAdmins() ? 'Another admin approves your request.' : isAdmin() ? 'You are the only admin, so this is approved right away.' : 'An admin approves it, then the days are deducted.') + '</span>',
-    '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit"' + (st.free > 0 ? '' : ' disabled') + '>' + ic('plane') + 'Send request</button>', 'requestUse');
+    '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit"' + (st.free > 0 || st.month > 0 ? '' : ' disabled') + '>' + ic('plane') + 'Send request</button>', 'requestUse');
 }
 function useModal(u, date){
   var staff = S.users.filter(function(x){ return x.active && !(x.username === S.me.username && otherAdmins()); });
   if (!staff.length) return toast('No staff to record for.');
   u = u && staff.some(function(x){ return x.username === u; }) ? u : staff[0].username;
   modal('Record offset use', '<div class="field"><label for="mu">Employee</label><select class="input" id="mu" name="username">' + staff.map(function(x){ return '<option value="' + esc(x.username) + '"' + (x.username === u ? ' selected' : '') + '>' + esc(x.name) + ' · ' + fD(stats(x.username).avail) + ' available</option>'; }).join('') + '</select></div>' +
-    daysFields(date) + '<span class="hint">For days off agreed in person. Staff can also send requests from their own accounts.</span>',
+    daysFields(date) + '<div id="muOpts">' + useOpts(u) + '</div><span class="hint">For days off agreed in person. Staff can also send requests from their own accounts.</span>',
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Record use</button>', 'recordUse');
 }
+/* a day-off request bigger than what the person can use: approving it needs an explicit "Approve anyway" (override) */
+function useShort(e){ if (e.type !== 'USE' || e.status !== 'Pending') return false; var s = stats(e.username); return e.days > s.avail + (e.early ? s.month : 0) + 1e-9; }
+function shortNote(e){ if (!useShort(e)) return ''; var s = stats(e.username); return '<span class="shortnote">' + ic('flag') + ' Not enough offset: has ' + fD(Math.max(s.avail + (e.early ? s.month : 0), 0)) + '. Approving goes below zero.</span>'; }
+/* "Use offsets earned this month": they are normally usable from the 1st of next month */
+function earlyBox(n, on){ return '<label class="check opt"><input type="checkbox" name="early" value="1"' + (on ? ' checked' : '') + '><span><b>Use offsets earned this month</b><small>' + fD(n) + ' earned this month, normally usable from ' + closesOn(curMonth()) + '.</small></span></label>'; }
+/* admin: early use, plus an override for when there is not enough offset (the balance goes below zero) */
+function useOpts(u){ var s = stats(u);
+  return (s.month > 0 ? earlyBox(s.month, false) : '') +
+    '<label class="check opt warnopt"><input type="checkbox" name="override" value="1"><span><b>Override: record even without enough offset</b><small>' + esc(firstName(u)) + ' has ' + fD(Math.max(s.avail, 0)) + ' usable now. Their balance can go below zero; offsets they earn later pay it back.</small></span></label>'; }
 function rejectModal(id){
   var e = S.entries.filter(function(x){ return x.id === id; })[0]; if (!e) return;
   M = { id: id };
@@ -1829,7 +1845,9 @@ document.addEventListener('click', function(ev){
   if (a === 'pinModal') return modal('Reset PIN for ' + esc(userName(t.dataset.u)), '<input type="hidden" name="username" value="' + esc(t.dataset.u) + '"><div class="field"><label for="rp">New PIN</label><input class="input pin" id="rp" name="pin" inputmode="numeric" maxlength="6" required><span class="hint">They will be signed out on all devices. Tell them the new PIN in person.</span></div>',
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Reset PIN</button>', 'resetPin');
   if (a === 'del'){ busy(t, act('deleteEntry', { id: t.dataset.id }, 'Entry removed').then(closeModal), 'merr'); return; }
-  if (a === 'review'){ var d = t.dataset.d; busy(t, act('review', { id: t.dataset.id, decision: d }, d === 'Confirmed' ? 'Approved' : 'Rejected').then(closeModal), document.querySelector('#modal .scrim') ? 'merr' : null); return; }
+  if (a === 'review'){ var d = t.dataset.d, ovr = t.dataset.override === '1';
+    if (ovr && t.dataset.sure !== '1'){ t.dataset.sure = '1'; t.innerHTML = ic('check') + 'Tap again to approve'; return; }   // a second tap confirms the override
+    busy(t, act('review', { id: t.dataset.id, decision: d, override: ovr ? '1' : '' }, d === 'Confirmed' ? (ovr ? 'Approved (override)' : 'Approved') : 'Rejected').then(closeModal), document.querySelector('#modal .scrim') ? 'merr' : null); return; }
   if (a === 'confirmAll'){ if (t.dataset.sure !== '1'){ t.dataset.sure = '1'; t.innerHTML = ic('check') + 'Tap again to approve all'; return; }
     busy(t, act('reviewMany', { ids: pending(t.dataset.k).filter(canReview).map(function(e){ return e.id; }), decision: 'Confirmed' }, function(n){ return n + ' approved'; })); return; }
   if (a === 'toggleActive'){ var on2 = t.dataset.a === '1', tu = t.dataset.u; busy(t, act('setActive', { username: tu, active: on2 }, on2 ? 'Account activated' : 'Account deactivated').then(function(){ personModal(tu); }), 'merr'); return; }
@@ -1891,6 +1909,7 @@ document.addEventListener('input', function(ev){
 var rfQTimer = null;
 document.addEventListener('change', function(ev){
   var el = ev.target, id = el.id;
+  if (id === 'mu'){ var mo = document.getElementById('muOpts'); if (mo) mo.innerHTML = useOpts(el.value); }
   if (id === 'calUser'){ S.calUser = el.value; render(); }
   if (id === 'dashDiv'){ S.dashDiv = el.value; render(); }
   if (id === 'holYear'){ S.holYear = el.value; render(); }
@@ -2406,7 +2425,8 @@ function dayoffHint(t){
   if (t.toType !== 'dayoff') return '';
   var n = 0, d0 = t.dateFrom; for (; d0 <= t.dateTo; d0 = addDays(d0, 1)) n++;
   var low = (t.names || []).map(function(nm){ var u = S.users.filter(function(x){ return x.name.toUpperCase() === nm; })[0]; return u && stats(u.username).avail < n - 1e-9 ? dispName(nm) + ' has only ' + fD(stats(u.username).avail) : ''; }).filter(Boolean);
-  return '<div class="warn-note">' + ic('clock') + '<span>Day-off travel order: preparing it deducts ' + fD(n) + ' of offset from each person.' + (low.length ? ' Not enough offset: ' + low.map(esc).join('; ') + '. Those days are skipped.' : '') + '</span></div>';
+  return '<div class="warn-note">' + ic('clock') + '<span>Day-off travel order: preparing it deducts ' + fD(n) + ' of offset from each person.' + (low.length ? ' Not enough offset: ' + low.map(esc).join('; ') + '. Those days are skipped unless you tick Deduct anyway.' : '') + '</span></div>' +
+    (low.length && isAdmin() ? '<label class="check opt warnopt"><input type="checkbox" name="override" value="1"><span><b>Deduct anyway</b><small>Deduct every day even without enough offset. Their balance goes below zero; offsets they earn later pay it back.</small></span></label>' : '');
 }
 function markPrinted(list){
   var ids = list.filter(function(t){ return t && t.status === 'Prepared' && !t.printedAt; }).map(function(t){ return t.id; });
@@ -3948,16 +3968,16 @@ document.addEventListener('submit', function(ev){
     return bg('logEarn', d, { arr: 'entries', item: e }, auto ? 'Offset added' : 'Sent for confirmation', 'The offset “' + e.event + '”', id);
   }
   if (kind === 'requestUse'){
-    var st = stats(me), days = Number(d.days);
+    var st = stats(me), days = Number(d.days), early = !!d.early, free = st.free + (early ? st.month : 0);
     if (!(days >= 0.5) || days * 2 !== Math.round(days * 2)) return bad(errId, 'Days must be in half-day steps.');
-    if (days > st.free + 1e-9) return bad(errId, 'You have ' + fD(Math.max(st.free, 0)) + ' available to request.');
-    var au = adm && otherAdmins() === 0, r = { id: id, username: me, type: 'USE', date: d.date, category: 'Used', days: days, event: '', venue: '', endTime: '', status: au ? 'Confirmed' : 'Pending', note: '', createdBy: me, createdAt: now, reviewedBy: au ? me : '', reviewedAt: au ? now : '', _saving: true };
+    if (days > free + 1e-9) return bad(errId, 'You have ' + fD(Math.max(free, 0)) + ' available to request.' + (!early && st.month ? ' Tick “Use offsets earned this month” to include this month’s.' : ''));
+    var au = adm && otherAdmins() === 0, r = { id: id, username: me, type: 'USE', date: d.date, category: 'Used', days: days, event: '', venue: '', endTime: '', status: au ? 'Confirmed' : 'Pending', note: early ? 'Uses offsets earned this month' : '', early: early, createdBy: me, createdAt: now, reviewedBy: au ? me : '', reviewedAt: au ? now : '', _saving: true };
     return bg('requestUse', d, { arr: 'entries', item: r }, au ? 'Day off recorded' : 'Request sent', 'Your day-off request for ' + fDate(d.date), id);
   }
   if (kind === 'recordUse'){
-    var days2 = Number(d.days), avail = stats(d.username).avail;
-    if (days2 > avail + 1e-9) return bad(errId, userName(d.username) + ' has only ' + fD(avail) + ' available.');
-    var u1 = { id: id, username: d.username, type: 'USE', date: d.date, category: 'Used', days: days2, event: '', venue: '', endTime: '', status: 'Confirmed', note: '', createdBy: me, createdAt: now, reviewedBy: me, reviewedAt: now, _saving: true };
+    var s2 = stats(d.username), days2 = Number(d.days), early2 = !!d.early, over = !!d.override, avail = s2.avail + (early2 ? s2.month : 0);
+    if (!over && days2 > avail + 1e-9) return bad(errId, userName(d.username) + ' has only ' + fD(Math.max(avail, 0)) + ' available. Tick Override to record it anyway.');
+    var u1 = { id: id, username: d.username, type: 'USE', date: d.date, category: 'Used', days: days2, event: '', venue: '', endTime: '', status: 'Confirmed', note: over && days2 > avail + 1e-9 ? 'Recorded without enough offset (override)' : early2 ? 'Uses offsets earned this month' : '', early: early2, createdBy: me, createdAt: now, reviewedBy: me, reviewedAt: now, _saving: true };
     return bg('recordUse', d, { arr: 'entries', item: u1 }, 'Offset use recorded', 'Offset use for ' + userName(d.username), id);
   }
   if (kind === 'reject'){
@@ -4581,6 +4601,9 @@ var Mock = (function(){
     log(me, 'Started a travel order for an approved weekday offset', e.username, e.date);
   }
   function bal(u){ return ledgerFor(entries, u, settings.carryCap).avail; }
+/* offsets confirmed this month: normally usable from the 1st of next month, but can be used early when asked */
+function earnedNow(u){ var m = today().slice(0, 7); return entries.filter(function(e){ return e.username === u && e.type === 'EARN' && e.status === 'Confirmed' && e.date.slice(0, 7) === m; }).reduce(function(s, e){ return s + e.days; }, 0); }
+function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
   function fail(m){ return { ok:false, error:m }; }
   function copy(x){ return JSON.parse(JSON.stringify(x)); }
   function others(me){ return users.filter(function(u){ return u.role === 'admin' && u.active && u.username !== me.username; }).length; }
@@ -4644,10 +4667,10 @@ var Mock = (function(){
     }
     if (a === 'editEntry'){ var x = entries.filter(function(e){ return e.id === p.id; })[0]; if (!x || x.status !== 'Pending') return fail('Only entries waiting for review can be edited.'); if (!adm && x.username !== me.username) return fail('You can only edit your own entries.');
       if (x.type === 'EARN') Object.assign(x, earn(p)); else { x.date = p.date; x.days = Number(p.days); } log(me, 'Edited an entry', x.username, x.date); return ok(me); }
-    if (a === 'requestUse'){ var held = entries.filter(function(e){ return e.username === me.username && e.type === 'USE' && e.status === 'Pending'; }).reduce(function(s,e){ return s + e.days; }, 0), free = bal(me.username) - held, dd = Number(p.days);
-      if (!(dd >= 0.5) || dd * 2 !== Math.round(dd * 2)) return fail('Days must be in half-day steps.'); if (dd > free) return fail('You have ' + fD(Math.max(free,0)) + ' available to request.');
-      var au = adm && others(me) === 0; entries.push({ id:'e' + nid(), username:me.username, type:'USE', date:p.date, category:'Used', days:dd, event:'', venue:'', endTime:'', status: au ? 'Confirmed' : 'Pending', note:'', createdBy:me.username, createdAt:now, reviewedBy: au ? me.username : '', reviewedAt: au ? now : '' });
-      log(me, 'Requested a day off', me.username, p.date + ' · ' + dd + ' day(s)'); return ok(me); }
+    if (a === 'requestUse'){ var held = entries.filter(function(e){ return e.username === me.username && e.type === 'USE' && e.status === 'Pending'; }).reduce(function(s,e){ return s + e.days; }, 0), early = yes(p.early), free = bal(me.username) - held + (early ? earnedNow(me.username) : 0), dd = Number(p.days);
+      if (!(dd >= 0.5) || dd * 2 !== Math.round(dd * 2)) return fail('Days must be in half-day steps.'); if (dd > free + 1e-9) return fail('You have ' + fD(Math.max(free,0)) + ' available to request.' + (!early && earnedNow(me.username) ? ' Tick "Use offsets earned this month" to include this month’s.' : ''));
+      var au = adm && others(me) === 0; entries.push({ id:'e' + nid(), username:me.username, type:'USE', date:p.date, category:'Used', days:dd, event:'', venue:'', endTime:'', status: au ? 'Confirmed' : 'Pending', note: early ? 'Uses offsets earned this month' : '', early: early, createdBy:me.username, createdAt:now, reviewedBy: au ? me.username : '', reviewedAt: au ? now : '' });
+      log(me, 'Requested a day off', me.username, p.date + ' · ' + dd + ' day(s)' + (early ? ' · uses this month’s offsets' : '')); return ok(me); }
     if (a === 'deleteEntry'){ var i = entries.findIndex(function(e){ return e.id === p.id; }); if (i < 0) return fail('Entry not found.'); var e = entries[i]; if (!adm && !(e.username === me.username && e.status === 'Pending')) return fail('You can only remove your own pending entries.'); entries.splice(i,1); log(me, 'Removed an entry', e.username, e.date + ' · ' + e.days + ' day(s)'); return ok(me); }
     if (a === 'changePin'){ if (p.oldPin !== me.pin) return fail('Current PIN is wrong.'); if (!/^\d{4,6}$/.test(p.newPin)) return fail('PIN must be 4 to 6 digits.'); me.pin = p.newPin; log(me, 'Changed own PIN', me.username); return ok(me); }
     if (a === 'saveItem' || a === 'checkoutItem' || a === 'checkinItem' || a === 'setItemStatus' || a === 'deleteItem'){
@@ -4736,7 +4759,7 @@ var Mock = (function(){
       if (p.status === 'Cancelled' && st2.offsetDone){ var gone = entries.filter(function(e){ return e.toId === st2.id && e.type === 'USE'; }).length; entries = entries.filter(function(e){ return !(e.toId === st2.id && e.type === 'USE'); }); st2.offsetDone = false; log(me, 'Returned offset for a cancelled day-off travel order', st2.event, gone + ' day(s)'); }
       var cut = 0; if (p.status === 'Prepared' && st2.toType === 'dayoff' && !st2.offsetDone){
         st2.names.forEach(function(nm3){ var u3 = users.filter(function(x){ return x.name.toUpperCase() === nm3; })[0]; if (!u3) return;
-          for (var dd = st2.dateFrom; dd <= st2.dateTo; dd = addDays(dd, 1)){ if (bal(u3.username) < 1) break;
+          for (var dd = st2.dateFrom; dd <= st2.dateTo; dd = addDays(dd, 1)){ if (bal(u3.username) < 1 && !yes(p.override)) break;
             entries.push({ id:'e' + nid(), username:u3.username, type:'USE', date:dd, category:'Used', days:1, event:'', venue:'', endTime:'', toId:st2.id, status:'Confirmed', note:'Day-off travel order', createdBy:me.username, createdAt:now, reviewedBy:me.username, reviewedAt:now }); cut++; } });
         st2.offsetDone = true; log(me, 'Deducted offset for a day-off travel order', st2.event, cut + ' day(s)'); }
       var made = 0; if (p.tev === 'Yes' && p.status !== 'Cancelled') st2.names.forEach(function(nm2){ if (tevs.some(function(v){ return v.toId === st2.id && v.name === nm2; })) return; var u2 = users.filter(function(x){ return x.name.toUpperCase() === nm2; })[0]; if (u2 && u2.empType === 'COS') return; tevs.push({ id:'v' + nid(), toId:st2.id, name:nm2, username:u2 ? u2.username : '', status:'To prepare', transpo:0, food:0, lodging:0, other:0, total:0, submittedOn:'', releasedOn:'', chequeNo:'', note:'' }); made++; });
@@ -4771,13 +4794,15 @@ var Mock = (function(){
     if (a === 'deleteLeave'){ leaves = leaves.filter(function(l){ return l.id !== p.id; }); log(me, 'Removed a leave record', ''); return ok(me); }
     if (a === 'setCredits'){ credits = credits.filter(function(c){ return c.username !== p.username; }); credits.push({ username:p.username, vl:Number(p.vl), sl:Number(p.sl), asOf:p.asOf }); log(me, 'Set leave balances', p.username, 'VL ' + p.vl + ' · SL ' + p.sl); return ok(me); }
     if (a === 'adjustLeave'){ if (!Number(p.days)) return fail('Enter the number of days to add (or a negative number to deduct).'); if (!String(p.note||'').trim()) return fail('Reason is required.'); leaves.push({ id:'l' + nid(), username:p.username, type:'ADJ-' + p.pool, dateFrom:today(), dateTo:today(), days:Number(p.days), note:p.note, createdBy:me.username, createdAt:now }); log(me, 'Adjusted leave credits', p.username, p.pool + ' ' + p.days); return ok(me); }
-    if (a === 'review' || a === 'reviewMany'){ var ids = a === 'review' ? [p.id] : p.ids, c = 0;
+    if (a === 'review' || a === 'reviewMany'){ var ids = a === 'review' ? [p.id] : p.ids, c = 0, skippedShort = false;
       if (a === 'review' && entries.some(function(e){ return e.id === p.id && e.username === me.username; }) && others(me)) return fail('Another admin needs to review your own entry.');
-      entries.forEach(function(e){ if (ids.indexOf(e.id) < 0 || e.status !== 'Pending' || (e.username === me.username && others(me))) return; if (e.type === 'USE' && p.decision === 'Confirmed' && e.days > bal(e.username)) return;
+      entries.forEach(function(e){ if (ids.indexOf(e.id) < 0 || e.status !== 'Pending' || (e.username === me.username && others(me))) return; var shortU = e.type === 'USE' && p.decision === 'Confirmed' && e.days > bal(e.username) + (e.early ? earnedNow(e.username) : 0) + 1e-9; if (shortU && !yes(p.override)){ skippedShort = true; return; }
+        if (shortU) e.note = 'Approved without enough offset (override)';
         e.status = p.decision; e.reviewedBy = me.username; e.reviewedAt = now; if (p.decision === 'Rejected') e.note = p.note || ''; autoTO(e, me, now); c++; log(me, (p.decision === 'Confirmed' ? 'Approved ' : 'Rejected ') + (e.type === 'USE' ? 'a day-off request' : 'an offset'), e.username, e.date + (p.note ? ' · Reason: ' + p.note : '')); });
-      return c ? ok(me, c) : fail('Nothing was reviewed.'); }
-    if (a === 'recordUse'){ var dy = Number(p.days), b = bal(p.username); if (!(dy >= 0.5) || dy > 30 || dy * 2 !== Math.round(dy * 2)) return fail('Days must be in half-day steps, from ½ to 30.'); if (dy > b) return fail(find(p.username).name + ' has only ' + fD(b) + ' available.');
-      entries.push({ id:'e' + nid(), username:p.username, type:'USE', date:p.date, category:'Used', days:dy, event:'', venue:'', endTime:'', status:'Confirmed', note:'', createdBy:me.username, createdAt:now, reviewedBy:me.username, reviewedAt:now }); log(me, 'Recorded offset use', p.username, p.date + ' · ' + dy + ' day(s)'); return ok(me); }
+      return c ? ok(me, c) : fail(skippedShort ? 'Not enough offset to approve this. Use Approve anyway to approve it below zero.' : 'Nothing was reviewed.'); }
+    if (a === 'recordUse'){ var dy = Number(p.days), early2 = yes(p.early), over = adm && yes(p.override), b = bal(p.username) + (early2 ? earnedNow(p.username) : 0); if (!(dy >= 0.5) || dy > 30 || dy * 2 !== Math.round(dy * 2)) return fail('Days must be in half-day steps, from ½ to 30.'); if (!over && dy > b + 1e-9) return fail(find(p.username).name + ' has only ' + fD(Math.max(b, 0)) + ' available. Tick Override to record it anyway.');
+      var rn = over && dy > b + 1e-9 ? 'Recorded without enough offset (override)' : early2 ? 'Uses offsets earned this month' : '';
+      entries.push({ id:'e' + nid(), username:p.username, type:'USE', date:p.date, category:'Used', days:dy, event:'', venue:'', endTime:'', status:'Confirmed', note:rn, early: early2, createdBy:me.username, createdAt:now, reviewedBy:me.username, reviewedAt:now }); log(me, 'Recorded offset use', p.username, p.date + ' · ' + dy + ' day(s)' + (rn ? ' · ' + rn : '')); return ok(me); }
     if (a === 'addUser'){ var nu = String(p.username||'').trim().toLowerCase(); if (!/^[a-z0-9._-]{3,30}$/.test(nu)) return fail('Usernames use 3–30 letters, numbers, dots or dashes.'); if (find(nu)) return fail('That username is taken.'); if (!/^\d{4,6}$/.test(p.pin)) return fail('PIN must be 4 to 6 digits.'); users.push({ username:nu, name:p.name, role:(['admin','scheduler'].indexOf(p.role) >= 0 ? p.role : 'employee'), division:p.division||'', pin:p.pin, active:true, empType:p.empType || 'JO' }); log(me, 'Added an account', nu, p.role); return ok(me); }
     if (a === 'resetPin'){ if (!/^\d{4,6}$/.test(p.pin)) return fail('PIN must be 4 to 6 digits.'); find(p.username).pin = p.pin; log(me, 'Reset a PIN', p.username); return ok(me); }
     if (a === 'setActive'){ find(p.username).active = p.active; log(me, p.active ? 'Activated an account' : 'Deactivated an account', p.username); return ok(me); }
