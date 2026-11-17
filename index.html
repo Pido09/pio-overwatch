@@ -136,6 +136,15 @@ dl.tov{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:4px 0}dl.
 .to-card:not(.open){padding-top:12px;padding-bottom:12px;align-items:center}
 .to-card:not(.open) .to-names,.to-card:not(.open) .to-body>.row-btns,.to-card:not(.open) .to-body>.clash,.to-card:not(.open) .to-acts{display:none}
 .to-card.open .to-sum{display:none}
+/* whole rows are tappable: show it (pointer, hover and press feedback) */
+.to-card{cursor:pointer;transition:background-color .15s}
+.to-card:hover{background:color-mix(in srgb,var(--surface-2) 60%,transparent)}
+.to-card:not(.open):active{background:var(--surface-2)}
+.to-card.open{cursor:default}.to-card.open .to-head{cursor:pointer}
+.grid.dash>section.panel[data-w]>.panel-h{cursor:pointer}
+.grid.dash>section.panel[data-w]>.panel-h select,.grid.dash>section.panel[data-w]>.panel-h input{cursor:auto}
+/* picking an option fades between states instead of snapping */
+.tgrid label,.divpick label,.check,.chip,.kchip,.seg label,.tabs button,.pill,.lnk{transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s}
 /* TEV groups */
 li.tevmem.shut{display:none}
 /* Dates that need equipment: fewer dates at first, and the button beside the event on phones */
@@ -1937,7 +1946,16 @@ document.addEventListener('click', function(ev){
   if (a === 'backupDrive'){ busy(t, call('backupToDrive').then(function(r){ modal('Backup saved', '<p style="margin:0">A copy named <b>' + esc(r.name) + '</b> was saved to the admin’s Google Drive.</p><a class="btn btn-ghost" href="' + esc(r.url) + '" target="_blank" rel="noopener">' + ic('drive') + 'Open in Google Drive</a>', '<button type="button" class="btn btn-primary" data-act="close">Done</button>'); render(); })); return; }
   if (a === 'customize'){ document.body.classList.remove('drawer-open'); return customizeModal(); }
   if (a === 'wUp' || a === 'wDown'){ var i = +t.dataset.i, j = a === 'wUp' ? i - 1 : i + 1, tmp = M.order[i]; M.order[i] = M.order[j]; M.order[j] = tmp; M.draw(); return; }
-  if (a === 'wFold'){ var fl = wFolded(), fw = t.dataset.w, fi = fl.indexOf(fw); if (fi < 0) fl.push(fw); else fl.splice(fi, 1); lSet('pio_fold_' + wRole(), JSON.stringify(fl)); render(); var fb = document.getElementById('wf-' + fw); if (fb) fb.focus({ preventScroll: true }); return; }
+  if (a === 'wFold'){ var fl = wFolded(), fw = t.dataset.w, fi = fl.indexOf(fw), opening = fi >= 0; if (fi < 0) fl.push(fw); else fl.splice(fi, 1); lSet('pio_fold_' + wRole(), JSON.stringify(fl));
+    var sec0 = document.querySelector('[data-w="' + fw + '"]'), fh0 = sec0 ? sec0.getBoundingClientRect().height : 0;
+    render(); var fb = document.getElementById('wf-' + fw); if (fb) fb.focus({ preventScroll: true });
+    // the section grows or shrinks to its new size, and its content fades in when it opens
+    var sec1 = document.querySelector('[data-w="' + fw + '"]');
+    if (sec1 && fh0 && !lessMotion() && sec1.animate){ var fh1 = sec1.getBoundingClientRect().height; sec1.style.overflow = 'hidden';
+      var fa = sec1.animate([{ height: fh0 + 'px' }, { height: fh1 + 'px' }], { duration: opening ? MOTION.inMs : MOTION.outMs, easing: opening ? MOTION.easeOut : MOTION.easeIn });
+      fa.oncancel = function(){ sec1.style.overflow = ''; }; settle(fa, opening ? MOTION.inMs : MOTION.outMs, function(){ sec1.style.overflow = ''; });
+      if (opening) staggerIn(Array.prototype.filter.call(sec1.children, function(c){ return !c.classList.contains('panel-h'); })); }
+    return; }
   if (a === 'wReset'){ lSet('pio_w_' + M.role, null); lSet('pio_fold_' + M.role, null); closeModal(); render(); toast('Dashboard reset'); return; }
   if (a === 'wSave'){ M.hidden = []; document.querySelectorAll('#wl input[data-w]').forEach(function(x){ if (!x.checked) M.hidden.push(x.dataset.w); }); lSet('pio_w_' + M.role, JSON.stringify({ order: M.order, hidden: M.hidden })); closeModal(); render(); toast('Layout saved'); return; }
   if (a === 'useModal') return useModal(t.dataset.u, t.dataset.date);
@@ -2246,23 +2264,70 @@ function toView(id){
     '<button type="button" class="btn ' + (adm && t.status === 'Filed' ? 'btn-ghost' : 'btn-primary') + '" data-act="close">Close</button>');
 }
 document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act]'); if (t && t.dataset.act === 'toView'){ ev.stopPropagation(); toView(t.dataset.id); } }, true);
-document.addEventListener('click', function(ev){ var a = ev.target.closest('[data-act="needAll"]'); if (a){ S.needAll = !S.needAll; render(); } });
+document.addEventListener('click', function(ev){ var a = ev.target.closest('[data-act="needAll"]'); if (a){ S.needAll = !S.needAll; render(); if (S.needAll) staggerIn(Array.prototype.slice.call(document.querySelectorAll('main .nday'), 4)); } });
+/* dashboard sections: a tap anywhere on the title bar (not on its buttons or menus) folds or unfolds it */
+document.addEventListener('click', function(ev){
+  var h = ev.target.closest('.grid.dash > section.panel[data-w] > .panel-h'); if (!h || !rowTap(ev)) return;
+  var b = h.querySelector('.fold-t'); if (b) b.click();
+});
 /* TEV groups: tap a travel order's header to show or hide its people */
 document.addEventListener('click', function(ev){
   var a = ev.target.closest('[data-act]'); if (!a) return;
   if (a.dataset.act === 'tevAllOpen'){ S.tevAllOpen = !S.tevAllOpen; S.tevOpen = {}; render(); return; }
   if (a.dataset.act !== 'tevGrp') return;
-  var id = a.dataset.id, on = !a.classList.contains('open');
+  var id = a.dataset.id, on = !a.classList.contains('open'), rows = document.querySelectorAll('li.tevmem[data-g="' + id + '"]');
   a.classList.toggle('open', on); a.setAttribute('aria-expanded', String(on)); S.tevOpen[id] = on;
-  document.querySelectorAll('li.tevmem[data-g="' + id + '"]').forEach(function(r){ r.classList.toggle('shut', !on); });
+  if (on){ rows.forEach(function(r){ r.classList.remove('shut'); }); staggerIn(rows); return; }
+  // closing: the people fade out quickly, then hide
+  if (lessMotion()){ rows.forEach(function(r){ r.classList.add('shut'); }); return; }
+  var left = rows.length; rows.forEach(function(r){ var an = r.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-4px)' }], { duration: MOTION.outMs, easing: MOTION.easeIn });
+    settle(an, MOTION.outMs, function(){ if (!a.classList.contains('open')) r.classList.add('shut'); }); });
 });
-/* travel order rows start compact (one summary line); tap to open the names, tags and buttons */
+/* ---------- motion ----------
+   Same rhythm as the pop-ups: things arrive in 0.24s easing out, leave in 0.17s easing in. JavaScript
+   animations check "reduce motion" themselves (the CSS rule only stops CSS animations). */
+var MOTION = { inMs: 240, outMs: 170, easeOut: 'cubic-bezier(.22,1,.36,1)', easeIn: 'cubic-bezier(.55,0,1,.45)' };
+function lessMotion(){ return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }
+/* open or close a block smoothly: its height follows, and what appears fades in one after another.
+   setOpen(bool) applies the real state; a new tap cancels a running animation, so it never gets stuck. */
+function smoothToggle(el, setOpen, open, reveal){
+  if (lessMotion() || !el.animate){ setOpen(open); return; }
+  if (el._anim){ el._anim.cancel(); }
+  var h0 = el.getBoundingClientRect().height;
+  setOpen(open); var h1 = el.getBoundingClientRect().height;
+  if (!open) setOpen(true);                       // keep the content visible while it closes
+  el.style.overflow = 'hidden';
+  var a = el._anim = el.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: open ? MOTION.inMs : MOTION.outMs, easing: open ? MOTION.easeOut : MOTION.easeIn });
+  var done = function(){ if (el._anim !== a) return; el._anim = null; el.style.overflow = ''; if (!open) setOpen(false); };
+  a.oncancel = function(){ if (el._anim === a){ el._anim = null; el.style.overflow = ''; } };
+  settle(a, open ? MOTION.inMs : MOTION.outMs, done);
+  if (open && reveal) Array.prototype.forEach.call(el.querySelectorAll(reveal), function(c, i){
+    settle(c.animate([{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'none' }], { duration: MOTION.inMs, delay: Math.min(i, 6) * 35, easing: MOTION.easeOut, fill: 'backwards' }), MOTION.inMs + 210); });
+}
+/* safety net: if the page stops drawing (app in the background), jump the animation to its end so nothing stays half-open or invisible */
+/* settle(an, ms, then): `then` runs exactly once, when the animation ends, or from the timer if the page never draws the end */
+function settle(an, ms, then){
+  var ran = false, go = function(){ if (ran) return; ran = true; if (then) then(); };
+  an.addEventListener('finish', go);
+  setTimeout(function(){ try { if (an.playState !== 'finished' && an.playState !== 'idle') an.finish(); } catch(e){} go(); }, ms + 200);
+  return an;
+}
+/* fade rows in one after another (a list that just appeared) */
+function staggerIn(nodes){ if (lessMotion()) return; Array.prototype.forEach.call(nodes, function(c, i){ if (c.animate) settle(c.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], { duration: MOTION.inMs, delay: Math.min(i, 8) * 30, easing: MOTION.easeOut, fill: 'backwards' }), MOTION.inMs + Math.min(i, 8) * 30); }); }
+/* a tap on the row itself, not on a link, button or field inside it, and not while selecting text */
+function rowTap(ev){ var c = ev.target.closest('a,button,input,select,textarea,label,[data-person],[data-entry],[data-act]:not(.to-head):not(.tev-grp)'); if (c) return false; var s = window.getSelection && String(window.getSelection()); return !s; }
+
+/* travel order rows start compact (one summary line); tap anywhere on the row to open the names, tags and buttons */
 S.toOpen = S.toOpen || {};
+function toSetOpen(li, on){ li.classList.toggle('open', on); var h = li.querySelector('.to-head'); if (h) h.setAttribute('aria-expanded', String(on)); S.toOpen[li.dataset.to] = on; }
 document.addEventListener('click', function(ev){
-  var t = ev.target.closest('[data-act="toToggle"],[data-act="toAll"]'); if (!t) return;
-  if (t.dataset.act === 'toAll'){ S.toAllOpen = !S.toAllOpen; S.toOpen = {}; render(); return; }
-  var li = t.closest('.to-card'), on = !li.classList.contains('open');
-  li.classList.toggle('open', on); t.setAttribute('aria-expanded', String(on)); S.toOpen[t.dataset.id] = on;
+  var t = ev.target.closest('[data-act="toAll"]');
+  if (t){ S.toAllOpen = !S.toAllOpen; S.toOpen = {}; render(); if (S.toAllOpen) staggerIn(document.querySelectorAll('main .to-card')); return; }
+  var head = ev.target.closest('.to-head'), li = ev.target.closest('.to-card'); if (!li) return;
+  if (!head && !rowTap(ev)) return;
+  // follow the last tap, not the in-between state of a row that is still closing
+  var cur = li._want != null ? li._want : li.classList.contains('open'), on = !cur; li._want = on;
+  smoothToggle(li, function(b){ toSetOpen(li, b); }, on, '.to-names,.to-body>.row-btns,.to-body>.clash,.to-acts');
 });
 function toSummary(t){
   var names = sortNames(t.names), q = (S.toQ || '').toLowerCase(), hit = q ? names.filter(function(n){ return n.toLowerCase().indexOf(q) >= 0; }) : [];
@@ -4257,8 +4322,18 @@ document.addEventListener('click', function(ev){
   var s = stats(e.username), lim = s.avail + (e.early ? s.month : 0), short = e.type === 'USE' && dec === 'Confirmed' && e.days > lim + 1e-9;
   if (short && !ovr) return toast(userName(e.username) + ' has only ' + fD(Math.max(lim, 0)) + ' available. Use Approve anyway to approve it below zero.');
   var patch = { status: dec, reviewedBy: me, reviewedAt: now }; if (short) patch.note = 'Approved without enough offset (override)';
-  bg('review', { id: id, decision: dec, override: ovr ? '1' : '' }, { arr: 'entries', id: id, patch: patch }, dec === 'Confirmed' ? (short ? 'Approved (override)' : 'Approved') : 'Rejected', 'The approval for ' + userName(e.username));
-  if (e.type === 'USE' && dec === 'Confirmed') offsetPromptFor(e.username, e.date);   // weekday day off: pick its event, then prepare
+  var save = function(){
+    bg('review', { id: id, decision: dec, override: ovr ? '1' : '' }, { arr: 'entries', id: id, patch: patch }, dec === 'Confirmed' ? (short ? 'Approved (override)' : 'Approved') : 'Rejected', 'The approval for ' + userName(e.username));
+    if (e.type === 'USE' && dec === 'Confirmed') offsetPromptFor(e.username, e.date);   // weekday day off: pick its event, then prepare
+  };
+  // a row in a list slides out first, so it is clear it left the queue (skipped with reduce motion, and in pop-ups)
+  var row = t.closest('li.row'); if (row && !t.closest('#modal') && !lessMotion() && row.animate){
+    row.style.overflow = 'hidden'; t.disabled = true;
+    var ra = row.animate([{ opacity: 1, transform: 'none', height: row.offsetHeight + 'px' }, { opacity: 0, transform: 'translateX(' + (dec === 'Confirmed' ? 24 : -24) + 'px)', height: '0px' }], { duration: MOTION.outMs + 40, easing: MOTION.easeIn, fill: 'forwards' });
+    // after saving, drop the animation: the page update may reuse this same row for the next entry
+    settle(ra, MOTION.outMs + 40, function(){ save(); setTimeout(function(){ ra.cancel(); row.style.overflow = ''; t.disabled = false; }, 30); }); return;
+  }
+  save();
 }, true);
 
 /* ---------- "New updates" prompt ----------
