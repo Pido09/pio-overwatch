@@ -118,6 +118,45 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .error{color:var(--red);font-size:13.5px;min-height:1em;margin:0}
 .ferr{color:var(--red);font-size:13.5px;font-weight:600;margin:2px 0 0}
 /* offset options: use this month's early / admin override */
+/* links between records */
+.lnk{all:unset;cursor:pointer;color:var(--brand-strong);font-weight:600;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--brand-strong) 35%,transparent);text-underline-offset:3px;border-radius:4px;padding:5px 2px;margin:-5px -2px;display:inline-block;line-height:1.2}
+.lnk:hover{text-decoration-color:currentColor}.lnk:focus-visible{outline:3px solid var(--brand-glow);outline-offset:2px}
+.to-names .lnk,.pp .pill .lnk{color:inherit;font-weight:inherit}
+.ev-tos{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;margin-top:8px;font-size:13.5px}.ev-tos>svg.i{color:var(--muted);width:16px;height:16px}.ev-tos .sep{color:var(--muted)}
+.linkrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);border-radius:12px;font-size:14px}
+dl.tov{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:4px 0}dl.tov>div{display:contents}dl.tov dt{color:var(--muted);font-size:13px;font-weight:600}dl.tov dd{margin:0}
+/* compact travel order rows */
+.to-head{all:unset;display:flex;align-items:flex-start;gap:8px;cursor:pointer;border-radius:6px;min-height:28px}
+.to-head:focus-visible{outline:3px solid var(--brand-glow);outline-offset:2px}
+.to-head .t{flex:1}
+.to-chev{display:inline-flex;color:var(--muted);transition:transform .2s;margin-top:1px}
+.to-card.open .to-chev{transform:rotate(90deg)}
+.to-sum{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px}
+.to-who{display:inline-flex;align-items:center;gap:4px;color:var(--muted);min-width:0}.to-who svg.i{width:14px;height:14px}
+.to-card:not(.open){padding-top:12px;padding-bottom:12px;align-items:center}
+.to-card:not(.open) .to-names,.to-card:not(.open) .to-body>.row-btns,.to-card:not(.open) .to-body>.clash,.to-card:not(.open) .to-acts{display:none}
+.to-card.open .to-sum{display:none}
+/* TEV groups */
+li.tevmem.shut{display:none}
+/* Dates that need equipment: fewer dates at first, and the button beside the event on phones */
+.nday.shut{display:none}
+.nmore{padding:10px 18px 14px;border-top:1px solid var(--line)}
+.nev .lnk{color:inherit;font-weight:inherit}
+@media (max-width:640px){ .nlist .nev{flex-direction:row!important;align-items:center} .nlist .nev .btn{flex:none} }
+li.tev-grp.tap{cursor:pointer}li.tev-grp.tap:hover{background:color-mix(in srgb,var(--surface-2) 70%,var(--line))}
+li.tev-grp .to-chev{align-self:center}li.tev-grp.open .to-chev{transform:rotate(90deg)}
+li.tev-grp .tev-cnt{display:block;margin-top:2px}
+li.tev-grp:focus-visible{outline:3px solid var(--brand-glow);outline-offset:-3px}
+/* phones: the Travel orders status tiles shrink to label + number (they still filter), so the list starts on the first screen */
+@media (max-width:640px){
+  .tiles.five{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin-bottom:12px}
+  .tiles.five .tile{padding:10px 10px 9px;gap:2px;min-height:0}
+  .tiles.five .tile .s,.tiles.five .tile .ib,.tiles.five .tile .go{display:none}
+  .tiles.five .tile .k{font-size:11px;white-space:normal;line-height:1.2}
+  .tiles.five .tile .v{font-size:20px}
+  .tiles.five .tile[aria-pressed="true"]{border-color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand)}
+}
+@media (prefers-reduced-motion: reduce){.to-chev{transition:none}}
 .to-names span.dayoff{background:var(--gold-soft);border-color:color-mix(in srgb,var(--gold) 50%,var(--line));color:var(--gold)}
 .warn-note.clash{margin:6px 0}
 .warn-note.gapnote{align-items:center}.warn-note.gapnote span{flex:1}
@@ -1664,7 +1703,9 @@ function entryModal(id){
         f('Counts toward', fMonth(e.date.slice(0,7)) + (e.date.slice(0,7) < curMonth() ? ' (usable now)' : ' (usable on ' + closesOn(e.date.slice(0,7)) + ')'))) +
       f(use && e.createdBy === e.username ? 'Requested by' : 'Logged by', (e.createdBy === e.username ? 'Self' : esc(userName(e.createdBy))) + ' · ' + when(e.createdAt)) +
       (e.reviewedBy && e.createdBy !== e.reviewedBy ? f(e.status === 'Rejected' ? 'Rejected by' : 'Approved by', esc(userName(e.reviewedBy)) + ' · ' + when(e.reviewedAt)) : '') + '</div>';
-  var foot = '', mine = e.username === S.me.username, tst = toState(e);
+  var foot = '', mine = e.username === S.me.username, tst = toState(e), eto = entryTO(e);
+  // its travel order, one tap away
+  if (eto) body += '<div class="linkrow">' + ic('route') + '<span class="hint">Travel order:</span>' + linkTO(eto) + toStatusPill(eto) + '</div>';
   // weekday offsets and days off are valid only once their travel order is prepared
   if (tst === 'none' || tst === 'prep') body += '<div class="warn-note">' + ic('route') + '<span>' + (e.type === 'USE' ? 'A weekday day off' : 'An offset for weekday work') + ' is valid only with a prepared travel order. ' + (tst === 'none' ? 'There is no travel order for it yet.' : 'Its travel order is not prepared yet.') + '</span>' +
     (isAdmin() ? (use ? '<button type="button" class="btn btn-sm btn-primary" data-act="offsetPick" data-id="' + e.id + '">' + ic('route') + 'Pick event and prepare</button>'
@@ -1803,7 +1844,7 @@ function personModal(username){
         '<button type="button" class="btn btn-sm btn-danger" data-act="removeUser" data-u="' + esc(username) + '">' + ic('trash') + 'Remove ' + (u.role === 'admin' ? 'admin' : 'staff') + '</button>') + '</div>' +
       (!self && st.avail > 0 ? '<div class="warn-note">' + ic('clock') + '<span>' + esc(u.name.split(' ')[0]) + ' still has ' + fD(st.avail) + ' available. Settle or record it before removing the account.</span></div>' : '') +
       '<p class="hint" style="margin:0">Deactivate blocks sign-in but keeps them on the lists. Remove deletes the account; their past entries stay in the records and the activity log.</p>' : '') +
-    (recent.length ? '<div class="label" style="display:flex;justify-content:space-between;align-items:center">Recent<button type="button" class="btn btn-sm btn-ghost" data-act="personRecords" data-u="' + esc(username) + '">' + ic('list') + 'All records</button></div><ul class="list boxed">' + recent.map(function(e){ return entryRow(e); }).join('') + '</ul>' : '<p class="hint">No offsets yet.</p>'),
+    (recent.length ? '<div class="label" style="display:flex;justify-content:space-between;align-items:center">Recent<button type="button" class="btn btn-sm btn-ghost" data-act="personRecords" data-u="' + esc(username) + '">' + ic('list') + 'All records</button></div><ul class="list boxed">' + recent.map(function(e){ return entryRow(e); }).join('') + '</ul>' : '<p class="hint">No offsets yet.</p>') + personTOs(username),
     isAdmin() ? '<button type="button" class="btn btn-ghost" data-act="personAdd" data-u="' + esc(username) + '">' + ic('plus') + 'Add offset</button>' +
       (self ? '<button type="button" class="btn btn-primary" data-act="requestModal">' + ic('plane') + 'Use offset</button>' : '<button type="button" class="btn btn-primary" data-act="useModal" data-u="' + esc(username) + '"' + (st.avail > 0 ? '' : ' disabled') + '>' + ic('minus') + 'Record use</button>') : '');
 }
@@ -2164,19 +2205,82 @@ function dispName(n){ var u = S.users.filter(function(x){ return x.name.toUpperC
 /* dashboard version: a summary that opens the Travel orders page; only "Prepare" stays as a shortcut */
 function toMini(t){
   var prep = isAdmin() && t.status === 'Filed' && !t._saving;
-  return '<li class="row tap to-mini" data-go="travel" tabindex="0"><div class="to-date"><b>' + fDate(t.dateFrom, { month:'short' }).toUpperCase() + '</b><span class="num">' + pd(t.dateFrom).getDate() + (t.dateTo !== t.dateFrom ? '–' + pd(t.dateTo).getDate() : '') + '</span></div>' +
+  return '<li class="row tap to-mini" data-act="toView" data-id="' + t.id + '" tabindex="0"><div class="to-date"><b>' + fDate(t.dateFrom, { month:'short' }).toUpperCase() + '</b><span class="num">' + pd(t.dateFrom).getDate() + (t.dateTo !== t.dateFrom ? '–' + pd(t.dateTo).getDate() : '') + '</span></div>' +
     '<div class="body"><div class="t">' + esc(t.event) + '</div><div class="m">' + (t.destination ? esc(t.destination) + ' · ' : '') + esc(sortNames(t.names).map(dispName).join(', ')) + '</div></div>' +
     (prep ? '<button class="btn btn-sm btn-primary" data-act="toManage" data-id="' + t.id + '">' + ic('shield') + 'Prepare</button>' : '<span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + t.status + '</span>') + '</li>';
 }
-function toRow(t){
+/* ---------- links between records ----------
+   Anything that names another record opens it: a travel order, an offset or day off, an event, a person (admins). */
+function nameToUser(n){ var u = S.users.filter(function(x){ return x.name.toUpperCase() === n; })[0]; return u ? u.username : ''; }
+function linkPerson(u, label){ return isAdmin() && u ? '<button type="button" class="lnk" data-person="' + esc(u) + '">' + esc(label) + '</button>' : esc(label); }
+function linkTO(t, label){ return t ? '<button type="button" class="lnk" data-act="toView" data-id="' + esc(t.id) + '">' + esc(label || t.event) + '</button>' : ''; }
+function toStatusPill(t){ return '<span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + (t.status === 'Filed' ? 'To prepare' : t.status) + '</span>'; }
+/* the offsets and days off a travel order makes valid */
+function toEntries(t){ var seen = {}; return S.entries.filter(function(e){ var hit = e.autoToId === t.id || e.toId === t.id || e.id === t.entryId || e.id === t.useEntryId; if (hit && !seen[e.id]){ seen[e.id] = 1; return true; } return false; }); }
+/* a person's travel orders from the last month on, newest first, each opening its quick view */
+function personTOs(u){
+  var from = addDays(today(), -30), ts = S.travelOrders.filter(function(t){ return t.status !== 'Cancelled' && (t.usernames || []).indexOf(u) >= 0 && t.dateTo >= from; }).sort(function(a, b){ return a.dateFrom < b.dateFrom ? 1 : -1; }).slice(0, 5);
+  if (!ts.length) return '';
+  return '<div class="label" style="margin-top:12px">Travel orders</div><ul class="list boxed">' + ts.map(function(t){
+    return '<li class="row tap" data-act="toView" data-id="' + t.id + '" tabindex="0"><span class="mark ' + (isOffsetTO(t) ? 'use' : 'earn') + '">' + ic(isOffsetTO(t) ? 'plane' : 'route') + '</span><div class="body"><div class="t">' + esc(t.event) + '</div><div class="m">' + fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + '</div></div>' + toStatusPill(t) + '</li>'; }).join('') + '</ul>';
+}
+/* one travel order with everything around it, each part tappable */
+function toView(id){
+  var t = S.travelOrders.filter(function(x){ return x.id === id; })[0]; if (!t) return toast('That travel order was not found.');
   var adm = isAdmin(), mine = t.createdBy === S.me.username, canEdit = adm || (mine && t.status === 'Filed' && !isLeader());
-  return '<li class="to-card"><div class="to-date"><b>' + fDate(t.dateFrom, { month:'short' }).toUpperCase() + '</b><span class="num">' + pd(t.dateFrom).getDate() + (t.dateTo !== t.dateFrom ? '–' + pd(t.dateTo).getDate() : '') + '</span></div>' +
-    '<div class="to-body"><div class="t">' + esc(t.event) + '</div><div class="m">' + fRange(t.dateFrom, t.dateTo, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') + '</div>' +
+  var ev = t.eventId && S.events.filter(function(x){ return x.id === t.eventId; })[0], cl = toDayOffClash(t).map(function(c){ return c.name; }), ents = toEntries(t);
+  var row = function(k, v){ return '<div><dt>' + k + '</dt><dd>' + v + '</dd></div>'; };
+  var body = '<div class="sumbox"><b>' + esc(t.event) + '</b><span>' + fRange(t.dateFrom, t.dateTo, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + '</span></div>' +
+    (isOffsetTO(t) ? '<div class="info-note">' + ic('plane') + '<span>Made for an offset or day off. The people on it are not dispatched' + (ev ? ' to the event' : '') + '.</span></div>' : '') + clashNote(t) +
+    '<dl class="kvs tov">' + row('Status', toStatusPill(t) + (t.printedAt ? ' <span class="pill Confirmed">Printed ' + fDate(String(t.printedAt).slice(0, 10), { month:'short', day:'numeric' }) + '</span>' : '')) +
+      row('Type', t.toType === 'dayoff' ? 'Day off (uses offset)' : 'Regular') + (t.toNo ? row('TO No.', esc(t.toNo)) : '') +
+      (ev ? row('Event', '<button type="button" class="lnk" data-act="evPick" data-id="' + esc(ev.id) + '">' + esc(ev.title) + '</button>') : '') +
+      (adm || t.tev ? row('TEV', esc(t.tev || 'Not set')) : '') + row('Filed by', linkPerson(t.createdBy, userName(t.createdBy)) + ' · ' + ago(t.createdAt)) + '</dl>' +
+    '<div class="dsec">People</div><div class="to-names">' + sortNames(t.names).map(function(n){ var u = nameToUser(n), lab = dispName(n) + (cl.indexOf(n) >= 0 ? ' · day off' : '');
+      return '<span' + (cl.indexOf(n) >= 0 ? ' class="dayoff"' : '') + '>' + linkPerson(u, lab) + '</span>'; }).join('') + '</div>' +
+    (ents.length ? '<div class="dsec">' + (ents.some(function(e){ return e.type === 'USE'; }) ? 'Makes these valid' : 'Offset it covers') + '</div><ul class="list">' + ents.map(function(e){ return entryRow(e, { showName: true }); }).join('') + '</ul>' : '');
+  modal('Travel order', body,
+    '<button type="button" class="btn btn-ghost" data-act="toCopy" data-id="' + t.id + '">' + ic('list') + 'Copy</button>' +
+    (canEdit ? '<button type="button" class="btn btn-ghost" data-act="toEdit" data-id="' + t.id + '">' + ic('edit') + 'Edit</button>' : '') +
+    (adm ? '<button type="button" class="btn ' + (t.status === 'Filed' ? 'btn-primary' : 'btn-ghost') + '" data-act="toManage" data-id="' + t.id + '">' + ic('shield') + (t.status === 'Filed' ? 'Prepare' : 'Update') + '</button>' : '') +
+    '<button type="button" class="btn ' + (adm && t.status === 'Filed' ? 'btn-ghost' : 'btn-primary') + '" data-act="close">Close</button>');
+}
+document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act]'); if (t && t.dataset.act === 'toView'){ ev.stopPropagation(); toView(t.dataset.id); } }, true);
+document.addEventListener('click', function(ev){ var a = ev.target.closest('[data-act="needAll"]'); if (a){ S.needAll = !S.needAll; render(); } });
+/* TEV groups: tap a travel order's header to show or hide its people */
+document.addEventListener('click', function(ev){
+  var a = ev.target.closest('[data-act]'); if (!a) return;
+  if (a.dataset.act === 'tevAllOpen'){ S.tevAllOpen = !S.tevAllOpen; S.tevOpen = {}; render(); return; }
+  if (a.dataset.act !== 'tevGrp') return;
+  var id = a.dataset.id, on = !a.classList.contains('open');
+  a.classList.toggle('open', on); a.setAttribute('aria-expanded', String(on)); S.tevOpen[id] = on;
+  document.querySelectorAll('li.tevmem[data-g="' + id + '"]').forEach(function(r){ r.classList.toggle('shut', !on); });
+});
+/* travel order rows start compact (one summary line); tap to open the names, tags and buttons */
+S.toOpen = S.toOpen || {};
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act="toToggle"],[data-act="toAll"]'); if (!t) return;
+  if (t.dataset.act === 'toAll'){ S.toAllOpen = !S.toAllOpen; S.toOpen = {}; render(); return; }
+  var li = t.closest('.to-card'), on = !li.classList.contains('open');
+  li.classList.toggle('open', on); t.setAttribute('aria-expanded', String(on)); S.toOpen[t.dataset.id] = on;
+});
+function toSummary(t){
+  var names = sortNames(t.names), q = (S.toQ || '').toLowerCase(), hit = q ? names.filter(function(n){ return n.toLowerCase().indexOf(q) >= 0; }) : [];
+  var show = hit.concat(names.filter(function(n){ return hit.indexOf(n) < 0; })).slice(0, 2).map(dispName), more = names.length - show.length, clash = toDayOffClash(t).length;
+  return '<span class="to-sum">' + toStatusPill(t) + (t.toType === 'dayoff' ? '<span class="pill off">Day off</span>' : '') + (clash ? '<span class="pill Pending" title="Someone on it has a day off">' + ic('plane') + clash + ' day off</span>' : '') +
+    '<span class="to-who">' + ic('users') + esc(show.join(', ')) + (more > 0 ? ' +' + more : '') + '</span></span>';
+}
+function toRow(t){
+  var adm = isAdmin(), mine = t.createdBy === S.me.username, canEdit = adm || (mine && t.status === 'Filed' && !isLeader()), open = !!(S.toOpen[t.id] || S.toAllOpen);
+  return '<li class="to-card' + (open ? ' open' : '') + '" data-to="' + t.id + '"><div class="to-date"><b>' + fDate(t.dateFrom, { month:'short' }).toUpperCase() + '</b><span class="num">' + pd(t.dateFrom).getDate() + (t.dateTo !== t.dateFrom ? '–' + pd(t.dateTo).getDate() : '') + '</span></div>' +
+    '<div class="to-body"><button type="button" class="to-head" data-act="toToggle" data-id="' + t.id + '" aria-expanded="' + open + '"><span class="t">' + esc(t.event) + '</span><span class="to-chev" aria-hidden="true">' + ic('right') + '</span></button>' +
+      '<div class="m">' + fRange(t.dateFrom, t.dateTo, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') + '</div>' + toSummary(t) +
       '<div class="to-names">' + (function(){ var cl = toDayOffClash(t).map(function(c){ return c.name; });
-        return sortNames(t.names).map(function(n){ return cl.indexOf(n) >= 0 ? '<span class="dayoff" title="Has a day off on these dates">' + esc(dispName(n)) + ' · day off</span>' : '<span>' + esc(dispName(n)) + '</span>'; }).join(''); })() + '</div>' +
+        return sortNames(t.names).map(function(n){ var lab = dispName(n) + (cl.indexOf(n) >= 0 ? ' · day off' : ''); return '<span' + (cl.indexOf(n) >= 0 ? ' class="dayoff" title="Has a day off on these dates"' : '') + '>' + linkPerson(nameToUser(n), lab) + '</span>'; }).join(''); })() + '</div>' +
       clashNote(t) +
       '<div class="row-btns"><span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + t.status + '</span>' + (adm || t.tev ? '<span class="pill ' + (t.tev === 'Yes' ? 'hol' : 'off') + '">TEV: ' + (t.tev || 'not set') + '</span>' : '') + (t._saving ? '<span class="pill off">Saving…</span>' : '') + evChip(t) + (t.auto ? '<span class="pill off">From an approved offset</span>' : '') + (t.toType === 'dayoff' ? '<span class="pill off">Day off · uses offset</span>' : '') + (adm && t.status === 'Prepared' && !t.printedAt ? '<span class="pill Pending">Not printed</span>' : '') + (t.printedAt ? '<span class="pill Confirmed">Printed ' + fDate(String(t.printedAt).slice(0, 10), { month:'short', day:'numeric' }) + '</span>' : '') + '<span class="hint">Filed by ' + esc(userName(t.createdBy)) + ' · ' + ago(t.createdAt) + '</span></div></div>' +
     '<div class="to-acts' + (t._saving ? ' is-saving' : '') + '">' + (adm ? '<button class="btn btn-sm ' + (t.status === 'Filed' ? 'btn-primary' : 'btn-ghost') + '" data-act="toManage" data-id="' + t.id + '">' + ic('shield') + (t.status === 'Filed' ? 'Prepare' : 'Update') + '</button>' : '') +
+      '<button class="btn btn-sm btn-ghost" data-act="toView" data-id="' + t.id + '">' + ic('right') + 'Details</button>' +
       '<div class="to-icons"><button class="btn btn-sm btn-ghost" data-act="toCopy" data-id="' + t.id + '" title="Copy the text for the document">' + ic('list') + 'Copy</button>' + (adm && t.status === 'Prepared' && !t.printedAt ? '<button class="btn btn-sm btn-ghost" data-act="toMarkPrinted" data-id="' + t.id + '">' + ic('check') + 'Mark printed</button>' : '') + (canEdit ? '<button class="btn btn-sm btn-ghost" data-act="toEdit" data-id="' + t.id + '">' + ic('edit') + 'Edit</button>' : '') + '</div></div>' + '</li>';
 }
 function moveModal(id){
@@ -2300,10 +2404,10 @@ function assignModal(id){
 function evCard(e){
   var st = evState(e), cs = canSched(), adm = isAdmin(), tasking = evKind(e) === 'tasking', ppl = evPeople(e), mine = evMine(e, S.me.username), ts = evLinked(e);
   var row = function(k, v){ return '<dt>' + k + '</dt><dd>' + v + '</dd>'; };
-  var people = ppl.length ? '<div class="pp">' + ppl.map(function(p){ return '<span class="pill ' + (p.st === 'To prepare' || p.st === 'Assigned' ? 'Pending' : 'Confirmed') + '">' + esc(p.name) + (p.st ? ' · ' + p.st : '') + '</span>'; }).join('') + '</div>' : (e.status === 'Cancelled' ? '<span class="hint">None</span>' : '<span class="pill e-need">No one dispatched yet</span>');
+  var people = ppl.length ? '<div class="pp">' + ppl.map(function(p){ return '<span class="pill ' + (p.st === 'To prepare' || p.st === 'Assigned' ? 'Pending' : 'Confirmed') + '">' + linkPerson(p.u, p.name) + (p.st ? ' · ' + p.st : '') + '</span>'; }).join('') + '</div>' : (e.status === 'Cancelled' ? '<span class="hint">None</span>' : '<span class="pill e-need">No one dispatched yet</span>');
   // people whose day-off travel order names this event: shown apart, never as dispatched
   var offN = []; evOffsetTOs(e).forEach(function(t){ (t.names || []).forEach(function(n){ if (offN.indexOf(n) < 0) offN.push(n); }); });
-  if (offN.length) people += '<div class="hint" style="margin-top:6px">' + ic('plane') + ' Day off only, not dispatched: ' + offN.map(function(n){ return esc(dispName(n)); }).join(', ') + '</div>';
+  if (offN.length) people += '<div class="hint" style="margin-top:6px">' + ic('plane') + ' Day off only, not dispatched: ' + offN.map(function(n){ return linkPerson(nameToUser(n), dispName(n)); }).join(', ') + '</div>';
   var gear = inProd() ? S.inventory.filter(function(i){ return i.eventId === e.id && i.status === 'Out'; }) : [];
   var acts = '';
   if (e.status !== 'Cancelled'){
@@ -2313,7 +2417,9 @@ function evCard(e){
     else acts += '<button type="button" class="btn btn-sm ' + (st === 'need' || evUnfiled(e).length ? 'btn-primary' : 'btn-ghost') + '" data-act="evDispatch" data-id="' + e.id + '">' + ic('route') + (evUnfiled(e).length ? 'Prepare travel order for ' + evUnfiled(e).length : ppl.length ? 'Add another travel order' : 'Prepare travel order') + '</button>';
     if (adm && e.status === 'Pending') acts += '<button type="button" class="btn btn-sm btn-ghost" data-act="evConfirm" data-id="' + e.id + '">' + ic('check') + 'Confirm event</button>';
   }
-  if (ts.length) acts += '<button type="button" class="btn btn-sm btn-ghost" data-go="travel">View travel orders</button>';
+  // each travel order for this event opens directly (dispatch ones first, then day-off ones)
+  var allTs = ts.concat(evOffsetTOs(e));
+  if (allTs.length) people += '<div class="ev-tos">' + ic('route') + allTs.map(function(t){ return linkTO(t, (isOffsetTO(t) ? 'Day off: ' : '') + sortNames(t.names).map(dispName).slice(0, 2).join(', ') + (t.names.length > 2 ? ' +' + (t.names.length - 2) : '')) + ' ' + toStatusPill(t); }).join('<span class="sep" aria-hidden="true">·</span>') + '</div>';
   if (cs){
     acts += '<button type="button" class="btn btn-sm btn-ghost" data-act="evEdit" data-id="' + e.id + '">' + ic('edit') + 'Edit</button>';
     if (e.status !== 'Cancelled') acts += '<button type="button" class="btn btn-sm btn-ghost" data-act="evCancel" data-id="' + e.id + '">' + ic('x') + 'Cancel event</button>';
@@ -2565,7 +2671,8 @@ function viewTravel(){
       '<label class="keep" style="font-size:13.5px"><input type="checkbox" id="toMine"' + (mine ? ' checked' : '') + '>Only mine</label></div>' +
       '<div class="panel-h"><div class="tabs" role="group" aria-label="Period">' + per.map(function(x){ return '<button data-act="toPer" data-p="' + x[0] + '" aria-pressed="' + ((S.toPer || 'all') === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
       (rg ? '<div class="row-btns"><button class="btn btn-sm btn-ghost" data-act="toNav" data-d="-1" aria-label="Previous ' + rg.p + '">‹</button><b>' + esc(lab) + '</b><button class="btn btn-sm btn-ghost" data-act="toNav" data-d="1" aria-label="Next ' + rg.p + '">›</button></div>' : '') +
-      '<input class="input" id="toQ" type="search" value="' + esc(S.toQ || '') + '" placeholder="Search purpose, place or name" aria-label="Search travel orders" style="max-width:240px">' + '<select class="input" id="toTy" aria-label="Type" style="max-width:150px">' + [['all','All types'],['regular','Regular'],['dayoff','Day off']].map(function(o){ return '<option value="' + o[0] + '"' + ((S.toType || 'all') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>' + '<button class="btn btn-sm btn-ghost" data-act="toSort" aria-label="Change order">' + (dir === 'desc' ? 'Newest first' : 'Oldest first') + '</button></div>' +
+      '<input class="input" id="toQ" type="search" value="' + esc(S.toQ || '') + '" placeholder="Search purpose, place or name" aria-label="Search travel orders" style="max-width:240px">' +
+      '<button type="button" class="btn btn-sm btn-ghost" data-act="toAll" aria-pressed="' + !!S.toAllOpen + '">' + ic(S.toAllOpen ? 'minus' : 'plus') + (S.toAllOpen ? 'Close all' : 'Open all') + '</button>' + '<select class="input" id="toTy" aria-label="Type" style="max-width:150px">' + [['all','All types'],['regular','Regular'],['dayoff','Day off']].map(function(o){ return '<option value="' + o[0] + '"' + ((S.toType || 'all') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>' + '<button class="btn btn-sm btn-ghost" data-act="toSort" aria-label="Change order">' + (dir === 'desc' ? 'Newest first' : 'Oldest first') + '</button></div>' +
       (list.length ? '<ul class="list">' + list.map(toRow).join('') + '</ul>' : empty('route', 'No travel orders here', 'Try another period, type or tab.', (canFileTO() ? '<button class="btn btn-primary" data-act="toNew">' + ic('plus') + 'New travel order</button>' : ''))) + '</section>' };
 }
 var TO = { names: [] };
@@ -2862,12 +2969,17 @@ function viewTEV(){
   var groups = {}, order = [];
   list.forEach(function(v){ if (!groups[v.toId]){ groups[v.toId] = []; order.push(v.toId); } groups[v.toId].push(v); });
   order.sort(function(a, b){ var x = toOf(a), y = toOf(b); return ((y && y.dateFrom) || '') < ((x && x.dateFrom) || '') ? -1 : 1; });
+  // groups start closed (header only, with a count); tap the header to see the people. One group, or a
+  // single travel order picked, starts open.
+  S.tevOpen = S.tevOpen || {};
   var body = order.map(function(id){
-    var t = toOf(id), vs = groups[id], sum = vs.reduce(function(n, v){ return n + v.total; }, 0);
-    return '<li class="grp tev-grp"><div><b>' + esc(t ? t.event : 'Travel order') + '</b><span class="hint">' + (t ? fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') : 'Removed') + '</span></div>' +
+    var t = toOf(id), vs = groups[id], sum = vs.reduce(function(n, v){ return n + v.total; }, 0), open = !!(S.tevAllOpen || S.tevOpen[id] || S.tevTO || order.length === 1);
+    var byS = {}; vs.forEach(function(v){ byS[v.status] = (byS[v.status] || 0) + 1; });
+    var cnt = vs.length + (vs.length === 1 ? ' person' : ' people') + ['To prepare', 'Pending', 'Claimed'].filter(function(s){ return byS[s]; }).map(function(s){ return ' · ' + byS[s] + ' ' + s.toLowerCase(); }).join('');
+    return '<li class="grp tev-grp tap' + (open ? ' open' : '') + '" data-act="tevGrp" data-id="' + id + '" tabindex="0" aria-expanded="' + open + '"><span class="to-chev" aria-hidden="true">' + ic('right') + '</span><div><b>' + esc(t ? t.event : 'Travel order') + '</b><span class="hint">' + (t ? fRange(t.dateFrom, t.dateTo, { month:'short', day:'numeric', year:'numeric' }) + (t.destination ? ' · ' + esc(t.destination) : '') + (t.toNo ? ' · TO No. ' + esc(t.toNo) : '') : 'Removed') + '</span><span class="hint tev-cnt">' + cnt + '</span></div>' +
       (function(){ var pend = vs.filter(function(v){ return v.status === 'Pending' && !v._saving; }); return adm && pend.length > 1 ? '<button class="btn btn-sm btn-primary" data-act="tevClaimAll" data-ids="' + pend.map(function(v){ return v.id; }).join(',') + '">' + ic('check') + 'Claim all ' + pend.length + '</button>' : ''; })() +
       '<b class="num">' + peso(sum) + '</b>' + (adm ? '<button class="icon-btn" data-act="tevPrint" data-to="' + id + '" aria-label="Print TEV forms" title="Print TEV forms">' + ic('print') + '</button>' : '') + '</li>' +
-      vs.sort(function(a, b){ return a.name < b.name ? -1 : 1; }).map(tevRow).join('');
+      vs.sort(function(a, b){ return a.name < b.name ? -1 : 1; }).map(function(v){ return tevRow(v).replace('<li class="', '<li data-g="' + id + '" class="tevmem' + (open ? '' : ' shut') + ' '); }).join('');
   }).join('');
   var tabs = '<div class="tabs" role="group" aria-label="Show">' + ['To prepare', 'Pending', 'Claimed', 'All'].map(function(x){ var n = all.filter(function(v){ return (x === 'All' || v.status === x) && (!S.tevTO || v.toId === S.tevTO); }).length; return '<button data-act="tevTab" data-t="' + x + '" aria-pressed="' + (tab === x) + '">' + x + (n ? ' · ' + n : '') + '</button>'; }).join('') + '</div>';
   var ft = S.tevTO && toOf(S.tevTO);
@@ -2876,7 +2988,7 @@ function viewTEV(){
     actions: adm ? '<button class="btn btn-sun" data-act="tevNew">' + ic('plus') + 'Add TEV</button>' : '',
     body: '<div class="grid">' + tevTiles(yearList, adm ? budget : null, 'span-12') +
       (ft ? '<div class="span-12 info-note">' + ic('route') + '<span>Showing TEVs for <b>' + esc(ft.event) + '</b> in ' + esc(ft.destination || '—') + '. <button class="link" data-act="tevAll">Show all</button></span></div>' : '') +
-      panel('TEVs', 'peso', list.length ? '<ul class="list">' + body + '</ul>' : empty('peso', tab === 'All' ? 'No TEVs yet' : 'Nothing ' + tab.toLowerCase(), adm ? 'When a travel order is marked “TEV: Yes”, a TEV is started for each person on it.' : 'TEVs for your travel orders show here.', adm ? '<button class="btn btn-ghost" data-go="travel">' + ic('route') + 'Travel orders</button>' : ''), tabs, 'span-12') + '</div>' };
+      panel('TEVs', 'peso', list.length ? '<ul class="list">' + body + '</ul>' : empty('peso', tab === 'All' ? 'No TEVs yet' : 'Nothing ' + tab.toLowerCase(), adm ? 'When a travel order is marked “TEV: Yes”, a TEV is started for each person on it.' : 'TEVs for your travel orders show here.', adm ? '<button class="btn btn-ghost" data-go="travel">' + ic('route') + 'Travel orders</button>' : ''), tabs + (order.length > 1 ? '<button type="button" class="btn btn-sm btn-ghost" data-act="tevAllOpen" aria-pressed="' + !!S.tevAllOpen + '">' + ic(S.tevAllOpen ? 'minus' : 'plus') + (S.tevAllOpen ? 'Close all' : 'Open all') + '</button>' : ''), 'span-12') + '</div>' };
 }
 function tevModal(id, toId){
   var v = id ? (S.tevs || []).filter(function(x){ return x.id === id; })[0] : null;
@@ -3900,7 +4012,7 @@ function newsItems(){
   });
   S.travelOrders.forEach(function(t){
     if (!after(t.statusAt) || !(t.usernames || []).concat([t.createdBy]).some(function(u){ return u === me; }) || isAdmin()) return;
-    out.push({ at: t.statusAt, k: t.status === 'Cancelled' ? 'del' : 'ok', ic: 'route', go: 'data-go="travel"', t: 'Travel order “' + t.event + '” is ' + t.status.toLowerCase() + (t.status === 'Prepared' && t.tev === 'Yes' ? ' · TEV will be made' : '') });
+    out.push({ at: t.statusAt, k: t.status === 'Cancelled' ? 'del' : 'ok', ic: 'route', go: 'data-act="toView" data-id="' + t.id + '"', t: 'Travel order “' + t.event + '” is ' + t.status.toLowerCase() + (t.status === 'Prepared' && t.tev === 'Yes' ? ' · TEV will be made' : '') });
   });
   (S.tevs || []).forEach(function(v){
     if (v.username !== me || !after(v.statusAt) || isAdmin()) return;
@@ -5621,14 +5733,17 @@ viewInventory = function(){
   // which dates need equipment (next 3 weeks)
   var lim = addDays(td, 21), ups = (S.events || []).filter(function(e){ return e.status !== 'Cancelled' && (e.dateTo || e.date) >= td && e.date <= lim && (needsGear(e) || (e.gear || []).length); }).sort(evSort);
   var byDay = {}; ups.forEach(function(e){ var k = e.date < td ? td : e.date; (byDay[k] = byDay[k] || []).push(e); });
-  var needs = Object.keys(byDay).sort().map(function(d){
+  // the next 4 dates show; the rest open with "Show N more dates"
+  var needDays = Object.keys(byDay).sort(), needMore = needDays.length - 4;
+  var needs = needDays.map(function(d, di){
     var evs = byDay[d], s2 = stockOn(d), want = evs.filter(function(e){ return needsGear(e) && !(e.gear || []).length; }).length, short = want > 0 && s2.Camera.free < want;
-    return '<div class="nday"><div class="ndate' + (short ? ' bad' : '') + '"><b>' + fDate(d, { day:'numeric' }) + '</b><span>' + fDate(d, { month:'short' }) + '</span><small>' + fDate(d, { weekday:'short' }) + '</small></div><div class="nlist">' +
+    return '<div class="nday' + (di >= 4 && !S.needAll ? ' shut' : '') + '"><div class="ndate' + (short ? ' bad' : '') + '"><b>' + fDate(d, { day:'numeric' }) + '</b><span>' + fDate(d, { month:'short' }) + '</span><small>' + fDate(d, { weekday:'short' }) + '</small></div><div class="nlist">' +
       evs.map(function(e){ var g = e.gear || [], who = e.gearHolder && userOf(e.gearHolder);
-        return '<div class="nev"><div class="grow"><b>' + esc(e.title) + '</b><div class="hint">' + esc((e.needs || []).filter(function(x){ return GEAR_NEEDS.indexOf(x) >= 0; }).join(', ') || 'Equipment planned') + (e.venue ? ' · ' + esc(e.venue) : '') + '</div>' +
+        return '<div class="nev"><div class="grow"><b><button type="button" class="lnk" data-act="evPick" data-id="' + esc(e.id) + '">' + esc(e.title) + '</button></b><div class="hint">' + esc((e.needs || []).filter(function(x){ return GEAR_NEEDS.indexOf(x) >= 0; }).join(', ') || 'Equipment planned') + (e.venue ? ' · ' + esc(e.venue) : '') + '</div>' +
           (g.length ? '<div class="kitline">' + ic('check') + esc(kitText(g)) + (who ? ' <span class="hint">· ' + esc(who.name) + '</span>' : '') + '</div>' : '<div class="kitline none">' + ic('flag') + 'No equipment planned yet</div>') + '</div>' +
           '<button type="button" class="btn btn-sm ' + (g.length ? 'btn-ghost' : 'btn-primary') + '" data-act="gearModal" data-id="' + esc(e.id) + '">' + (g.length ? 'Change' : 'Plan kit') + '</button></div>'; }).join('') +
       '<div class="hint nstock">' + s2.Camera.free + ' camera' + (s2.Camera.free === 1 ? '' : 's') + ' free that day' + (short ? ' · <b style="color:var(--red)">not enough for ' + want + ' event' + (want === 1 ? '' : 's') + '</b>' : '') + '</div></div></div>'; }).join('');
+  if (needMore > 0) needs += '<div class="nmore"><button type="button" class="btn btn-sm btn-ghost" data-act="needAll" aria-expanded="' + !!S.needAll + '">' + ic(S.needAll ? 'minus' : 'plus') + (S.needAll ? 'Show fewer dates' : 'Show ' + needMore + ' more date' + (needMore === 1 ? '' : 's')) + '</button></div>';
   var needPanel = panel('Dates that need equipment', 'cal', needs ? '<div class="ndays">' + needs + '</div>' : empty('cal', 'Nothing coming up', 'Events in the next 3 weeks that need photo, video or livestream show here.'), '<span class="hint">Next 3 weeks</span>', '');
 
   // the list, grouped in kit order
