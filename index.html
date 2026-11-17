@@ -1667,7 +1667,8 @@ function entryModal(id){
   var foot = '', mine = e.username === S.me.username, tst = toState(e);
   // weekday offsets and days off are valid only once their travel order is prepared
   if (tst === 'none' || tst === 'prep') body += '<div class="warn-note">' + ic('route') + '<span>' + (e.type === 'USE' ? 'A weekday day off' : 'An offset for weekday work') + ' is valid only with a prepared travel order. ' + (tst === 'none' ? 'There is no travel order for it yet.' : 'Its travel order is not prepared yet.') + '</span>' +
-    (isAdmin() ? (tst === 'none' ? '<button type="button" class="btn btn-sm btn-ghost" data-act="startEntryTO" data-id="' + e.id + '">Start travel order</button>' : '<button type="button" class="btn btn-sm btn-ghost" data-go="travel">Open travel orders</button>') : '') + '</div>';
+    (isAdmin() ? (use ? '<button type="button" class="btn btn-sm btn-primary" data-act="offsetPick" data-id="' + e.id + '">' + ic('route') + 'Pick event and prepare</button>'
+      : tst === 'none' ? '<button type="button" class="btn btn-sm btn-ghost" data-act="startEntryTO" data-id="' + e.id + '">Start travel order</button>' : '<button type="button" class="btn btn-sm btn-ghost" data-go="travel">Open travel orders</button>') : '') + '</div>';
   if (e._saving){ modal(esc(e.event || 'Saving'), body + '<div class="info-note">' + ic('clock') + '<span>Still saving. You can open it again in a moment.</span></div>', '<button type="button" class="btn btn-ghost" data-act="close">Close</button>'); return; }
   if (adm || (mine && pend)) foot += '<button type="button" class="btn btn-danger" data-act="del" data-id="' + e.id + '" style="margin-right:auto">' + ic('trash') + 'Remove</button>';
   if (pend && (adm || mine)) foot += '<button type="button" class="btn btn-ghost" data-act="editEntry" data-id="' + e.id + '">' + ic('edit') + 'Edit</button>';
@@ -1727,6 +1728,35 @@ function toDayOffClash(t){
   return (t.names || []).map(function(n, i){ var u = (t.usernames || [])[i] || ((S.users.filter(function(x){ return x.name.toUpperCase() === n; })[0]) || {}).username; if (!u) return null;
     for (var d = t.dateFrom; d <= (t.dateTo || t.dateFrom); d = addDays(d, 1)){ if (dayOffOn(u, d)) return { name: n, u: u, date: d }; } return null; }).filter(Boolean);
 }
+/* After a weekday day off is recorded or approved: pick the event its travel order goes with (an event that day,
+   a new one, or none), then go straight to preparing it. People on it are NOT counted as dispatched to the event. */
+function offsetTOModal(e){
+  if (!e || !isAdmin()) return;
+  var u = userOf(e.username), evs = S.events.filter(function(x){ return x.status !== 'Cancelled' && x.date <= e.date && (x.dateTo || x.date) >= e.date; });
+  var cur = entryTO(e), curEv = cur && cur.eventId;
+  M = { offsetEntry: e.id };
+  var opt = function(val, title, sub, on){ return '<label class="check opt"><input type="radio" name="ev" value="' + esc(val) + '"' + (on ? ' checked' : '') + ' required><span><b>' + title + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</span></label>'; };
+  modal('Travel order for this day off',
+    '<div class="sumbox"><b>' + esc(u ? u.name : e.username) + ' · day off</b><span>' + esc(fDate(e.date, { weekday:'long', month:'long', day:'numeric' })) + ' · ' + fD(e.days) + '</span></div>' +
+    '<p class="hint" style="margin:0">A weekday day off is valid only with a prepared travel order. Pick the event it goes with. ' + esc(u ? firstName(u.username) : 'They') + ' will <b>not</b> be counted as dispatched to that event.</p>' +
+    '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">Event</legend>' +
+      evs.map(function(x, i){ return opt(x.id, esc(x.title), esc([x.venue, evTimes(x)].filter(Boolean).join(' · ')), curEv ? curEv === x.id : i === 0); }).join('') +
+      opt('__new', 'Add a new event', 'For an event that is not on the calendar yet', !evs.length && !curEv) +
+      '<div class="two" id="ofNew"' + (evs.length || curEv ? ' hidden' : '') + '><div class="field"><label for="ofT">Event name</label><input class="input" id="ofT" name="newTitle" maxlength="160" placeholder="e.g. Provincial Board session"></div><div class="field"><label for="ofV">Location</label><input class="input" id="ofV" name="newVenue" maxlength="160" placeholder="e.g. Capitol, Daet"></div></div>' +
+      opt('__none', 'No event', 'Just the day off', false) + '</fieldset>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Later</button><button class="btn btn-primary" type="submit">' + ic('route') + 'Continue to prepare</button>', 'offsetTO');
+}
+document.addEventListener('change', function(ev){ if (ev.target.name === 'ev' && ev.target.closest('form[data-form="offsetTO"]')){ var nb = document.getElementById('ofNew'); if (nb){ nb.hidden = ev.target.value !== '__new'; if (!nb.hidden) document.getElementById('ofT').focus(); } } });
+/* open the prompt for this person's day off on this date once it is saved (quick saves sync in the background) */
+function offsetPromptFor(u, date){
+  var n = 0;
+  (function tick(){
+    var busy = typeof Q !== 'undefined' && (Q.ops.length || Q.busy);
+    var e = S.entries.filter(function(x){ return x.username === u && x.type === 'USE' && x.status === 'Confirmed' && x.date === date && !x._saving; }).sort(function(a, b){ return a.createdAt < b.createdAt ? 1 : -1; })[0];
+    if (!busy && e){ if (needsTO(e) && toState(e) !== 'ok') offsetTOModal(e); return; }
+    if (++n < 80) setTimeout(tick, 250);
+  })();
+}
 /* admin dashboard: weekday offsets and days off that are not valid yet (no prepared travel order) */
 function gapNote(){ var g = toGaps(); if (!g.length) return '';
   var nUse = g.filter(function(e){ return e.type === 'USE'; }).length, nEarn = g.length - nUse;
@@ -1736,6 +1766,7 @@ function gapsModal(){ var g = toGaps().sort(function(a, b){ return a.date < b.da
     (g.length ? '<ul class="list">' + g.map(function(e){ return entryRow(e, { showName: true }); }).join('') + '</ul>' : '<p class="hint">All set.</p>'),
     '<button type="button" class="btn btn-ghost" data-go="travel">Open travel orders</button><button type="button" class="btn btn-primary" data-act="close">Done</button>'); }
 document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="toGaps"]'); if (t) gapsModal(); });
+document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="offsetPick"]'); if (!t) return; var e = S.entries.filter(function(x){ return x.id === t.dataset.id; })[0]; if (e) offsetTOModal(e); });
 function clashNote(t){ var c = toDayOffClash(t); if (!c.length) return '';
   return '<div class="warn-note clash">' + ic('plane') + '<span><b>Not a real dispatch for ' + c.length + (c.length === 1 ? ' person' : ' people') + ':</b> ' + c.map(function(x){ return esc(dispName(x.name)) + ' has a day off on ' + fDate(x.date, { month:'short', day:'numeric' }); }).join('; ') + '. A day off uses a day-off travel order, not a dispatch.</span></div>'; }
 /* a day-off request bigger than what the person can use: approving it needs an explicit "Approve anyway" (override) */
@@ -1889,7 +1920,8 @@ document.addEventListener('click', function(ev){
   if (a === 'startEntryTO'){ busy(t, act('startEntryTO', { id: t.dataset.id }, 'Travel order started. Prepare it in Travel orders.').then(closeModal), 'merr'); return; }
   if (a === 'review'){ var d = t.dataset.d, ovr = t.dataset.override === '1';
     if (ovr && t.dataset.sure !== '1'){ t.dataset.sure = '1'; t.innerHTML = ic('check') + 'Tap again to approve'; return; }   // a second tap confirms the override
-    busy(t, act('review', { id: t.dataset.id, decision: d, override: ovr ? '1' : '' }, d === 'Confirmed' ? (ovr ? 'Approved (override)' : 'Approved') : 'Rejected').then(closeModal), document.querySelector('#modal .scrim') ? 'merr' : null); return; }
+    var rvE = S.entries.filter(function(x){ return x.id === t.dataset.id; })[0];
+    busy(t, act('review', { id: t.dataset.id, decision: d, override: ovr ? '1' : '' }, d === 'Confirmed' ? (ovr ? 'Approved (override)' : 'Approved') : 'Rejected').then(function(){ closeModal(); if (rvE && rvE.type === 'USE' && d === 'Confirmed') offsetPromptFor(rvE.username, rvE.date); }), document.querySelector('#modal .scrim') ? 'merr' : null); return; }
   if (a === 'confirmAll'){ if (t.dataset.sure !== '1'){ t.dataset.sure = '1'; t.innerHTML = ic('check') + 'Tap again to approve all'; return; }
     busy(t, act('reviewMany', { ids: pending(t.dataset.k).filter(canReview).map(function(e){ return e.id; }), decision: 'Confirmed' }, function(n){ return n + ' approved'; })); return; }
   if (a === 'toggleActive'){ var on2 = t.dataset.a === '1', tu = t.dataset.u; busy(t, act('setActive', { username: tu, active: on2 }, on2 ? 'Account activated' : 'Account deactivated').then(function(){ personModal(tu); }), 'merr'); return; }
@@ -1990,7 +2022,11 @@ document.addEventListener('submit', function(ev){
     p = act('logEarn', d, isAdmin() && !(selfLog && otherAdmins()) ? 'Offset saved and confirmed' : 'Sent for confirmation').then(function(){ S.view = 'dashboard'; render(); window.scrollTo(0,0); }); }
   else if (kind === 'editEntry'){ d.id = M.id; d.noTravelOrder = d.noTravelOrder !== undefined || !f.querySelector('input[name=noTravelOrder]'); d.notInPayroll = d.notInPayroll !== undefined; p = act('editEntry', d, 'Changes saved').then(closeModal); }
   else if (kind === 'requestUse') p = act('requestUse', d, isAdmin() && !otherAdmins() ? 'Day off recorded' : 'Request sent').then(closeModal);
-  else if (kind === 'recordUse') p = act('recordUse', d, 'Offset use recorded').then(closeModal);
+  else if (kind === 'recordUse') p = act('recordUse', d, 'Offset use recorded').then(function(){ closeModal(); offsetPromptFor(d.username, d.date); });
+  else if (kind === 'offsetTO' && (d.ev === '__new' && String(d.newTitle || '').trim().length < 3)){ var ofErr = document.getElementById('merr'); if (ofErr) ofErr.textContent = 'Write the new event’s name.'; var ofT = document.getElementById('ofT'); if (ofT) ofT.focus(); return; }
+  else if (kind === 'offsetTO'){ var ofe = M.offsetEntry, pick = d.ev || '';
+    p = act('offsetTO', { id: ofe, eventId: pick.indexOf('__') === 0 ? '' : pick, newTitle: pick === '__new' ? d.newTitle : '', newVenue: pick === '__new' ? d.newVenue : '' }, 'Travel order ready. Prepare it now.')
+      .then(function(r){ closeModal(); var tid = r && (r.id || (r.data && r.data.id)); if (tid) setTimeout(function(){ if (S.travelOrders.some(function(t){ return t.id === tid; })) toManageModal(tid); }, 200); }); }
   else if (kind === 'moveUse'){ d.id = M.id; p = act('moveUse', d, 'Day off rescheduled').then(closeModal); }
   else if (kind === 'saveEvent'){ d.needs = [].map.call(f.querySelectorAll('input[name=need]:checked'), function(x){ return x.value; }); var wasNew = !d.id;
     p = act('saveEvent', d, wasNew ? 'Event added' : 'Event saved').then(function(r){ closeModal(); var ne = S.events.filter(function(x){ return x.id === (r && r.id); })[0];
@@ -2060,7 +2096,8 @@ function activeTOs(){ return S.travelOrders.filter(function(t){ return t.status 
 function toOn(u, d){ return activeTOs().filter(function(t){ return t.usernames.indexOf(u) >= 0 && t.dateFrom <= d && t.dateTo >= d; })[0]; }
 /* What a person is doing on a date: travel order, leave, day off (offset), or nothing. */
 function statusOn(u, d){
-  var t = toOn(u, d); if (t) return { kind: 'to', label: t.event, ref: t };
+  // a travel order made only for an offset or day off is not travel: the day off below shows instead
+  var t = activeTOs().filter(function(x){ return !isOffsetTO(x) && (x.usernames || []).indexOf(u) >= 0 && x.dateFrom <= d && x.dateTo >= d; })[0]; if (t) return { kind: 'to', label: t.event, ref: t };
   var adm = isAdmin() || u === S.me.username;
   var l = (adm ? S.leaves : []).filter(function(x){ return x.username === u && !/^ADJ/.test(x.type) && x.dateFrom <= d && x.dateTo >= d; })[0];
   if (l) return { kind: 'leave', label: leaveName(l.type), ref: l };
@@ -2163,13 +2200,20 @@ function evMissing(e){ var m = []; if (!String(e.venue || '').trim()) m.push('pl
 function inProd(){ if (!S.me) return false; if (isAdmin()) return true; var d = divOf(S.me.division); return !!(d && /production/i.test(d.name)); }
 function dayDiff(a, b){ return Math.round((pd(a) - pd(b)) / 864e5); }
 function evKind(e){ return e.kind === 'tasking' ? 'tasking' : 'travel'; }
-function evLinked(e){ return S.travelOrders.filter(function(t){ return t.eventId === e.id && t.status !== 'Cancelled'; }); }
+/* Travel orders made only to make an offset or day off valid (day-off travel orders and the ones started for
+   offsets) can name an event, but the people on them were NOT dispatched to it. They never count as dispatch. */
+function isOffsetTO(t){ return t.toType === 'dayoff' || !!t.forOffset || !!t.entryId || !!t.useEntryId; }
+function evLinked(e){ return S.travelOrders.filter(function(t){ return t.eventId === e.id && t.status !== 'Cancelled' && !isOffsetTO(t); }); }
+function evOffsetTOs(e){ return S.travelOrders.filter(function(t){ return t.eventId === e.id && t.status !== 'Cancelled' && isOffsetTO(t); }); }
+/* someone on a dispatch travel order who has a day off on the event date is not really dispatched either */
+function evOnDayOff(u, e){ if (!u) return false; for (var d = e.date; d <= (e.dateTo || e.date); d = addDays(d, 1)){ if (dayOffOn(u, d)) return true; } return false; }
 function evState(e){
   if (e.status === 'Cancelled') return 'off';
   if (!String(e.venue || '').trim()) return 'need';
   if (evKind(e) === 'tasking') return (e.assigned || []).length && !e.crewOpen ? 'ok' : 'need';
-  var ts = evLinked(e);
-  return !ts.length ? (evUnfiled(e).length ? 'wait' : 'need') : ts.some(function(t){ return t.status === 'Prepared'; }) && !evUnfiled(e).length ? 'ok' : 'wait';
+  var real = evPeople(e).filter(function(p){ return p.st === 'Prepared' || p.st === 'To prepare'; });
+  if (!real.length) return evUnfiled(e).length ? 'wait' : 'need';
+  return real.some(function(p){ return p.st === 'Prepared'; }) && !evUnfiled(e).length ? 'ok' : 'wait';
 }
 /* people a division leader assigned to a travel event who are not on a travel order for it yet */
 function evUnfiled(e){
@@ -2180,11 +2224,14 @@ function evUnfiled(e){
 function evPeople(e){
   if (evKind(e) === 'tasking') return (e.assigned || []).map(function(u){ var x = userOf(u); return { name: x ? x.name : u, u: u, st: '' }; });
   var out = [], seen = {};
-  evLinked(e).forEach(function(t){ (t.names || []).forEach(function(n, i){ if (seen[n]) return; seen[n] = 1; out.push({ name: dispName(n), u: (t.usernames || [])[i] || '', st: t.status === 'Prepared' ? 'Prepared' : 'To prepare' }); }); });
+  evLinked(e).forEach(function(t){ (t.names || []).forEach(function(n, i){ if (seen[n]) return; seen[n] = 1;
+    var u = (t.usernames || [])[i] || ((S.users.filter(function(x){ return x.name.toUpperCase() === n; })[0]) || {}).username || '';
+    if (evOnDayOff(u, e)) return;   // on a day off that date: not dispatched
+    out.push({ name: dispName(n), u: u, st: t.status === 'Prepared' ? 'Prepared' : 'To prepare' }); }); });
   evUnfiled(e).forEach(function(u){ var x = userOf(u); out.push({ name: x ? x.name : u, u: u, st: 'Assigned' }); });
   return out;
 }
-function evMine(e, u){ return evKind(e) === 'tasking' ? (e.assigned || []).indexOf(u) >= 0 : evLinked(e).some(function(t){ return (t.usernames || []).indexOf(u) >= 0; }) || evUnfiled(e).indexOf(u) >= 0; }
+function evMine(e, u){ return evKind(e) === 'tasking' ? (e.assigned || []).indexOf(u) >= 0 : evPeople(e).some(function(p){ return p.u === u; }); }
 function evTime(h){ var p = String(h).split(':'), n = Number(p[0]); return (n % 12 || 12) + ':' + p[1] + ' ' + (n < 12 ? 'AM' : 'PM'); }
 function evTimes(e){ return e.time ? evTime(e.time) + (e.timeEnd ? ' to ' + evTime(e.timeEnd) : '') : (e.timeEnd ? 'Until ' + evTime(e.timeEnd) : ''); }
 function evDates(e){
@@ -2254,6 +2301,9 @@ function evCard(e){
   var st = evState(e), cs = canSched(), adm = isAdmin(), tasking = evKind(e) === 'tasking', ppl = evPeople(e), mine = evMine(e, S.me.username), ts = evLinked(e);
   var row = function(k, v){ return '<dt>' + k + '</dt><dd>' + v + '</dd>'; };
   var people = ppl.length ? '<div class="pp">' + ppl.map(function(p){ return '<span class="pill ' + (p.st === 'To prepare' || p.st === 'Assigned' ? 'Pending' : 'Confirmed') + '">' + esc(p.name) + (p.st ? ' · ' + p.st : '') + '</span>'; }).join('') + '</div>' : (e.status === 'Cancelled' ? '<span class="hint">None</span>' : '<span class="pill e-need">No one dispatched yet</span>');
+  // people whose day-off travel order names this event: shown apart, never as dispatched
+  var offN = []; evOffsetTOs(e).forEach(function(t){ (t.names || []).forEach(function(n){ if (offN.indexOf(n) < 0) offN.push(n); }); });
+  if (offN.length) people += '<div class="hint" style="margin-top:6px">' + ic('plane') + ' Day off only, not dispatched: ' + offN.map(function(n){ return esc(dispName(n)); }).join(', ') + '</div>';
   var gear = inProd() ? S.inventory.filter(function(i){ return i.eventId === e.id && i.status === 'Out'; }) : [];
   var acts = '';
   if (e.status !== 'Cancelled'){
@@ -2307,7 +2357,7 @@ function evTileModal(f){
 function calItems(mine){
   var me = S.me.username, adm = isAdmin(), items = [], live = {};
   S.events.forEach(function(e){ if (e.status === 'Cancelled') return; live[e.id] = 1; var mm = evMine(e, me); if (mine && !mm) return; var st = evState(e); items.push({ s: e.date, e: e.dateTo, cls: 'b-' + st, t: e.title, un: e.status === 'Pending', mine: mm, pr: st === 'need' ? 0 : st === 'wait' ? 1 : 2 }); });
-  activeTOs().forEach(function(t){ if (t.eventId && live[t.eventId]) return; var mm = (t.usernames || []).indexOf(me) >= 0; if (mine && !mm) return; items.push({ s: t.dateFrom, e: t.dateTo, cls: 'b-to', t: 'TO · ' + t.event, mine: mm, pr: 3 }); });
+  activeTOs().forEach(function(t){ if ((t.eventId && live[t.eventId]) || isOffsetTO(t)) return; var mm = (t.usernames || []).indexOf(me) >= 0; if (mine && !mm) return; items.push({ s: t.dateFrom, e: t.dateTo, cls: 'b-to', t: 'TO · ' + t.event, mine: mm, pr: 3 }); });
   S.leaves.forEach(function(l){ if (/^ADJ/.test(l.type)) return; var mm = l.username === me; if (mine && !mm) return; items.push({ s: l.dateFrom, e: l.dateTo, cls: 'b-lv', t: (adm && !mm ? firstName(l.username) + ' · ' : '') + leaveName(l.type), mine: mm, pr: 4 }); });
   S.entries.forEach(function(e){ if (e.type !== 'USE' || e.status === 'Rejected') return; var mm = e.username === me; if (mine && !mm) return; items.push({ s: e.date, e: e.date, cls: 'b-lv', t: (adm && !mm ? firstName(e.username) + ' · ' : '') + 'Day off', un: e.status === 'Pending', mine: mm, pr: 4 }); });
   if (!adm) S.board.forEach(function(b){ if (b.username === me || mine) return; items.push({ s: b.from, e: b.to, cls: 'b-lv', t: firstName(b.username) + ' · ' + (b.kind === 'leave' ? 'On leave' : 'Day off'), pr: 4 }); });
@@ -4022,7 +4072,9 @@ document.addEventListener('submit', function(ev){
     var s2 = stats(d.username), days2 = Number(d.days), early2 = !!d.early, over = !!d.override, avail = s2.avail + (early2 ? s2.month : 0);
     if (!over && days2 > avail + 1e-9) return bad(errId, userName(d.username) + ' has only ' + fD(Math.max(avail, 0)) + ' available. Tick Override to record it anyway.');
     var u1 = { id: id, username: d.username, type: 'USE', date: d.date, category: 'Used', days: days2, event: '', venue: '', endTime: '', status: 'Confirmed', note: over && days2 > avail + 1e-9 ? 'Recorded without enough offset (override)' : early2 ? 'Uses offsets earned this month' : '', early: early2, createdBy: me, createdAt: now, reviewedBy: me, reviewedAt: now, _saving: true };
-    return bg('recordUse', d, { arr: 'entries', item: u1 }, 'Offset use recorded', 'Offset use for ' + userName(d.username), id);
+    var rbg = bg('recordUse', d, { arr: 'entries', item: u1 }, 'Offset use recorded', 'Offset use for ' + userName(d.username), id);
+    offsetPromptFor(d.username, d.date);   // weekday day off: pick its event, then prepare its travel order
+    return rbg;
   }
   if (kind === 'reject'){
     var rid = M.id, note = d.note;
@@ -4094,6 +4146,7 @@ document.addEventListener('click', function(ev){
   if (short && !ovr) return toast(userName(e.username) + ' has only ' + fD(Math.max(lim, 0)) + ' available. Use Approve anyway to approve it below zero.');
   var patch = { status: dec, reviewedBy: me, reviewedAt: now }; if (short) patch.note = 'Approved without enough offset (override)';
   bg('review', { id: id, decision: dec, override: ovr ? '1' : '' }, { arr: 'entries', id: id, patch: patch }, dec === 'Confirmed' ? (short ? 'Approved (override)' : 'Approved') : 'Rejected', 'The approval for ' + userName(e.username));
+  if (e.type === 'USE' && dec === 'Confirmed') offsetPromptFor(e.username, e.date);   // weekday day off: pick its event, then prepare
 }, true);
 
 /* ---------- "New updates" prompt ----------
@@ -4869,6 +4922,24 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
         if (shortU) e.note = 'Approved without enough offset (override)';
         e.status = p.decision; e.reviewedBy = me.username; e.reviewedAt = now; if (p.decision === 'Rejected') e.note = p.note || ''; autoTO(e, me, now); c++; log(me, (p.decision === 'Confirmed' ? 'Approved ' : 'Rejected ') + (e.type === 'USE' ? 'a day-off request' : 'an offset'), e.username, e.date + (p.note ? ' · Reason: ' + p.note : '')); });
       return c ? ok(me, c) : fail(skippedShort ? 'Not enough offset to approve this. Use Approve anyway to approve it below zero.' : 'Nothing was reviewed.'); }
+    // admin: the travel order that makes a weekday day off valid, tied to an event of that day (or a new one, or none).
+    // It is a day-off travel order: the people on it are not dispatched to the event, and it never deducts again.
+    if (a === 'offsetTO'){ if (!adm) return fail('Only an admin can do that.');
+      var oe = entries.filter(function(e){ return e.id === p.id && e.type === 'USE' && e.status === 'Confirmed'; })[0]; if (!oe) return fail('That day off was not found.');
+      var ou = find(oe.username); if (!ou) return fail('That person was not found.');
+      var oev = null;
+      if (p.eventId){ oev = events.filter(function(x){ return x.id === p.eventId && x.status !== 'Cancelled'; })[0]; if (!oev) return fail('That event was not found.'); }
+      else if (String(p.newTitle || '').trim()){
+        var nT = String(p.newTitle).trim().slice(0, 160); if (nT.length < 3) return fail('Write the event name.');
+        oev = { id: 'ev' + nid(), status: 'Confirmed', createdBy: me.username, createdAt: now, confirmedBy: me.username, confirmedAt: now, title: nT, venue: String(p.newVenue || '').trim().slice(0, 160), date: oe.date, dateTo: oe.date, time: '', timeEnd: '', requester: '', needs: [], note: '', kind: 'travel' };
+        events.push(oev); log(me, 'Added an event', nT, oe.date + ' · ' + oev.venue);
+      }
+      var oEnd = oe.date; for (var k3 = 1; k3 < Math.ceil(oe.days); k3++) oEnd = addDays(oEnd, 1);
+      var ot = oe.autoToId && tos.filter(function(t){ return t.id === oe.autoToId && t.status !== 'Cancelled'; })[0];
+      if (!ot){ ot = { id: 't' + nid(), toNo: '', status: 'Filed', tev: '', createdBy: me.username, createdAt: now, toType: 'dayoff', offsetDone: true, useEntryId: oe.id, auto: true }; tos.push(ot); oe.autoToId = ot.id; }
+      Object.assign(ot, { names: [String(ou.name).toUpperCase()], usernames: [ou.username], dateFrom: oe.date, dateTo: oEnd, event: oev ? 'To cover ' + oev.title : 'Day off (offset use)', destination: oev ? (oev.venue || 'PIO') : 'Day off', eventId: oev ? oev.id : '', toType: 'dayoff', forOffset: true, useEntryId: oe.id, offsetDone: true, updatedBy: me.username, updatedAt: now });
+      log(me, 'Set the travel order for a day off', oe.username, oe.date + (oev ? ' · ' + oev.title : ' · no event'));
+      return ok(me, { id: ot.id }); }
     // admin: start the missing travel order for an older weekday offset or day off
     if (a === 'startEntryTO'){ if (!adm) return fail('Only an admin can do that.'); var se = entries.filter(function(e){ return e.id === p.id; })[0]; if (!se) return fail('Entry not found.');
       var hadTO = se.autoToId; autoTO(se, me, now); return se.autoToId && se.autoToId !== hadTO ? ok(me) : fail('This one does not need a new travel order (COS, weekend, holiday, or one already covers it).'); }
@@ -5443,7 +5514,7 @@ function inMyDiv(u){ var x = userOf(u); return !!x && !!S.me.division && x.divis
     var keep = function(us, isEvent, e){ if (sc === 'all') return true; if (sc === 'mine') return us.indexOf(me) >= 0;
       return us.some(inMyDiv) || us.indexOf(me) >= 0 || (isEvent && canSched() && evState(e) === 'need') || (isEvent && e.createdBy && inMyDiv(e.createdBy)); };
     S.events.forEach(function(e){ if (e.status === 'Cancelled') return; live[e.id] = 1; var us = evPeople(e).map(function(p){ return p.u; }).filter(Boolean); if (!keep(us, true, e)) return; var st = evState(e); items.push({ s: e.date, e: e.dateTo, cls: 'b-' + st, t: e.title, un: e.status === 'Pending', mine: us.indexOf(me) >= 0, pr: st === 'need' ? 0 : st === 'wait' ? 1 : 2 }); });
-    activeTOs().forEach(function(t){ if (t.eventId && live[t.eventId]) return; var us = t.usernames || []; if (!keep(us)) return; items.push({ s: t.dateFrom, e: t.dateTo, cls: 'b-to', t: 'TO · ' + t.event, mine: us.indexOf(me) >= 0, pr: 3 }); });
+    activeTOs().forEach(function(t){ if ((t.eventId && live[t.eventId]) || isOffsetTO(t)) return; var us = t.usernames || []; if (!keep(us)) return; items.push({ s: t.dateFrom, e: t.dateTo, cls: 'b-to', t: 'TO · ' + t.event, mine: us.indexOf(me) >= 0, pr: 3 }); });
     S.leaves.forEach(function(l){ if (/^ADJ/.test(l.type) || !keep([l.username])) return; var mm = l.username === me; items.push({ s: l.dateFrom, e: l.dateTo, cls: 'b-lv', t: (adm && !mm ? firstName(l.username) + ' · ' : '') + leaveName(l.type), mine: mm, pr: 4 }); });
     S.entries.forEach(function(e){ if (e.type !== 'USE' || e.status === 'Rejected' || !keep([e.username])) return; var mm = e.username === me; items.push({ s: e.date, e: e.date, cls: 'b-lv', t: (adm && !mm ? firstName(e.username) + ' · ' : '') + 'Day off', un: e.status === 'Pending', mine: mm, pr: 4 }); });
     if (!adm) S.board.forEach(function(b){ if (b.username === me || !keep([b.username])) return; items.push({ s: b.from, e: b.to, cls: 'b-lv', t: firstName(b.username) + ' · ' + (b.kind === 'leave' ? 'On leave' : 'Day off'), pr: 4 }); });
