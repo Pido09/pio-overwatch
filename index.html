@@ -145,6 +145,23 @@ dl.tov{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:4px 0}dl.
 /* week at a glance */
 .wk{padding:14px 18px 16px;display:flex;flex-direction:column;gap:14px}
 .wk-cover{display:flex;flex-direction:column;gap:8px}
+.upd-scrim{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:16px;background:rgba(4,10,8,.62);-webkit-backdrop-filter:blur(8px) saturate(.9);backdrop-filter:blur(8px) saturate(.9);animation:updFade .24s ease-out}
+.upd{width:min(400px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:20px;box-shadow:0 30px 70px -20px rgba(0,0,0,.6),0 2px 8px rgba(0,0,0,.15);padding:20px 20px 16px;animation:updIn .34s cubic-bezier(.22,1,.36,1)}
+.upd-scrim.out{animation:updFadeOut .18s ease-in forwards}.upd-scrim.out .upd{animation:updOut .18s cubic-bezier(.55,0,1,.45) forwards}
+@keyframes updFade{from{opacity:0}}@keyframes updFadeOut{to{opacity:0}}
+@keyframes updIn{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes updOut{to{opacity:0;transform:scale(.97)}}
+.upd-h{display:flex;gap:12px;align-items:flex-start}
+.upd-h>svg.i{flex:none;width:20px;height:20px;padding:8px;box-sizing:content-box;border-radius:10px;background:var(--brand-soft);color:var(--brand-strong)}
+.upd-h b{display:block;font-size:15px}.upd-h span{display:block;font-size:13.5px;color:var(--muted)}
+.upd-new{margin:12px 0 0;padding:10px 12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line)}
+.upd-k{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.upd-new ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-2)}.upd-new li{margin:3px 0}
+.upd-f{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.upd .upd-h>svg.i{width:22px;height:22px;padding:10px;border-radius:12px}.upd-h b{font-size:17px}
+.upd-f .btn{min-height:40px}
+@media (max-width:640px){ .upd-f{flex-direction:column-reverse} .upd-f .btn{width:100%;justify-content:center;min-height:44px} }
+@media (prefers-reduced-motion:reduce){ .upd-scrim,.upd,.upd-scrim.out,.upd-scrim.out .upd{animation:none} }
 .totools{flex-wrap:wrap;gap:10px 12px;align-items:center}
 .to-per{display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap}
 .to-nav{gap:4px;align-items:center}.to-nav b{min-width:120px;text-align:center;font-size:14px}
@@ -5387,6 +5404,62 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
     return fail('Unknown action.');
     } catch(err){ return fail(typeof err === 'string' ? err : 'Something went wrong.'); }
   } };
+})();
+
+/* ---------- update prompt ----------
+   An app left open keeps running the version it loaded. version.json (published with each update) holds the
+   newest version and a few lines on what changed. When it differs from this page's APP_VER, a card offers
+   a refresh. Checked when the app comes back to the front and every 10 minutes. Keep APP_VER, version.json
+   and the cache name in sw.js the same when publishing. */
+var APP_VER = 'v63';
+(function(){
+  var shown = null, last = 0;
+  function check(force){
+    if (!force && Date.now() - last < 60000) return; last = Date.now();
+    if (!window.fetch || location.protocol === 'file:') return;
+    fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : null; }).then(function(v){
+      if (!v || !v.ver || v.ver === APP_VER || v.ver === shown) return;
+      try { if (sessionStorage.getItem('pio_upd_later') === v.ver) return; } catch(e){}
+      shown = v.ver; showUpdate(v);
+    }).catch(function(){});
+  }
+  function showUpdate(v){
+    var old = document.getElementById('upd'); if (old) old.remove();
+    var notes = (v.notes || []).slice(0, 5);
+    var el = document.createElement('div'); el.id = 'upd'; el.className = 'upd-scrim';
+    var back = document.activeElement;
+    el.innerHTML = '<section class="upd" role="dialog" aria-modal="true" aria-labelledby="updT"><div class="upd-h">' + ic('refresh') + '<div><b id="updT">Update ready</b><span>Refresh to get the newest version.</span></div></div>' +
+      (notes.length ? '<div class="upd-new"><div class="upd-k">What’s new</div><ul>' + notes.map(function(n){ return '<li>' + esc(n) + '</li>'; }).join('') + '</ul></div>' : '') +
+      '<div class="upd-f"><button type="button" class="btn btn-ghost btn-sm" data-upd="later">Later</button><button type="button" class="btn btn-primary btn-sm" data-upd="go">' + ic('refresh') + 'Refresh now</button></div></section>';
+    document.body.appendChild(el); document.body.classList.add('locked');
+    var go = el.querySelector('[data-upd="go"]'); go.focus();
+    var later = function(){ try { sessionStorage.setItem('pio_upd_later', v.ver); } catch(e){}
+      el.classList.add('out'); document.removeEventListener('keydown', keys, true);
+      setTimeout(function(){ el.remove(); if (!document.querySelector('#modal .scrim')) document.body.classList.remove('locked'); if (back && document.body.contains(back)) back.focus(); }, 200); };
+    // Esc = Later; Tab stays inside the two buttons
+    var keys = function(ev){
+      if (ev.key === 'Escape'){ ev.stopPropagation(); ev.preventDefault(); later(); }
+      else if (ev.key === 'Tab'){ var bs = el.querySelectorAll('button:not(:disabled)'), f = bs[0], l = bs[bs.length - 1];
+        if (ev.shiftKey && document.activeElement === f){ ev.preventDefault(); l.focus(); } else if (!ev.shiftKey && document.activeElement === l){ ev.preventDefault(); f.focus(); } }
+    };
+    document.addEventListener('keydown', keys, true);
+    el.addEventListener('click', function(ev){
+      if (ev.target === el){ later(); return; }          // a tap on the dimmed backdrop counts as Later
+      var b = ev.target.closest('[data-upd]'); if (!b) return;
+      if (b.dataset.upd === 'later'){ later(); return; }
+      b.disabled = true; b.lastChild.textContent = 'Refreshing…'; reloadWhenSaved();
+    });
+  }
+  // never throw away a change that is still being saved
+  function reloadWhenSaved(){
+    if (typeof Q !== 'undefined' && Q && (Q.busy || (Q.ops && Q.ops.length))){ setTimeout(reloadWhenSaved, 500); return; }
+    location.reload();
+  }
+  window.addEventListener('focus', function(){ check(); });
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) check(); });
+  setInterval(function(){ if (!document.hidden) check(true); }, 10 * 60000);
+  setTimeout(function(){ check(true); }, 4000);
+  window.pioCheckUpdate = function(){ last = 0; check(true); };
 })();
 
 /* Installable app: cache the page shell so it opens fast and works as a home-screen app. */
