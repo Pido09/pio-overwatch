@@ -5411,29 +5411,33 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
    newest version and a few lines on what changed. When it differs from this page's APP_VER, a card offers
    a refresh. Checked when the app comes back to the front and every 10 minutes. Keep APP_VER, version.json
    and the cache name in sw.js the same when publishing. */
-var APP_VER = 'v63';
+var APP_VER = 'v64';
 (function(){
   var shown = null, last = 0;
   function check(force){
     if (!force && Date.now() - last < 60000) return; last = Date.now();
     if (!window.fetch || location.protocol === 'file:') return;
     fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : null; }).then(function(v){
-      if (!v || !v.ver || v.ver === APP_VER || v.ver === shown) return;
+      if (!v || !v.ver) return;
+      // just updated: say what changed, once per version on this device
+      if (v.ver === APP_VER){ var seen = null; try { seen = localStorage.getItem('pio_seen_ver'); } catch(e){}
+        if (seen !== APP_VER && shown !== APP_VER && (v.notes || []).length){ shown = APP_VER; lSet('pio_seen_ver', APP_VER); showUpdate(v, true); } return; }
+      if (v.ver === shown) return;
       try { if (sessionStorage.getItem('pio_upd_later') === v.ver) return; } catch(e){}
       shown = v.ver; showUpdate(v);
     }).catch(function(){});
   }
-  function showUpdate(v){
+  function showUpdate(v, done){
     var old = document.getElementById('upd'); if (old) old.remove();
     var notes = (v.notes || []).slice(0, 5);
     var el = document.createElement('div'); el.id = 'upd'; el.className = 'upd-scrim';
     var back = document.activeElement;
-    el.innerHTML = '<section class="upd" role="dialog" aria-modal="true" aria-labelledby="updT"><div class="upd-h">' + ic('refresh') + '<div><b id="updT">Update ready</b><span>Refresh to get the newest version.</span></div></div>' +
+    el.innerHTML = '<section class="upd" role="dialog" aria-modal="true" aria-labelledby="updT"><div class="upd-h">' + (done ? ic('check') + '<div><b id="updT">You’re up to date</b><span>Here’s what changed in this version.</span></div></div>' : ic('refresh') + '<div><b id="updT">Update ready</b><span>Refresh to get the newest version.</span></div></div>') +
       (notes.length ? '<div class="upd-new"><div class="upd-k">What’s new</div><ul>' + notes.map(function(n){ return '<li>' + esc(n) + '</li>'; }).join('') + '</ul></div>' : '') +
-      '<div class="upd-f"><button type="button" class="btn btn-ghost btn-sm" data-upd="later">Later</button><button type="button" class="btn btn-primary btn-sm" data-upd="go">' + ic('refresh') + 'Refresh now</button></div></section>';
+      '<div class="upd-f">' + (done ? '<button type="button" class="btn btn-primary btn-sm" data-upd="ok">Got it</button>' : '<button type="button" class="btn btn-ghost btn-sm" data-upd="later">Later</button><button type="button" class="btn btn-primary btn-sm" data-upd="go">' + ic('refresh') + 'Refresh now</button>') + '</div></section>';
     document.body.appendChild(el); document.body.classList.add('locked');
-    var go = el.querySelector('[data-upd="go"]'); go.focus();
-    var later = function(){ try { sessionStorage.setItem('pio_upd_later', v.ver); } catch(e){}
+    el.querySelector('.upd-f .btn-primary').focus();
+    var later = function(){ if (!done) try { sessionStorage.setItem('pio_upd_later', v.ver); } catch(e){}
       el.classList.add('out'); document.removeEventListener('keydown', keys, true);
       setTimeout(function(){ el.remove(); if (!document.querySelector('#modal .scrim')) document.body.classList.remove('locked'); if (back && document.body.contains(back)) back.focus(); }, 200); };
     // Esc = Later; Tab stays inside the two buttons
@@ -5446,7 +5450,7 @@ var APP_VER = 'v63';
     el.addEventListener('click', function(ev){
       if (ev.target === el){ later(); return; }          // a tap on the dimmed backdrop counts as Later
       var b = ev.target.closest('[data-upd]'); if (!b) return;
-      if (b.dataset.upd === 'later'){ later(); return; }
+      if (b.dataset.upd !== 'go'){ later(); return; }
       b.disabled = true; b.lastChild.textContent = 'Refreshing…'; reloadWhenSaved();
     });
   }
