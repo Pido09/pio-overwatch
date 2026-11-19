@@ -2178,6 +2178,9 @@ function tabFade(el){
 function tabFades(root){ (root || document).querySelectorAll('.tabs').forEach(tabFade); }
 document.addEventListener('scroll', function(ev){ var el = ev.target; if (el && el.classList && el.classList.contains('tabs')) tabFade(el); }, true);
 window.addEventListener('resize', function(){ tabFades(); });
+/* the calendar fits more events per day on phones: redraw it when the screen crosses phone size (rotating, resizing) */
+var calNarrow = window.innerWidth <= 640;
+window.addEventListener('resize', function(){ var n = window.innerWidth <= 640; if (n !== calNarrow){ calNarrow = n; if (S.me && S.view === 'calendar') render(); } });
 /* Wide tables marked "cards" turn each row into a small card on phones.
    Each cell is given its column name, which the phone styles show as a label. */
 function cardLabels(root){
@@ -2535,7 +2538,9 @@ function calItems(mine){
   return items;
 }
 function calWeek(ws, items, m){
-  var we = addDays(ws, 6), td = today(), MAXL = 3;
+  // events per day before "+N more": 6 on desktop and tablet; 8 on phones, where each event is a thin strip.
+  // A week is only as tall as its busiest day, so quiet weeks stay compact.
+  var narrow = window.innerWidth <= 640, we = addDays(ws, 6), td = today(), MAXL = narrow ? 8 : 6;
   var segs = items.filter(function(it){ return it.e >= ws && it.s <= we; }).map(function(it){ return { it: it, c0: Math.max(0, dayDiff(it.s, ws)), c1: Math.min(6, dayDiff(it.e, ws)), cl: it.s < ws, cr: it.e > we }; });
   segs.sort(function(a, b){ return a.c0 - b.c0 || a.it.pr - b.it.pr || (b.c1 - b.c0) - (a.c1 - a.c0); });
   var ends = []; segs.forEach(function(sg){ var l = 0; while (l < ends.length && ends[l] >= sg.c0) l++; ends[l] = sg.c1; sg.l = l; });
@@ -2545,7 +2550,7 @@ function calWeek(ws, items, m){
     var k = addDays(ws, c), d = pd(k), h = holidayOn(k), col = c, names = segs.filter(function(sg){ return sg.c0 <= col && sg.c1 >= col; }).map(function(sg){ return sg.it.t; });
     var cls = 'mc-day' + (d.getMonth() !== m ? ' out' : '') + (h ? ' hol' : '') + (k === td ? ' today' : '');
     var aria = fDate(k, { weekday:'long', month:'long', day:'numeric' }) + (h ? ', ' + h.name : '') + (names.length ? ': ' + names.join('; ') : ', nothing scheduled');
-    cells += '<button type="button" class="' + cls + '" data-act="dayPop" data-d="' + k + '" aria-label="' + esc(aria) + '"><span class="mc-n">' + d.getDate() + '</span>' + (h ? '<span class="mc-hl">' + esc(h.name) + '</span>' : '') + (more[c] ? '<span class="mc-more">+' + more[c] + '</span>' : '') + '</button>';
+    cells += '<button type="button" class="' + cls + '" data-act="dayPop" data-d="' + k + '" aria-label="' + esc(aria) + '"><span class="mc-n">' + d.getDate() + '</span>' + (h ? '<span class="mc-hl">' + esc(h.name) + '</span>' : '') + (more[c] ? '<span class="mc-more">+' + more[c] + (narrow ? '' : ' more') + '</span>' : '') + '</button>';
   }
   var bars = segs.filter(function(sg){ return sg.l < MAXL; }).map(function(sg){ var it = sg.it; return '<span class="mc-bar ' + it.cls + (it.un ? ' b-un' : '') + (it.mine ? ' b-mine' : '') + (sg.cl ? ' cl' : '') + (sg.cr ? ' cr' : '') + '" style="--c0:' + sg.c0 + ';--c1:' + sg.c1 + ';--l:' + sg.l + ';--il:' + (sg.cl ? 0 : 4) + 'px;--ir:' + (sg.cr ? 0 : 4) + 'px">' + esc(it.t) + '</span>'; }).join('');
   return '<div class="mc-wk" style="--lanes:' + Math.max(1, Math.min(MAXL, ends.length)) + '"><div class="mc-days">' + cells + '</div><div class="mc-bars" aria-hidden="true">' + bars + '</div></div>';
