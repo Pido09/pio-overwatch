@@ -881,13 +881,18 @@ function clearSession(){ lSet('pio_tok', null); sSet('pio_tok', null); lSet('pio
 
 /* ---------- utilities ---------- */
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-function today(){ return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date()); }
+/* Speed: making a date formatter is slow and these run thousands of times per screen, so one formatter is
+   reused per format, and today's date is remembered for a second (it still turns over at midnight). */
+var TODAY_FMT = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }), TODAY_AT = 0, TODAY_VAL = '';
+function today(){ var n = Date.now(); if (n - TODAY_AT > 1000){ TODAY_VAL = TODAY_FMT.format(new Date(n)); TODAY_AT = n; } return TODAY_VAL; }
+var DFMT = {};
+function dfmt(opt){ var k = JSON.stringify(opt); return DFMT[k] || (DFMT[k] = new Intl.DateTimeFormat('en-PH', opt)); }
 function curMonth(){ return today().slice(0,7); }
 function pd(s){ var a = s.split('-'); return new Date(+a[0], +a[1]-1, +(a[2]||1)); }
 function ymd(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
-function fDate(s, opt){ return pd(s).toLocaleDateString('en-PH', opt || { month:'short', day:'numeric', year:'numeric' }); }
-function fMonth(m){ return pd(m + '-01').toLocaleDateString('en-PH', { month:'long', year:'numeric' }); }
-function mShort(m){ return pd(m + '-01').toLocaleDateString('en-PH', { month:'short' }); }
+function fDate(s, opt){ return dfmt(opt || { month:'short', day:'numeric', year:'numeric' }).format(pd(s)); }
+function fMonth(m){ return dfmt({ month:'long', year:'numeric' }).format(pd(m + '-01')); }
+function mShort(m){ return dfmt({ month:'short' }).format(pd(m + '-01')); }
 function shiftMonth(m, n){ var d = pd(m + '-01'); d.setMonth(d.getMonth() + n); return ymd(d).slice(0,7); }
 function nextMonthStart(m){ return shiftMonth(m, 1) + '-01'; }
 function addDays(s, n){ var d = pd(s); d.setDate(d.getDate() + n); return ymd(d); }
@@ -904,12 +909,12 @@ function canSched(){ return !!S.me && (S.me.role === 'admin' || S.me.role === 's
 /* Division leaders (role "scheduler") assign people; they do not file or edit travel orders. */
 function isLeader(){ return !!S.me && S.me.role === 'scheduler'; }
 function canFileTO(){ return !!S.me && !isLeader(); }
-function when(iso){ if (!iso) return ''; var d = new Date(iso); if (isNaN(d)) return ''; return d.toLocaleDateString('en-PH', { month:'short', day:'numeric', year:'numeric' }) + ', ' + d.toLocaleTimeString('en-PH', { hour:'numeric', minute:'2-digit' }); }
+function when(iso){ if (!iso) return ''; var d = new Date(iso); if (isNaN(d)) return ''; return dfmt({ month:'short', day:'numeric', year:'numeric' }).format(d) + ', ' + dfmt({ hour:'numeric', minute:'2-digit' }).format(d); }
 function ago(iso){
   var d = new Date(iso); if (isNaN(d)) return '';
   var s = (Date.now() - d) / 1000;
   if (s < 60) return 'just now'; if (s < 3600) return Math.floor(s/60) + ' min ago'; if (s < 86400) return Math.floor(s/3600) + ' h ago';
-  if (s < 7*86400) return Math.floor(s/86400) + ' d ago'; return d.toLocaleDateString('en-PH', { month:'short', day:'numeric' });
+  if (s < 7*86400) return Math.floor(s/86400) + ' d ago'; return dfmt({ month:'short', day:'numeric' }).format(d);
 }
 function holidayOn(d){ return S.holidays.filter(function(h){ return h.date === d; })[0]; }
 function isWeekend(d){ var w = pd(d).getDay(); return w === 0 || w === 6; }
@@ -1038,7 +1043,16 @@ function ledgerFor(entries, u, cap){
   }
   return { avail: avail, months: months };
 }
+/* Speed: a person's balance is worked out once per screen draw and reused (rows ask for it several times).
+   The cache is emptied when the next draw starts and after the current task, so new data is always counted. */
+var STATS_C = null;
+function statsReset(){ STATS_C = null; }
 function stats(u){
+  if (STATS_C && STATS_C[u]) return STATS_C[u];
+  if (!STATS_C){ STATS_C = {}; setTimeout(statsReset, 0); }
+  return (STATS_C[u] = statsCalc(u));
+}
+function statsCalc(u){
   var L = ledgerFor(S.entries, u, S.settings.carryCap);
   var o = { avail: L.avail, month: 0, pending: 0, pendN: 0, reqDays: 0, reqN: 0, earnedY: 0, usedY: 0, usedM: 0, lastUse: null, upcoming: 0 };
   var y = today().slice(0,4), m = curMonth(), td = today();
@@ -1075,7 +1089,7 @@ function canReview(e){ return isAdmin() && e.status === 'Pending' && !(e.usernam
 function sorted(list){ return list.slice().sort(function(a,b){ return a.date === b.date ? (b.createdAt > a.createdAt ? 1 : -1) : (b.date > a.date ? 1 : -1); }); }
 function pending(type){ return sorted(S.entries.filter(function(e){ return e.status === 'Pending' && (!type || e.type === type); })); }
 function closesOn(m){ return fDate(nextMonthStart(m), { month:'long', day:'numeric' }); }
-function goRecords(f){ S.rf = Object.assign({ user:'all', div:'all', type:'all', status:'all' }, f || {}); var rq = document.getElementById('rfQ'); if (rq) rq.value = S.rf.q || ''; S.recTab = 'entries'; S.view = 'records'; render(); window.scrollTo(0,0); }
+function goRecords(f){ S.recLimit = 0; S.rf =Object.assign({ user:'all', div:'all', type:'all', status:'all' }, f || {}); var rq = document.getElementById('rfQ'); if (rq) rq.value = S.rf.q || ''; S.recTab = 'entries'; S.view = 'records'; render(); window.scrollTo(0,0); }
 
 /* ---------- files ---------- */
 function download(name, text, type){
@@ -1132,6 +1146,7 @@ function restoreForm(k){
 document.addEventListener('submit', function(ev){ var f = ev.target.closest && ev.target.closest('form[data-form]'); if (f) S.sentForm = f.dataset.form; }, true);
 document.addEventListener('input', function(ev){ var f = ev.target.closest && ev.target.closest('form[data-form]'); if (f && f.dataset.form === S.sentForm) S.sentForm = null; }, true);
 function render(){
+  statsReset();
   var app = document.getElementById('app');
   var banner = LIVE ? '' : '<div class="preview">Preview mode with sample data. Nothing is saved. Sign in as <b>admin</b> or <b>jdelacruz</b>, PIN <b>1234</b>. To go live, put your Firebase settings in config.js (see README).</div>';
   if (!S.me){ app.innerHTML = banner + (S.needsSetup ? viewSetup() : viewLogin()); return; }
@@ -1608,7 +1623,9 @@ function viewRecords(){
   function sel(id, label, opts, val){ return '<select class="input" id="' + id + '" aria-label="' + label + '">' + opts.map(function(o){ return '<option value="' + esc(o[0]) + '"' + (val === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; }
   var filters = '<div class="filters">' + tabs + '<input class="input" type="search" id="rfQ" placeholder="Search name, event, venue" aria-label="Search records" autocomplete="off" enterkeyhint="search" value="' + esc(f.q || '') + '">' + (adm ? divSelect('rfDiv', f.div, 'Division', true) + sel('rfUser', 'Employee', [['all','All staff']].concat(S.users.map(function(u){ return [u.username, u.name]; })), f.user) : '') +
     sel('rfType', 'Type', [['all','Earned and used'],['EARN','Earned only'],['USE','Days off only']], f.type) + sel('rfStatus', 'Status', [['all','Any status'],['Confirmed','Confirmed'],['Pending','Pending'],['Rejected','Rejected']], f.status) + '</div>';
-  var rows = list.map(function(e){
+  // Speed: draw the newest 100 (then 100 more per tap). Search, filters and the CSV still cover everything.
+  var lim = S.recLimit || 100, more = list.length - lim;
+  var rows = list.slice(0, lim).map(function(e){
     return '<tr class="tap" data-entry="' + e.id + '" tabindex="0"><td class="num">' + fDate(e.date, { weekday:'short', month:'short', day:'numeric', year:'numeric' }) + '</td>' + (adm ? '<td>' + esc(userName(e.username)) + '</td>' : '') +
       '<td style="white-space:normal;min-width:180px"><b>' + (e.type === 'USE' ? 'Day off' : esc(e.event || '—')) + '</b><div class="hint">' + (e.type === 'USE' ? '' : esc(e.category) + (e.endTime ? ' · until ' + fTime(e.endTime) : '')) + '</div></td>' +
       '<td class="hint" style="white-space:normal;min-width:150px">' + esc(e.venue || '—') + '</td><td class="r num amt ' + (e.type === 'USE' ? 'minus' : 'plus') + '">' + fDs(e.type === 'USE' ? -e.days : e.days, true) + '</td>' +
@@ -1617,7 +1634,8 @@ function viewRecords(){
   return { eyebrow: 'Records', title: adm ? 'All records' : 'My records', sub: 'Every offset earned and every day off. Tap a row for details.',
     actions: '<button class="btn btn-glass" data-act="exportRecords">' + ic('download') + 'Download CSV</button>',
     body: '<section class="panel"><div class="panel-h">' + filters + '<span class="hint num">' + list.length + (list.length === 1 ? ' entry' : ' entries') + ' · net ' + fD(net) + ' confirmed</span></div>' +
-      (list.length ? '<div class="table-wrap"><table class="cards"><thead><tr><th>Date</th>' + (adm ? '<th>Employee</th>' : '') + '<th>Event</th><th>Venue</th><th class="r">Days</th><th>Status</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+      (list.length ? '<div class="table-wrap"><table class="cards"><thead><tr><th>Date</th>' + (adm ? '<th>Employee</th>' : '') + '<th>Event</th><th>Venue</th><th class="r">Days</th><th>Status</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+        (more > 0 ? '<div class="nmore"><button type="button" class="btn btn-sm btn-ghost" data-act="recMore">' + ic('plus') + 'Show ' + Math.min(100, more) + ' more <span class="hint">(' + more + ' not shown)</span></button></div>' : '')
         : empty('list', 'No matching entries', 'Try different filters.', '<button class="btn btn-sm btn-ghost" data-act="clearFilters">Clear filters</button>')) + '</section>' };
 }
 function filteredRecords(){
@@ -2037,7 +2055,7 @@ document.addEventListener('change', fieldFixed, true);
 document.addEventListener('input', function(ev){
   if (ev.target.id !== 'rfQ') return;
   var v = ev.target.value; clearTimeout(rfQTimer);
-  rfQTimer = setTimeout(function(){ S.rf.q = v; render(); }, 180);
+  rfQTimer = setTimeout(function(){ S.rf.q = v; S.recLimit = 0; render(); }, 180);
 });
 var rfQTimer = null;
 document.addEventListener('change', function(ev){
@@ -2046,7 +2064,7 @@ document.addEventListener('change', function(ev){
   if (id === 'calUser'){ S.calUser = el.value; render(); }
   if (id === 'dashDiv'){ S.dashDiv = el.value; render(); }
   if (id === 'holYear'){ S.holYear = el.value; render(); }
-  if (id === 'rfUser' || id === 'rfType' || id === 'rfStatus' || id === 'rfDiv'){ S.rf[{ rfUser:'user', rfType:'type', rfStatus:'status', rfDiv:'div' }[id]] = el.value; render(); }
+  if (id === 'rfUser' || id === 'rfType' || id === 'rfStatus' || id === 'rfDiv'){ S.rf[{ rfUser:'user', rfType:'type', rfStatus:'status', rfDiv:'div' }[id]] = el.value; S.recLimit = 0; render(); }
   if (el.name === 'category' || id === 'fd' || id === 'ft' || id === 'fu' || id === 'fto'){ checkEarnForm(el.closest('form') || document, id === 'fd'); }
   if (id === 'dcol'){ M.color = el.value.toUpperCase(); divPreview(); }
   if (id === 'dlogo' && el.files[0]){ readLogo(el.files[0]).then(function(u){ M.logo = u; divPreview(); }).catch(function(e){ document.getElementById('merr').textContent = e.message; }); }
@@ -2267,6 +2285,10 @@ function toView(id){
     '<button type="button" class="btn ' + (adm && t.status === 'Filed' ? 'btn-ghost' : 'btn-primary') + '" data-act="close">Close</button>');
 }
 document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act]'); if (t && t.dataset.act === 'toView'){ ev.stopPropagation(); toView(t.dataset.id); } }, true);
+/* Records: 100 more rows per tap; the new rows fade in */
+document.addEventListener('click', function(ev){ var a = ev.target.closest('[data-act="recMore"]'); if (!a) return;
+  var had = document.querySelectorAll('main tbody tr').length; S.recLimit = (S.recLimit || 100) + 100; render();
+  staggerIn(Array.prototype.slice.call(document.querySelectorAll('main tbody tr'), had, had + 12)); });
 document.addEventListener('click', function(ev){ var a = ev.target.closest('[data-act="needAll"]'); if (a){ S.needAll = !S.needAll; render(); if (S.needAll) staggerIn(Array.prototype.slice.call(document.querySelectorAll('main .nday'), 4)); } });
 /* dashboard sections: a tap anywhere on the title bar (not on its buttons or menus) folds or unfolds it */
 document.addEventListener('click', function(ev){
@@ -2989,7 +3011,8 @@ document.addEventListener('submit', function(ev){
    calendar events overview and quick picks for logging offsets
    ===================================================================== */
 ICONS.peso = '<path d="M7 21V3h5.5a5 5 0 0 1 0 10H7"/><path d="M4 7h16M4 10h16"/>';
-function peso(n){ return '₱' + (Number(n) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+var PESO_FMT = new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function peso(n){ return '₱' + PESO_FMT.format(Number(n) || 0); }
 function toOf(id){ return S.travelOrders.filter(function(t){ return t.id === id; })[0]; }
 
 /* ---------- TEVs ---------- */
@@ -4136,6 +4159,7 @@ function tmpId(){ return 'tmp' + (++Q.n) + '-' + Date.now().toString(36) + Math.
 
 /* What the screen shows while a save is on its way. Kept as plain data so it survives a closed tab. */
 function applySpec(sp){
+  statsReset();   // data is changing: balances must be worked out again
   var arr = S[sp.arr], key = sp.key || 'id';
   if (!arr) return;
   if (sp.item){ if (!arr.some(function(x){ return x[key] === sp.item[key]; })) arr.push(Object.assign({}, sp.item)); }
