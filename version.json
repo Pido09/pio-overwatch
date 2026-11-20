@@ -1,9 +1,9 @@
 {
-  "ver": "v66",
+  "ver": "v67",
   "notes": [
-    "Events added only for a day-off travel order now show as \"Day off only\", not as needing people",
-    "A prompt tells you when an update is ready, with what changed",
-    "Week at a glance on the dashboard: tap a day for its events",
-    "Day pop-up: tap a count to show only those events"
+    "Removing an event asks why: rescheduled, cancelled or a duplicate entry",
+    "Adding an event warns you if it looks like one already on the calendar",
+    "The calendar lists likely duplicate events so you can keep one and remove the other",
+    "Events added only for a day-off travel order show as \"Day off only\""
   ]
 }

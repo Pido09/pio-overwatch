@@ -903,7 +903,22 @@ button,[role=button],a,input,select,summary,label{touch-action:manipulation}
   .mc-day{padding:3px 3px} .mc-hl{display:none} .mc-n{min-width:22px;height:22px;font-size:12px}
 }
 .dcard{border:1px solid var(--line);border-left:5px solid var(--ec,var(--line-strong));border-radius:10px;padding:12px 14px;margin:0 0 12px;background:var(--surface)}
-.dcard.need{--ec:var(--red)} .dcard.wait{--ec:var(--gold)} .dcard.ok{--ec:var(--brand)} .dcard.off{--ec:var(--line-strong)} .dcard.dayoff{--ec:var(--rose)}
+.dcard.need{--ec:var(--red)} .dcard.wait{--ec:var(--gold)} .dcard.ok{--ec:var(--brand)} .dcard.off{--ec:var(--line-strong)}
+.dupwarn{margin:-4px 0 12px;padding:10px 12px;border-radius:12px;background:var(--gold-soft);border:1px solid color-mix(in srgb,var(--gold) 35%,transparent)}
+.dup-h{display:flex;align-items:center;gap:8px;color:var(--gold);margin-bottom:4px}.dup-h svg.i{width:16px;height:16px}.dup-h b{color:var(--ink);font-size:14px}
+.dup-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid color-mix(in srgb,var(--gold) 20%,transparent)}
+.dup-row span{display:flex;flex-direction:column;min-width:0}.dup-row b{font-size:14px}.dup-row small{color:var(--muted);font-size:12.5px}
+.dup-note{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 16px 10px;padding:8px 8px 8px 12px;border-radius:12px;background:var(--gold-soft);font-size:14px}
+.dup-note span{display:flex;align-items:center;gap:8px}.dup-note svg.i{width:16px;height:16px;color:var(--gold)}
+.dup-chip{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;background:var(--gold-soft);color:var(--gold);vertical-align:2px}
+.dup-chip svg.i{width:13px;height:13px}.dup-chip:focus-visible{outline:3px solid var(--brand-glow);outline-offset:1px}
+.dup-pair{border:1px solid var(--line);border-radius:14px;padding:10px;margin:10px 0}
+.dup-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.dup-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dup-col{display:flex;flex-direction:column;gap:8px;justify-content:space-between;background:var(--surface-2);border-radius:10px;padding:10px}
+.dup-ev{display:flex;flex-direction:column;gap:2px;font-size:13.5px}.dup-ev b{font-size:14px}.dup-ev .hint{font-size:12.5px}
+.btn-rm{color:var(--red)}
+@media (max-width:560px){ .dup-two{grid-template-columns:1fr} } .dcard.dayoff{--ec:var(--rose)}
 .dcard h4{margin:0 0 10px;font-size:16px;display:flex;gap:6px 8px;flex-wrap:wrap;align-items:center}
 .dcard dl{display:grid;grid-template-columns:104px minmax(0,1fr);gap:7px 12px;margin:0} .dcard dt{color:var(--muted);font-size:13px;font-weight:600} .dcard dd{margin:0;overflow-wrap:anywhere}
 .dcard .acts-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -2287,6 +2302,11 @@ document.addEventListener('submit', function(ev){
   else if (kind === 'offsetTO'){ var ofe = M.offsetEntry, pick = d.ev || '';
     p = act('offsetTO', { id: ofe, eventId: pick.indexOf('__') === 0 ? '' : pick, newTitle: pick === '__new' ? d.newTitle : '', newVenue: pick === '__new' ? d.newVenue : '' }, 'Travel order ready. Prepare it now.')
       .then(function(r){ closeModal(); var tid = r && (r.id || (r.data && r.data.id)); if (tid) setTimeout(function(){ if (S.travelOrders.some(function(t){ return t.id === tid; })) toManageModal(tid); }, 200); }); }
+  else if (kind === 'evRemove'){ var rmId = M.id, back = function(){ if (S.pop) dayPop(S.pop); else closeModal(); };
+    if (d.why === 'resched'){ if (!d.date){ err.textContent = 'Pick the new date.'; return; } p = act('rescheduleEvent', { id: rmId, date: d.date, dateTo: d.dateTo, note: d.note }, 'Event moved to ' + fDate(d.date)).then(back); }
+    else if (d.why === 'cancel') p = act('setEventStatus', { id: rmId, status: 'Cancelled', note: d.note }, 'Event cancelled').then(back);
+    else if (d.why === 'dup') p = act('mergeEvent', { id: rmId, into: d.into === '__none' ? '' : d.into, note: d.note }, 'Duplicate removed').then(back);
+    else { err.textContent = 'Pick a reason.'; return; } }
   else if (kind === 'moveUse'){ d.id = M.id; p = act('moveUse', d, 'Day off rescheduled').then(closeModal); }
   else if (kind === 'saveEvent'){ d.needs = [].map.call(f.querySelectorAll('input[name=need]:checked'), function(x){ return x.value; }); var wasNew = !d.id;
     p = act('saveEvent', d, wasNew ? 'Event added' : 'Event saved').then(function(r){ closeModal(); var ne = S.events.filter(function(x){ return x.id === (r && r.id); })[0];
@@ -2660,6 +2680,138 @@ function evCancelAsk(id){
   modal('Cancel this event?', '<p style="margin:0"><b>' + esc(e.title) + '</b> · ' + fDate(e.date) + '</p><p class="hint" style="margin:8px 0 0">Travel orders already filed for it stay as they are.</p>',
     '<button type="button" class="btn btn-ghost" data-act="evBack">Keep event</button><button type="button" class="btn btn-danger" data-act="evCancelYes" data-id="' + esc(e.id) + '">' + ic('x') + 'Cancel event</button>');
 }
+/* ---------- duplicate events ----------
+   Two events are likely the same when their names share most of their meaningful words (common words, years
+   and "to cover / to document" are ignored; short forms like PB or SP are expanded) and their dates overlap or
+   are a day or two apart. A matching place and time make it more likely. Pairs marked "not the same" are left alone. */
+var DUP_STOP = {};
+('the a an of and or to for in on at by with from into ng sa mga at ang para kay ni ng event events activity activities ' +
+ 'cover covering coverage document documentation documenting livestream livestreaming emcee hosting serve photo video ' +
+ 'pio camarines norte camnorte daet capitol province provincial office').split(' ').forEach(function(w){ DUP_STOP[w] = 1; });
+var DUP_SYN = { pb: 'board', sp: 'sangguniang panlalawigan', sb: 'sangguniang bayan', gov: 'governor', vgov: 'vice governor', vg: 'vice governor',
+  mtg: 'meeting', mtng: 'meeting', conf: 'conference', sem: 'seminar', orient: 'orientation', ceremony: 'ceremony', ceremonies: 'ceremony',
+  '1st': 'first', '2nd': 'second', '3rd': 'third', '4th': 'fourth', '5th': 'fifth', bday: 'birthday', anniv: 'anniversary', dept: 'department',
+  doj: 'department justice', dilg: 'interior local government', deped: 'education', dswd: 'social welfare development', doh: 'health',
+  dti: 'trade industry', da: 'agriculture', denr: 'environment natural resource', dict: 'information communication technology',
+  pnp: 'police', bfp: 'fire protection', lgu: 'local government', ched: 'higher education', tesda: 'technical skill' };
+function dupWords(str){
+  var out = {}, n = 0;
+  String(str || '').toLowerCase().replace(/[^a-z0-9ñ]+/g, ' ').split(' ').forEach(function(w){
+    (DUP_SYN[w] || w).split(' ').forEach(function(x){
+      if (x.length < 2 || DUP_STOP[x] || /^(19|20)\d\d$/.test(x)) return;
+      if (x.length > 4 && /s$/.test(x) && !/ss$/.test(x)) x = x.slice(0, -1);
+      if (!out[x]){ out[x] = 1; n++; } }); });
+  out._n = n; return out;
+}
+function dupSim(a, b){
+  var A = dupWords(a), B = dupWords(b); if (!A._n || !B._n) return 0;
+  var inter = 0; for (var k in A) if (k !== '_n' && B[k]) inter++;
+  var jac = inter / (A._n + B._n - inter), cont = inter / Math.min(A._n, B._n);
+  return Math.max(jac, cont * (Math.min(A._n, B._n) >= 2 ? 0.9 : 0.7));   // "Media Appreciation Day" inside a longer name still counts
+}
+function dupDateSim(a, b){
+  var a2 = a.dateTo || a.date, b2 = b.dateTo || b.date, gap = a.date > b2 ? dayDiff(a.date, b2) : b.date > a2 ? dayDiff(b.date, a2) : 0;
+  return gap <= 0 ? 1 : gap === 1 ? 0.6 : gap === 2 ? 0.3 : 0;
+}
+function evDupScore(a, b){
+  if (!a.date || !b.date) return 0;
+  var d = dupDateSim(a, b); if (!d) return 0;
+  var t = dupSim(a.title, b.title); if (t < 0.34) return 0;
+  var v = a.venue && b.venue ? dupSim(a.venue, b.venue) : 0.5, sc = t * 0.6 + d * 0.25 + v * 0.15;
+  if (a.time && b.time && Math.abs(parseInt(a.time) * 60 + parseInt(a.time.slice(3)) - parseInt(b.time) * 60 - parseInt(b.time.slice(3))) > 180) sc *= 0.85;
+  return Math.round(sc * 100) / 100;
+}
+function notDupPair(a, b){ return (a.notDup || []).indexOf(b.id) >= 0 || (b.notDup || []).indexOf(a.id) >= 0; }
+/* events that look like e (e may be an unsaved form), best match first */
+function evDupes(e, min){
+  return S.events.filter(function(x){ return x.id !== e.id && x.status !== 'Cancelled' && !notDupPair(e, x); })
+    .map(function(x){ return { e: x, s: evDupScore(e, x) }; }).filter(function(m){ return m.s >= (min || 0.55); })
+    .sort(function(a, b){ return b.s - a.s; });
+}
+function dupLikely(sc){ return sc >= 0.75 ? 'Very likely the same' : 'Possibly the same'; }
+/* pairs among recent and upcoming events (from two weeks ago on) */
+function dupPairs(){
+  var from = addDays(today(), -14), evs = S.events.filter(function(e){ return e.status !== 'Cancelled' && (e.dateTo || e.date) >= from; }).sort(evSort), out = [];
+  for (var i = 0; i < evs.length; i++) for (var j = i + 1; j < evs.length; j++){
+    if (notDupPair(evs[i], evs[j])) continue; var sc = evDupScore(evs[i], evs[j]); if (sc >= 0.55) out.push({ a: evs[i], b: evs[j], s: sc }); }
+  return out.sort(function(x, y){ return y.s - x.s; });
+}
+function dupMini(e){
+  var tos = evLinked(e).length + evOffsetTOs(e).length, ppl = evPeople(e).length;
+  return '<div class="dup-ev"><b>' + esc(e.title) + '</b><span>' + esc(evDates(e)) + (evTimes(e) ? ' · ' + esc(evTimes(e)) : '') + '</span>' +
+    '<span>' + (e.venue ? esc(e.venue) : '<i>No place yet</i>') + '</span>' +
+    '<span class="hint">' + (ppl ? ppl + ' ' + (ppl === 1 ? 'person' : 'people') : 'Nobody dispatched') + (tos ? ' · ' + tos + ' travel order' + (tos > 1 ? 's' : '') : '') + ' · added by ' + esc(firstName(e.createdBy) || e.createdBy || '—') + '</span></div>';
+}
+/* review all likely duplicates: keep one of each pair (the other is merged into it) or mark them as different */
+function dupReview(){
+  var pairs = dupPairs();
+  if (!pairs.length){ if (document.querySelector('#modal .dup-pair, #modal [data-form=evRemove]')) closeModal(); toast('No likely duplicates left'); return; }
+  modal('Possible duplicate events',
+    '<p class="hint" style="margin:0 0 4px">Keep the right one: the other is removed, and its people and travel orders move to the one you keep.</p>' +
+    pairs.map(function(x){
+      return '<div class="dup-pair"><div class="dup-top"><span class="pill ' + (x.s >= 0.75 ? 'e-need' : 'e-wait') + '">' + dupLikely(x.s) + ' · ' + Math.round(x.s * 100) + '%</span>' +
+        '<button type="button" class="btn btn-sm btn-ghost" data-act="dupNot" data-a="' + esc(x.a.id) + '" data-b="' + esc(x.b.id) + '">Not the same</button></div>' +
+        '<div class="dup-two">' + [[x.a, x.b], [x.b, x.a]].map(function(k){ return '<div class="dup-col">' + dupMini(k[0]) +
+          '<button type="button" class="btn btn-sm btn-primary" data-act="dupKeep" data-keep="' + esc(k[0].id) + '" data-drop="' + esc(k[1].id) + '">' + ic('check') + 'Keep this one</button></div>'; }).join('') + '</div></div>';
+    }).join(''),
+    '<button type="button" class="btn btn-ghost" data-act="close">Done</button>');
+}
+var RM_WHY = [
+  ['resched', 'Rescheduled', 'It is moving to another date. The event stays, with its people.'],
+  ['cancel', 'Cancelled', 'It will not happen. It stays on the calendar, crossed out.'],
+  ['dup', 'Duplicate entry', 'It was added twice. Pick the copy to keep; this one is removed.']];
+/* remove an event, always with a reason */
+function evRemoveAsk(id, pre){
+  var e = S.events.filter(function(x){ return x.id === id; })[0]; if (!e) return;
+  var why = RM_WHY.filter(function(r){ return !(r[0] === 'cancel' && e.status === 'Cancelled'); });
+  pre = pre && why.some(function(r){ return r[0] === pre; }) ? pre : '';
+  var cands = evDupes(e, 0.3).slice(0, 5), near = cands.length ? [] : S.events.filter(function(x){ return x.id !== e.id && x.status !== 'Cancelled' && Math.abs(dayDiff(x.date, e.date)) <= 3; }).sort(evSort).slice(0, 6);
+  var pick = function(x, i, sc){ return '<label class="check opt"><input type="radio" name="into" value="' + esc(x.id) + '"' + (i === 0 && sc >= 0.55 ? ' checked' : '') + '><span><b>' + esc(x.title) + '</b><small>' + esc(evShort(x)) + (x.venue ? ' · ' + esc(x.venue) : '') + (sc ? ' · ' + dupLikely(sc).toLowerCase() + ' (' + Math.round(sc * 100) + '%)' : '') + '</small></span></label>'; };
+  M = { id: e.id };
+  modal('Remove this event?',
+    '<div class="sumbox"><b>' + esc(e.title) + '</b><span>' + esc([evDates(e), e.venue].filter(Boolean).join(' · ')) + '</span></div>' +
+    '<fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">Why?</legend>' +
+      why.map(function(r){ return '<label class="check opt"><input type="radio" name="why" value="' + r[0] + '"' + (pre === r[0] ? ' checked' : '') + ' required><span><b>' + r[1] + '</b><small>' + r[2] + '</small></span></label>'; }).join('') + '</fieldset>' +
+    '<div class="rm-part" data-for="resched"' + (pre === 'resched' ? '' : ' hidden') + '><div class="two"><div class="field"><label for="rmD1">New date</label><input class="input" id="rmD1" name="date" type="date" value="' + esc(e.date) + '"></div>' +
+      '<div class="field"><label for="rmD2">Until <span class="hint">(if more than one day)</span></label><input class="input" id="rmD2" name="dateTo" type="date" value="' + (e.dateTo && e.dateTo !== e.date ? esc(e.dateTo) : '') + '"></div></div>' +
+      '<p class="hint" style="margin:0 0 8px">Travel orders already made for it keep their dates. Update them if they need to change.</p></div>' +
+    '<div class="rm-part" data-for="dup"' + (pre === 'dup' ? '' : ' hidden') + '><fieldset class="field" style="border:0;padding:0;margin:0"><legend class="label" style="margin-bottom:6px">Keep which event?</legend>' +
+      (cands.length ? cands.map(function(m, i){ return pick(m.e, i, m.s); }).join('') : near.map(function(x, i){ return pick(x, i, 0); }).join('') + (near.length ? '' : '<p class="hint" style="margin:0 0 6px">No similar events found nearby.</p>')) +
+      '<label class="check opt"><input type="radio" name="into" value="__none"' + (cands.length && cands[0].s >= 0.55 ? '' : ' checked') + '><span><b>None of these</b><small>Just remove this entry.</small></span></label>' +
+      ((evLinked(e).length + evOffsetTOs(e).length + (e.assigned || []).length) ? '<p class="hint" style="margin:6px 0 0">Its people and travel orders move to the event you keep.</p>' : '') + '</fieldset></div>' +
+    '<div class="field rm-part" data-for="resched cancel dup"' + (pre ? '' : ' hidden') + '><label for="rmN">Note <span class="hint">(optional)</span></label><input class="input" id="rmN" name="note" maxlength="200" placeholder="e.g. moved by the organizer, per letter"></div>',
+    '<button type="button" class="btn btn-ghost" data-act="evBack">Keep event</button><button class="btn btn-danger" type="submit" id="rmGo">' + rmLabel(pre) + '</button>', 'evRemove');
+}
+function rmLabel(w){ return w === 'resched' ? ic('month') + 'Move event' : w === 'dup' ? ic('trash') + 'Remove duplicate' : w === 'cancel' ? ic('x') + 'Cancel event' : 'Remove event'; }
+document.addEventListener('change', function(ev){
+  var f = ev.target.closest && ev.target.closest('form[data-form="evRemove"]'); if (!f || ev.target.name !== 'why') return;
+  var w = ev.target.value;
+  f.querySelectorAll('.rm-part').forEach(function(x){ x.hidden = x.dataset.for.split(' ').indexOf(w) < 0; });
+  var go = document.getElementById('rmGo'); if (go){ go.innerHTML = rmLabel(w); go.className = 'btn ' + (w === 'resched' ? 'btn-primary' : 'btn-danger'); }
+});
+/* the event form warns while you type when the event looks like one already on the calendar */
+var dupT = null;
+document.addEventListener('input', function(ev){
+  var f = ev.target.closest && ev.target.closest('form[data-form="saveEvent"]'); if (!f || ['title', 'venue', 'date', 'dateTo', 'time'].indexOf(ev.target.name) < 0) return;
+  clearTimeout(dupT); dupT = setTimeout(function(){ evFormDupes(f); }, 250);
+});
+function evFormDupes(f){
+  var box = f.querySelector('#evDup'); if (!box) return;
+  var g = function(n){ var x = f.querySelector('[name="' + n + '"]'); return x ? x.value : ''; };
+  var cand = { id: g('id'), title: g('title'), venue: g('venue'), date: g('date'), dateTo: g('dateTo') || g('date'), time: g('time') };
+  var cur = S.events.filter(function(x){ return x.id === cand.id; })[0]; if (cur) cand.notDup = cur.notDup;
+  var m = String(cand.title).trim().length >= 3 ? evDupes(cand, 0.55).slice(0, 3) : [];
+  var was = box.dataset.ids || '', ids = m.map(function(x){ return x.e.id; }).join(',');
+  if (ids === was) return;
+  box.dataset.ids = ids; box.hidden = !m.length;
+  var strong = !cand.id && m.some(function(x){ return x.s >= 0.75; });
+  box.innerHTML = m.length ? '<div class="dup-h">' + ic('flag') + '<b>Is this already on the calendar?</b></div>' +
+    m.map(function(x){ return '<div class="dup-row"><span><b>' + esc(x.e.title) + '</b><small>' + esc(evShort(x.e)) + (x.e.venue ? ' · ' + esc(x.e.venue) : '') + ' · ' + dupLikely(x.s).toLowerCase() + ' (' + Math.round(x.s * 100) + '%)</small></span>' +
+      '<button type="button" class="btn btn-sm btn-ghost" data-act="dupOpen" data-id="' + esc(x.e.id) + '">Open it</button></div>'; }).join('') +
+    '<input type="hidden" name="notDupIds" value="' + esc(ids) + '">' +
+    (strong ? '<label class="check" style="margin-top:8px"><input type="checkbox" name="notDupOk" required>It’s a different event. Add it anyway.</label>' : '') : '';
+  if (m.length && !lessMotion()) settle(box.animate([{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'none' }], { duration: MOTION.inMs, easing: MOTION.easeOut }), MOTION.inMs);
+}
 function evBackToDay(){ if (S.pop) dayPop(S.pop); else closeModal(); }
 function evDispatch(e){
   var n0 = (e.needs || [])[0] || '', pre = /^Photo|^Video/.test(n0) ? 'To document ' : n0 === 'Livestreaming' ? 'To livestream ' : n0 === 'Emcee or Hosting' ? 'To serve as emcee for ' : 'To cover ';
@@ -2679,7 +2831,7 @@ function evModal(id){
   var kinds = [['travel', 'Travel order', 'Outside the Capitol'], ['tasking', 'Dispatch order', 'Within the Capitol and office hours']];
   modal(e.id ? 'Edit event' : 'Add an event',
     '<input type="hidden" name="id" value="' + esc(e.id || '') + '">' +
-    '<div class="field"><label for="evt">Event name</label><input class="input" id="evt" name="title" maxlength="160" value="' + esc(e.title) + '" placeholder="e.g. Provincial Board regular session" required></div>' +
+    '<div class="field"><label for="evt">Event name</label><input class="input" id="evt" name="title" maxlength="160" value="' + esc(e.title) + '" placeholder="e.g. Provincial Board regular session" required></div><div class="dupwarn" id="evDup" hidden></div>' +
     '<div class="field"><label for="evv">Location <span class="hint">(you can add it later)</span></label><input class="input" id="evv" name="venue" maxlength="160" value="' + esc(e.venue) + '" placeholder="e.g. Capitol Gym, Daet"></div>' +
     '<div class="two"><div class="field"><label for="evd1">When</label><input class="input" id="evd1" name="date" type="date" value="' + esc(e.date) + '" required></div><div class="field"><label for="evd2">Until when <span class="hint">(if more than one day)</span></label><input class="input" id="evd2" name="dateTo" type="date" value="' + (e.dateTo && e.dateTo !== e.date ? esc(e.dateTo) : '') + '"></div></div>' +
     '<div class="field"><label for="evtm">Time of the event</label><input class="input" id="evtm" name="time" type="time" value="' + esc(e.time || '') + '"><input type="hidden" name="timeEnd" value="' + esc(e.timeEnd || '') + '"></div>' +
@@ -2690,6 +2842,7 @@ function evModal(id){
     '<div class="field"><label for="evc">Contact person <span class="hint">(optional)</span></label><input class="input" id="evc" name="contact" maxlength="120" value="' + esc(e.contact || '') + '" placeholder="Name and number"></div>' +
     '<div class="info-note">' + ic('shield') + '<span>' + (adm ? 'Events you add are confirmed right away.' : 'An admin confirms the event. Editing a confirmed event asks for confirmation again.') + '</span></div>',
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">' + (e.id ? 'Save event' : 'Add event') + '</button>', 'saveEvent');
+  var ef = document.querySelector('#modal form[data-form="saveEvent"]'); if (ef) evFormDupes(ef);
 }
 function assignModal(id){
   var e = S.events.filter(function(x){ return x.id === id; })[0]; if (!e) return;
@@ -2723,11 +2876,13 @@ function evCard(e){
   if (allTs.length) people += '<div class="ev-tos">' + ic('route') + allTs.map(function(t){ return linkTO(t, (isOffsetTO(t) ? 'Day off: ' : '') + sortNames(t.names).map(dispName).slice(0, 2).join(', ') + (t.names.length > 2 ? ' +' + (t.names.length - 2) : '')) + ' ' + toStatusPill(t); }).join('<span class="sep" aria-hidden="true">·</span>') + '</div>';
   if (cs){
     acts += '<button type="button" class="btn btn-sm btn-ghost" data-act="evEdit" data-id="' + e.id + '">' + ic('edit') + 'Edit</button>';
-    if (e.status !== 'Cancelled') acts += '<button type="button" class="btn btn-sm btn-ghost" data-act="evCancel" data-id="' + e.id + '">' + ic('x') + 'Cancel event</button>';
-    else if (adm) acts += '<button type="button" class="btn btn-sm btn-ghost" data-act="evReopen" data-id="' + e.id + '">Reopen</button>';
-    if (adm || e.status === 'Pending') acts += '<button type="button" class="btn btn-sm btn-danger" data-act="evDelete" data-id="' + e.id + '">' + ic('trash') + 'Delete</button>';
+    if (e.status === 'Cancelled' && adm) acts += '<button type="button" class="btn btn-sm btn-ghost" data-act="evReopen" data-id="' + e.id + '">Reopen</button>';
+    acts += '<button type="button" class="btn btn-sm btn-ghost btn-rm" data-act="evRemove" data-id="' + e.id + '">' + ic('trash') + 'Remove</button>';
   }
-  return '<article class="dcard ' + st + '" data-ev="' + esc(e.id) + '"><h4>' + esc(e.title) + ' <span class="pill e-' + st + '">' + EV_LABEL[st] + '</span>' + (e.status === 'Pending' ? '<span class="pill Pending">Unconfirmed</span>' : '') + (mine ? '<span class="pill Confirmed">You</span>' : '') + '</h4><dl>' +
+  return '<article class="dcard ' + st + '" data-ev="' + esc(e.id) + '"><h4>' + esc(e.title) + ' <span class="pill e-' + st + '">' + EV_LABEL[st] + '</span>' + (e.status === 'Pending' ? '<span class="pill Pending">Unconfirmed</span>' : '') + (mine ? '<span class="pill Confirmed">You</span>' : '') +
+    (cs && e.status !== 'Cancelled' && evDupes(e, 0.55).length ? '<button type="button" class="pill e-wait dup-chip" data-act="dupReview">' + ic('flag') + 'Possible duplicate</button>' : '') + '</h4><dl>' +
+    (e.status === 'Cancelled' ? row('Removed', 'Cancelled' + (e.removeNote ? ' · ' + esc(e.removeNote) : '') + (e.updatedBy ? ' <span class="hint">by ' + esc(firstName(e.updatedBy)) + '</span>' : '')) : '') +
+    ((e.moves || []).length ? row('Moved', (function(m){ var f = function(x){ return String(x).split(' to ').map(function(d){ return fDate(d, { month: 'short', day: 'numeric' }); }).join('–'); }; return 'From ' + esc(f(m.from)) + ' to ' + esc(f(m.to)) + (m.note ? ' · ' + esc(m.note) : ''); })(e.moves.slice(-1)[0])) :'') +
     row('Date', esc(evDates(e))) + (evTimes(e) ? row('Time', esc(evTimes(e))) : '') + row('Place', e.venue ? esc(e.venue) : '<span class="pill e-need">Not set yet</span>') +
     row('Sent by', tasking ? 'Dispatch order <span class="hint">(within the Capitol)</span>' : 'Travel order') + row('Dispatched', people) +
     row('Needed', evNeedsText(e).length ? evNeedsText(e).map(function(n){ return '<span class="pill off">' + esc(n) + '</span>'; }).join(' ') : '<span class="hint">Not specified</span>') +
@@ -2823,6 +2978,7 @@ function calWeek(ws, items, m){
   var bars = segs.filter(function(sg){ return sg.l < MAXL; }).map(function(sg){ var it = sg.it; return '<span class="mc-bar ' + it.cls + (it.un ? ' b-un' : '') + (it.mine ? ' b-mine' : '') + (sg.cl ? ' cl' : '') + (sg.cr ? ' cr' : '') + '" style="--c0:' + sg.c0 + ';--c1:' + sg.c1 + ';--l:' + sg.l + ';--il:' + (sg.cl ? 0 : 4) + 'px;--ir:' + (sg.cr ? 0 : 4) + 'px">' + esc(it.t) + '</span>'; }).join('');
   return '<div class="mc-wk" style="--lanes:' + Math.max(1, Math.min(MAXL, ends.length)) + '"><div class="mc-days">' + cells + '</div><div class="mc-bars" aria-hidden="true">' + bars + '</div></div>';
 }
+function dupNotice(){ if (!canSched()) return ''; var n = dupPairs().length; return n ? '<div class="dup-note"><span>' + ic('flag') + '<b>' + n + '</b> possible duplicate event' + (n > 1 ? 's' : '') + ' on the calendar</span><button type="button" class="btn btn-sm btn-ghost" data-act="dupReview">Review</button></div>' : ''; }
 function viewCalendar(){
   if (!S.cal){ var t0 = pd(today()); S.cal = { y: t0.getFullYear(), m: t0.getMonth() }; }
   var y = S.cal.y, m = S.cal.m, first = new Date(y, m, 1), td = today(), cs = canSched();
@@ -2842,7 +2998,7 @@ function viewCalendar(){
   var legend = '<div class="legend lgscroll" style="padding:0"><b class="lgh">Events</b><span><i class="lg b-need"></i>! Incomplete</span><span><i class="lg b-wait"></i>… Waiting for TO</span><span><i class="lg b-ok"></i>✓ Ready</span><span class="lgsep" aria-hidden="true"></span><b class="lgh">People</b><span><i class="lg b-to"></i>Travel order (no event)</span><span><i class="lg b-lv"></i>Leave or day off</span><span class="lgsep" aria-hidden="true"></span><span><i class="lg b-un"></i>Not yet confirmed</span><span>★ Yours</span></div>';
   return { eyebrow: 'Calendar', title: first.toLocaleDateString('en-PH', { month:'long', year:'numeric' }), sub: 'Events, travel and days off. Tap a day for details.',
     actions: '<button type="button" class="btn btn-glass" data-act="calPrev" aria-label="Previous month">' + ic('left') + '</button><button type="button" class="btn btn-glass" data-act="calToday">Today</button><button type="button" class="btn btn-glass" data-act="calNext" aria-label="Next month">' + ic('right') + '</button>' + (cs ? '<button type="button" class="btn btn-sun" data-act="evNew">' + ic('plus') + 'Add event</button>' : ''),
-    body: tiles + '<section class="panel"><div class="mcbar">' + strip + '<label class="keep" style="font-size:13.5px"><input type="checkbox" id="calMine"' + (S.calMine ? ' checked' : '') + '>Only mine</label></div><div class="mcbar" style="padding-top:0">' + legend + '</div>' +
+    body: tiles + '<section class="panel"><div class="mcbar">' + strip + '<label class="keep" style="font-size:13.5px"><input type="checkbox" id="calMine"' + (S.calMine ? ' checked' : '') + '>Only mine</label></div>' + dupNotice() + '<div class="mcbar" style="padding-top:0">' + legend + '</div>' +
       '<div class="mc"><div class="mc-dow">' + ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(function(d){ return '<div>' + d + '</div>'; }).join('') + '</div>' + weeks + '</div></section>' };
 }
 /* ----- Notifications ----- */
@@ -3200,8 +3356,12 @@ document.addEventListener('click', function(ev){
   else if (a === 'evDispatch'){ var de = S.events.filter(function(x){ return x.id === t.dataset.id; })[0]; if (de){ closeModal(); evDispatch(de); } }
   else if (a === 'evBack') evBackToDay();
   else if (a === 'evCancelYes'){ busy(t, act('setEventStatus', { id: t.dataset.id, status: 'Cancelled' }, 'Event cancelled').then(evBackToDay).catch(function(e){ toast(e.message); })); }
-  else if (a === 'evConfirm' || a === 'evCancel' || a === 'evReopen'){ var es = a === 'evConfirm' ? 'Confirmed' : a === 'evCancel' ? 'Cancelled' : 'Pending'; if (a === 'evCancel') return evCancelAsk(t.dataset.id); act('setEventStatus', { id: t.dataset.id, status: es }, es === 'Confirmed' ? 'Event confirmed' : es === 'Cancelled' ? 'Event cancelled' : 'Event reopened').then(refreshPop).catch(function(e){ toast(e.message); }); }
-  else if (a === 'evDelete'){ act('deleteEvent', { id: t.dataset.id }, 'Event deleted').then(refreshPop).catch(function(e){ toast(e.message); }); }
+  else if (a === 'evConfirm' || a === 'evCancel' || a === 'evReopen'){ var es = a === 'evConfirm' ? 'Confirmed' : a === 'evCancel' ? 'Cancelled' : 'Pending'; if (a === 'evCancel') return evRemoveAsk(t.dataset.id, 'cancel'); act('setEventStatus', { id: t.dataset.id, status: es }, es === 'Confirmed' ? 'Event confirmed' : es === 'Cancelled' ? 'Event cancelled' : 'Event reopened').then(refreshPop).catch(function(e){ toast(e.message); }); }
+  else if (a === 'evDelete' || a === 'evRemove') evRemoveAsk(t.dataset.id, a === 'evDelete' ? 'dup' : '');
+  else if (a === 'dupReview') dupReview();
+  else if (a === 'dupOpen'){ var dq = S.events.filter(function(x){ return x.id === t.dataset.id; })[0]; if (dq){ closeModal(); dayPop(dq.date); } }
+  else if (a === 'dupKeep'){ t.disabled = true; act('mergeEvent', { id: t.dataset.drop, into: t.dataset.keep, note: 'From the duplicate review' }, 'Duplicate removed').then(dupReview).catch(function(e){ t.disabled = false; toast(e.message); }); }
+  else if (a === 'dupNot'){ t.disabled = true; act('markNotDup', { id: t.dataset.a, other: t.dataset.b }, 'Marked as different events').then(dupReview).catch(function(e){ t.disabled = false; toast(e.message); }); }
   else if (a === 'toMarkPrinted'){ var mp = S.travelOrders.filter(function(x){ return x.id === t.dataset.id; })[0]; if (mp) markPrinted([mp]); }
   else if (a === 'toNew') toModal();
   else if (a === 'toEdit') toModal(t.dataset.id);
@@ -5268,7 +5428,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
       if (['Available', 'Repair', 'Missing'].indexOf(p.status) < 0) return fail('Unknown status.');
       itO.status = p.status; itO.holder = ''; itO.eventId = ''; itO.dueBack = ''; itO.outAt = ''; itH(p.status === 'Available' ? 'Marked available' : p.status === 'Repair' ? 'Sent for repair' : 'Marked missing', '', p.note); log(me, 'Updated equipment', itO.name, p.status); return ok(me);
     }
-    if (a === 'saveEvent' || a === 'setEventStatus' || a === 'deleteEvent' || a === 'assignEvent'){
+    if (a === 'saveEvent' || a === 'setEventStatus' || a === 'deleteEvent' || a === 'assignEvent' || a === 'rescheduleEvent' || a === 'mergeEvent' || a === 'markNotDup'){
       if (!(adm || me.role === 'scheduler')) return fail('Only a division leader or an admin can do that.');
       if (a === 'saveEvent'){
         var evT = String(p.title || '').trim(), evV = String(p.venue || '').trim(), ev1 = String(p.date || ''), ev2 = String(p.dateTo || '') || ev1;
@@ -5281,6 +5441,9 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
         if (evF.time && evF.timeEnd && ev1 === ev2 && evF.timeEnd <= evF.time) return fail('The end time is before the start time.');
         if (evX){ Object.assign(evX, evF); if (!adm && evX.status === 'Confirmed'){ evX.status = 'Pending'; evX.confirmedBy = ''; evX.confirmedAt = ''; } log(me, 'Edited an event', evT, ev1); return ok(me, { id: evX.id }); }
         var evN = Object.assign({ id: 'ev' + nid(), status: adm ? 'Confirmed' : 'Pending', createdBy: me.username, createdAt: now, confirmedBy: adm ? me.username : '', confirmedAt: adm ? now : '' }, evF);
+        // the person looked at the likely duplicates and said this one is different: do not flag that pair again
+        var nd = String(p.notDupIds || '').split(',').filter(function(x){ return x && events.some(function(y){ return y.id === x; }); });
+        if (nd.length && p.notDupOk) evN.notDup = nd;
         events.push(evN); log(me, 'Added an event', evT, ev1 + ' · ' + evV); return ok(me, { id: evN.id });
       }
       var evO = events.filter(function(x){ return x.id === p.id; })[0]; if (!evO) return fail('That event was not found.');
@@ -5288,10 +5451,44 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
         var evW = (Array.isArray(p.users) ? p.users : []).map(String).filter(function(u, i, arr){ return arr.indexOf(u) === i && users.some(function(x){ return x.username === u && x.active; }); });
         evO.assigned = evW; evO.crewOpen = p.open === '1' && evW.length < 2; evO.assignedBy = me.username; evO.assignedAt = now; evO.updatedBy = me.username; evO.updatedAt = now;
         log(me, 'Updated a dispatch order', evO.title, evW.length + ' person(s)'); return ok(me, { id: evO.id }); }
+      if (a === 'rescheduleEvent'){
+        var rd1 = String(p.date || ''), rd2 = String(p.dateTo || '') || rd1;
+        if (!/^\d{4}-\d\d-\d\d$/.test(rd1)) return fail('Pick the new date.');
+        if (rd2 < rd1) return fail('The end date is before the start date.');
+        if (rd1 === evO.date && rd2 === (evO.dateTo || evO.date)) return fail('That is the same date. Pick the new one.');
+        var span = function(x, y){ return x === y ? x : x + ' to ' + y; };
+        evO.moves = (evO.moves || []).concat([{ from: span(evO.date, evO.dateTo || evO.date), to: span(rd1, rd2), note: String(p.note || '').trim().slice(0, 200), by: me.username, at: now }]).slice(-10);
+        evO.date = rd1; evO.dateTo = rd2; evO.updatedBy = me.username; evO.updatedAt = now;
+        if (!adm && evO.status === 'Confirmed'){ evO.status = 'Pending'; evO.confirmedBy = ''; evO.confirmedAt = ''; }
+        log(me, 'Rescheduled an event', evO.title, evO.moves[evO.moves.length - 1].from + ' → ' + evO.moves[evO.moves.length - 1].to); return ok(me, { id: evO.id }); }
+      if (a === 'markNotDup'){
+        var evB = events.filter(function(x){ return x.id === p.other; })[0]; if (!evB) return fail('That event was not found.');
+        evO.notDup = (evO.notDup || []).filter(function(x){ return x !== evB.id; }).concat([evB.id]); evB.notDup = (evB.notDup || []).filter(function(x){ return x !== evO.id; }).concat([evO.id]);
+        evO.updatedBy = evB.updatedBy = me.username; evO.updatedAt = evB.updatedAt = now;
+        log(me, 'Marked two events as different', evO.title, evB.title); return ok(me); }
+      if (a === 'mergeEvent'){
+        // remove a duplicate entry; its people and travel orders move to the event that is kept
+        var keep = p.into ? events.filter(function(x){ return x.id === p.into && x.id !== evO.id; })[0] : null;
+        if (p.into && !keep) return fail('The event to keep was not found.');
+        var its = tos.filter(function(t){ return t.eventId === evO.id; });
+        if (its.length && !adm) return fail('This event has travel orders. Ask an admin to remove the duplicate.');
+        if (!keep && its.length) return fail('Pick the event to keep, so its travel orders are not left without one.');
+        if (keep){
+          its.forEach(function(t){ t.eventId = keep.id; t.updatedBy = me.username; t.updatedAt = now; });
+          (evO.assigned || []).forEach(function(u){ keep.assigned = keep.assigned || []; if (keep.assigned.indexOf(u) < 0) keep.assigned.push(u); });
+          (evO.needs || []).forEach(function(n){ keep.needs = keep.needs || []; if (keep.needs.indexOf(n) < 0) keep.needs.push(n); });
+          ['venue', 'time', 'timeEnd', 'requester', 'contact'].forEach(function(k){ if (!keep[k] && evO[k]) keep[k] = evO[k]; });
+          keep.notDup = (keep.notDup || []).filter(function(x){ return x !== evO.id; });
+          keep.updatedBy = me.username; keep.updatedAt = now;
+        }
+        events.splice(events.indexOf(evO), 1);
+        log(me, 'Removed a duplicate event', evO.title, evO.date + (keep ? ' · kept ' + keep.title : '') + (p.note ? ' · ' + String(p.note).slice(0, 200) : ''));
+        return ok(me, { id: keep ? keep.id : '' }); }
       if (a === 'deleteEvent'){ if (!adm && evO.status !== 'Pending') return fail('Only an admin can delete a confirmed event.'); events.splice(events.indexOf(evO), 1); log(me, 'Deleted an event', evO.title, evO.date); return ok(me); }
       if (['Confirmed', 'Pending', 'Cancelled'].indexOf(p.status) < 0) return fail('Unknown status.');
       if (p.status === 'Confirmed' && !adm) return fail('Only an admin can confirm an event.');
       evO.status = p.status; evO.updatedBy = me.username; evO.updatedAt = now; if (p.status === 'Confirmed'){ evO.confirmedBy = me.username; evO.confirmedAt = now; }
+      if (p.status === 'Cancelled'){ evO.removeReason = 'Cancelled'; evO.removeNote = String(p.note || '').trim().slice(0, 200); } else { delete evO.removeReason; delete evO.removeNote; }
       log(me, p.status === 'Confirmed' ? 'Confirmed an event' : p.status === 'Cancelled' ? 'Cancelled an event' : 'Reopened an event', evO.title, evO.date); return ok(me);
     }
     if (a === 'moveUse'){ var mu = entries.filter(function(e){ return e.id === p.id; })[0];
@@ -5432,7 +5629,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
    newest version and a few lines on what changed. When it differs from this page's APP_VER, a card offers
    a refresh. Checked when the app comes back to the front and every 10 minutes. Keep APP_VER, version.json
    and the cache name in sw.js the same when publishing. */
-var APP_VER = 'v66';
+var APP_VER = 'v67';
 (function(){
   var shown = null, last = 0;
   function check(force){
