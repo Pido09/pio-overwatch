@@ -158,6 +158,16 @@ dl.tov{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:4px 0}dl.
 .upd-k{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
 .upd-new ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-2)}.upd-new li{margin:3px 0}
 .upd-f{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.upd-done{position:fixed;z-index:70;right:20px;bottom:20px;width:min(340px,calc(100vw - 32px));overflow:hidden;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px -14px rgba(14,30,51,.35),0 2px 6px rgba(14,30,51,.08);padding:14px 12px 14px 14px;animation:updIn .32s cubic-bezier(.22,1,.36,1)}
+.upd-done.out{animation:updOut .26s ease-in forwards}
+.upd-done .upd-h{align-items:center}.upd-done .upd-h>div{flex:1;min-width:0}.upd-done .upd-h b{font-size:15px}
+.upd-done .upd-h>svg.i{flex:none;width:18px;height:18px;padding:8px;box-sizing:content-box;border-radius:10px;background:var(--brand-soft);color:var(--brand-strong)}
+.upd-done ul{margin:10px 0 0;padding-left:18px;font-size:13.5px;color:var(--ink-2)}.upd-done li{margin:3px 0}
+.upd-timer{position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--brand);transform-origin:left;transform:scaleX(1)}
+.upd-timer.go{transition:transform 5s linear;transform:scaleX(0)}.upd-timer.hold{transition:transform .2s;transform:scaleX(1)}
+@media (max-width:1100px){ .upd-done{bottom:calc(92px + env(safe-area-inset-bottom,0px))} }
+@media (max-width:640px){ .upd-done{left:16px;right:16px;width:auto} }
+@media (prefers-reduced-motion:reduce){ .upd-done,.upd-done.out{animation:none} }
 .upd .upd-h>svg.i{width:22px;height:22px;padding:10px;border-radius:12px}.upd-h b{font-size:17px}
 .upd-f .btn{min-height:40px}
 @media (max-width:640px){ .upd-f{flex-direction:column-reverse} .upd-f .btn{width:100%;justify-content:center;min-height:44px} }
@@ -5411,7 +5421,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
    newest version and a few lines on what changed. When it differs from this page's APP_VER, a card offers
    a refresh. Checked when the app comes back to the front and every 10 minutes. Keep APP_VER, version.json
    and the cache name in sw.js the same when publishing. */
-var APP_VER = 'v64';
+var APP_VER = 'v65';
 (function(){
   var shown = null, last = 0;
   function check(force){
@@ -5421,7 +5431,7 @@ var APP_VER = 'v64';
       if (!v || !v.ver) return;
       // just updated: say what changed, once per version on this device
       if (v.ver === APP_VER){ var seen = null; try { seen = localStorage.getItem('pio_seen_ver'); } catch(e){}
-        if (seen !== APP_VER && shown !== APP_VER && (v.notes || []).length){ shown = APP_VER; lSet('pio_seen_ver', APP_VER); showUpdate(v, true); } return; }
+        if (seen !== APP_VER && shown !== APP_VER && (v.notes || []).length){ shown = APP_VER; lSet('pio_seen_ver', APP_VER); showDone(v); } return; }
       if (v.ver === shown) return;
       try { if (sessionStorage.getItem('pio_upd_later') === v.ver) return; } catch(e){}
       shown = v.ver; showUpdate(v);
@@ -5453,6 +5463,24 @@ var APP_VER = 'v64';
       if (b.dataset.upd !== 'go'){ later(); return; }
       b.disabled = true; b.lastChild.textContent = 'Refreshing…'; reloadWhenSaved();
     });
+  }
+  /* after updating: a quiet card in the lower right that fades out after 5 seconds
+     (it waits while the pointer is on it or it has keyboard focus, so it can be read) */
+  function showDone(v){
+    var notes = (v.notes || []).slice(0, 5), el = document.createElement('section');
+    el.className = 'upd-done'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
+    el.innerHTML = '<div class="upd-h">' + ic('check') + '<div><b>You’re up to date</b><span>What’s new in this version:</span></div>' +
+      '<button type="button" class="icon-btn" aria-label="Close">' + ic('x') + '</button></div>' +
+      '<ul>' + notes.map(function(n){ return '<li>' + esc(n) + '</li>'; }).join('') + '</ul><i class="upd-timer" aria-hidden="true"></i>';
+    document.body.appendChild(el);
+    var t = null, gone = false, bar = el.querySelector('.upd-timer');
+    var bye = function(){ if (gone) return; gone = true; el.classList.add('out'); setTimeout(function(){ el.remove(); }, 260); };
+    var run = function(){ clearTimeout(t); bar.classList.remove('hold'); void bar.offsetWidth; bar.classList.add('go'); t = setTimeout(bye, 5000); };
+    var hold = function(){ clearTimeout(t); bar.classList.remove('go'); bar.classList.add('hold'); };
+    el.addEventListener('pointerenter', hold); el.addEventListener('pointerleave', function(){ if (!el.contains(document.activeElement)) run(); });
+    el.addEventListener('focusin', hold); el.addEventListener('focusout', function(ev){ if (!el.contains(ev.relatedTarget)) run(); });
+    el.querySelector('.icon-btn').addEventListener('click', bye);
+    run();
   }
   // never throw away a change that is still being saved
   function reloadWhenSaved(){
