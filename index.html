@@ -842,9 +842,9 @@ button,[role=button],a,input,select,summary,label{touch-action:manipulation}
 /* ---- Events: the office whiteboard ---- */
 .tile.bad .k{color:var(--red)} .tile.bad .k .ib{background:var(--red-soft);color:var(--red)}
 .tile.ok .k{color:var(--brand-strong)}
-.ev.e-need{background:var(--red-soft);color:var(--red)} .ev.e-wait{background:var(--gold-soft);color:var(--gold)} .ev.e-ok{background:var(--brand-soft);color:var(--brand-strong)} .ev.e-off{background:var(--surface-2);color:var(--muted);text-decoration:line-through}
+.ev.e-need{background:var(--red-soft);color:var(--red)} .ev.e-wait{background:var(--gold-soft);color:var(--gold)} .ev.e-ok{background:var(--brand-soft);color:var(--brand-strong)} .ev.e-dayoff{background:var(--rose-soft);color:var(--rose)} .ev.e-off{background:var(--surface-2);color:var(--muted);text-decoration:line-through}
 .ev.e-un{outline:1px dashed currentColor;outline-offset:-1px}
-.pill.e-need{background:var(--red-soft);color:var(--red)} .pill.e-wait{background:var(--gold-soft);color:var(--gold)} .pill.e-ok{background:var(--brand-soft);color:var(--brand-strong)} .pill.e-off{background:var(--surface-2);color:var(--muted)}
+.pill.e-need{background:var(--red-soft);color:var(--red)} .pill.e-wait{background:var(--gold-soft);color:var(--gold)} .pill.e-ok{background:var(--brand-soft);color:var(--brand-strong)} .pill.e-off{background:var(--surface-2);color:var(--muted)} .pill.e-dayoff{background:var(--rose-soft);color:var(--rose)}
 .legend i.e-need{background:var(--red-soft);box-shadow:inset 0 0 0 1px var(--red)} .legend i.e-wait{background:var(--gold-soft);box-shadow:inset 0 0 0 1px var(--gold)} .legend i.e-ok{background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)} .legend i.e-off{background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line-strong)} .legend i.e-un{background:transparent;outline:1px dashed var(--muted);outline-offset:-1px}
 .evlist{list-style:none;margin:0;padding:0}
 .evday{padding:12px 16px 4px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
@@ -887,7 +887,7 @@ button,[role=button],a,input,select,summary,label{touch-action:manipulation}
 .mc-bar.cl{border-top-left-radius:0;border-bottom-left-radius:0} .mc-bar.cr{border-top-right-radius:0;border-bottom-right-radius:0}
 .b-need{background:var(--red-soft);color:var(--red);box-shadow:inset 3px 0 0 var(--red)} .b-wait{background:var(--gold-soft);color:var(--gold);box-shadow:inset 3px 0 0 var(--gold)}
 .b-ok{background:var(--brand-soft);color:var(--brand-strong);box-shadow:inset 3px 0 0 var(--brand)} .b-to{background:var(--violet-soft);color:var(--violet);box-shadow:inset 3px 0 0 var(--violet)}
-.b-lv{background:var(--rose-soft);color:var(--rose);box-shadow:inset 3px 0 0 var(--rose)}
+.b-lv,.b-dayoff{background:var(--rose-soft);color:var(--rose);box-shadow:inset 3px 0 0 var(--rose)}
 .b-un{outline:1px dashed currentColor;outline-offset:-1px}
 .mc-bar.b-need::before{content:"! "} .mc-bar.b-wait::before{content:"\2026 "} .mc-bar.b-ok::before{content:"\2713 "} .mc-bar.b-mine::before{content:"\2605 "}
 .legend i.lg{display:inline-block;width:16px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
@@ -897,13 +897,13 @@ button,[role=button],a,input,select,summary,label{touch-action:manipulation}
   .mc{--lane:9px;--bar:6px;--top:30px}
   .mc-bar{font-size:0;padding:0;border-radius:3px;box-shadow:none;line-height:0}
   .mc-bar::before{content:none!important}
-  .b-need.mc-bar{background:var(--st-need)} .b-wait.mc-bar{background:var(--st-wait)} .b-ok.mc-bar{background:var(--st-ok)} .b-to.mc-bar{background:var(--violet)} .b-lv.mc-bar{background:var(--rose)}
+  .b-need.mc-bar{background:var(--st-need)} .b-wait.mc-bar{background:var(--st-wait)} .b-ok.mc-bar{background:var(--st-ok)} .b-to.mc-bar{background:var(--violet)} .b-lv.mc-bar,.b-dayoff.mc-bar{background:var(--rose)}
   .legend i.lg.b-need,.legend i.lg.b-wait,.legend i.lg.b-ok,.legend i.lg.b-to,.legend i.lg.b-lv{border:0;box-shadow:none;height:6px}
   .legend i.lg.b-need{background:var(--st-need)} .legend i.lg.b-wait{background:var(--st-wait)} .legend i.lg.b-ok{background:var(--st-ok)} .legend i.lg.b-to{background:var(--violet)} .legend i.lg.b-lv{background:var(--rose)}
   .mc-day{padding:3px 3px} .mc-hl{display:none} .mc-n{min-width:22px;height:22px;font-size:12px}
 }
 .dcard{border:1px solid var(--line);border-left:5px solid var(--ec,var(--line-strong));border-radius:10px;padding:12px 14px;margin:0 0 12px;background:var(--surface)}
-.dcard.need{--ec:var(--red)} .dcard.wait{--ec:var(--gold)} .dcard.ok{--ec:var(--brand)} .dcard.off{--ec:var(--line-strong)}
+.dcard.need{--ec:var(--red)} .dcard.wait{--ec:var(--gold)} .dcard.ok{--ec:var(--brand)} .dcard.off{--ec:var(--line-strong)} .dcard.dayoff{--ec:var(--rose)}
 .dcard h4{margin:0 0 10px;font-size:16px;display:flex;gap:6px 8px;flex-wrap:wrap;align-items:center}
 .dcard dl{display:grid;grid-template-columns:104px minmax(0,1fr);gap:7px 12px;margin:0} .dcard dt{color:var(--muted);font-size:13px;font-weight:600} .dcard dd{margin:0;overflow-wrap:anywhere}
 .dcard .acts-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -2588,7 +2588,7 @@ function prepPrompt(t, tev, pr){
 }
 /* ----- Events, dispatch orders and the shared calendar ----- */
 var EV_NEEDS = ['Photo Documentation', 'Video Documentation', 'Livestreaming', 'News and Write-up', 'Emcee or Hosting', 'Other'];
-var EV_LABEL = { need: 'Incomplete', wait: 'Waiting for TO', ok: 'Ready', off: 'Cancelled' };
+var EV_LABEL = { need: 'Incomplete', wait: 'Waiting for TO', ok: 'Ready', off: 'Cancelled', dayoff: 'Day off only' };
 /* An event is incomplete until it has a place and the people who will cover it. It can be saved incomplete. */
 function evMissing(e){ var m = []; if (!String(e.venue || '').trim()) m.push('place'); if (!evPeople(e).length) m.push('people'); else if (evKind(e) === 'tasking' && e.crewOpen) m.push('more people'); return m; }
 function inProd(){ if (!S.me) return false; if (isAdmin()) return true; var d = divOf(S.me.division); return !!(d && /production/i.test(d.name)); }
@@ -2601,8 +2601,19 @@ function evLinked(e){ return S.travelOrders.filter(function(t){ return t.eventId
 function evOffsetTOs(e){ return S.travelOrders.filter(function(t){ return t.eventId === e.id && t.status !== 'Cancelled' && isOffsetTO(t); }); }
 /* someone on a dispatch travel order who has a day off on the event date is not really dispatched either */
 function evOnDayOff(u, e){ if (!u) return false; for (var d = e.date; d <= (e.dateTo || e.date); d = addDays(d, 1)){ if (dayOffOn(u, d)) return true; } return false; }
+/* An event added only to carry someone's day-off travel order: nobody is dispatched to it and nobody needs to be,
+   so it is not "incomplete". Marked offsetOnly when added from the day-off flow; older ones are recognised by
+   being added in the same step as their day-off travel order. Once real travel orders or assignments exist,
+   it is an ordinary event again. */
+function evDayOffOnly(e){
+  if (evKind(e) === 'tasking' || (e.assigned || []).length || evLinked(e).length) return false;
+  var offs = evOffsetTOs(e); if (!offs.length) return false;
+  if (e.offsetOnly) return true;
+  return !e.requester && !(e.needs || []).length && offs.some(function(t){ return e.createdAt && (t.updatedAt === e.createdAt || t.createdAt === e.createdAt); });
+}
 function evState(e){
   if (e.status === 'Cancelled') return 'off';
+  if (evDayOffOnly(e)) return 'dayoff';
   if (!String(e.venue || '').trim()) return 'need';
   if (evKind(e) === 'tasking') return (e.assigned || []).length && !e.crewOpen ? 'ok' : 'need';
   var real = evPeople(e).filter(function(p){ return p.st === 'Prepared' || p.st === 'To prepare'; });
@@ -2694,7 +2705,7 @@ function assignModal(id){
 function evCard(e){
   var st = evState(e), cs = canSched(), adm = isAdmin(), tasking = evKind(e) === 'tasking', ppl = evPeople(e), mine = evMine(e, S.me.username), ts = evLinked(e);
   var row = function(k, v){ return '<dt>' + k + '</dt><dd>' + v + '</dd>'; };
-  var people = ppl.length ? '<div class="pp">' + ppl.map(function(p){ return '<span class="pill ' + (p.st === 'To prepare' || p.st === 'Assigned' ? 'Pending' : 'Confirmed') + '">' + linkPerson(p.u, p.name) + (p.st ? ' · ' + p.st : '') + '</span>'; }).join('') + '</div>' : (e.status === 'Cancelled' ? '<span class="hint">None</span>' : '<span class="pill e-need">No one dispatched yet</span>');
+  var people = ppl.length ? '<div class="pp">' + ppl.map(function(p){ return '<span class="pill ' + (p.st === 'To prepare' || p.st === 'Assigned' ? 'Pending' : 'Confirmed') + '">' + linkPerson(p.u, p.name) + (p.st ? ' · ' + p.st : '') + '</span>'; }).join('') + '</div>' : (e.status === 'Cancelled' ? '<span class="hint">None</span>' : st === 'dayoff' ? '<span class="hint">No one needed: this event only carries a day-off travel order</span>' : '<span class="pill e-need">No one dispatched yet</span>');
   // people whose day-off travel order names this event: shown apart, never as dispatched
   var offN = []; evOffsetTOs(e).forEach(function(t){ (t.names || []).forEach(function(n){ if (offN.indexOf(n) < 0) offN.push(n); }); });
   if (offN.length) people += '<div class="hint" style="margin-top:6px">' + ic('plane') + ' Day off only, not dispatched: ' + offN.map(function(n){ return linkPerson(nameToUser(n), dispName(n)); }).join(', ') + '</div>';
@@ -2818,7 +2829,7 @@ function viewCalendar(){
   var gs = ymd(new Date(y, m, 1 - first.getDay())), mEnd = ymd(new Date(y, m + 1, 0)), items = calItems(!!S.calMine), weeks = '';
   for (var w = 0; w < 6; w++){ var ws = addDays(gs, w * 7); if (ws > mEnd) break; weeks += calWeek(ws, items, m); }
   var up = S.events.filter(function(e){ return e.status !== 'Cancelled' && e.dateTo >= td; }).sort(evSort), cnt = { need: 0, wait: 0, ok: 0 };
-  up.forEach(function(e){ cnt[evState(e)]++; });
+  up.forEach(function(e){ var s = evState(e); if (cnt[s] != null) cnt[s]++; });
   var unconf = up.filter(function(e){ return e.status === 'Pending'; }).length, nx = up[0], nn = up.filter(function(e){ return evState(e) === 'need'; })[0];
   var tiles = '<div class="tiles cal4" style="margin-bottom:16px">' + [
     ['upcoming', 'Upcoming', 'cal', String(up.length), (nx ? 'Next: ' + evRelText(nx) : 'Nothing scheduled') + (cs && unconf ? ' · ' + unconf + ' unconfirmed' : ''), ''],
@@ -5381,7 +5392,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
       if (p.eventId){ oev = events.filter(function(x){ return x.id === p.eventId && x.status !== 'Cancelled'; })[0]; if (!oev) return fail('That event was not found.'); }
       else if (String(p.newTitle || '').trim()){
         var nT = String(p.newTitle).trim().slice(0, 160); if (nT.length < 3) return fail('Write the event name.');
-        oev = { id: 'ev' + nid(), status: 'Confirmed', createdBy: me.username, createdAt: now, confirmedBy: me.username, confirmedAt: now, title: nT, venue: String(p.newVenue || '').trim().slice(0, 160), date: oe.date, dateTo: oe.date, time: '', timeEnd: '', requester: '', needs: [], note: '', kind: 'travel' };
+        oev = { id: 'ev' + nid(), status: 'Confirmed', createdBy: me.username, createdAt: now, confirmedBy: me.username, confirmedAt: now, title: nT, venue: String(p.newVenue || '').trim().slice(0, 160), date: oe.date, dateTo: oe.date, time: '', timeEnd: '', requester: '', needs: [], note: '', kind: 'travel', offsetOnly: true };
         events.push(oev); log(me, 'Added an event', nT, oe.date + ' · ' + oev.venue);
       }
       var oEnd = oe.date; for (var k3 = 1; k3 < Math.ceil(oe.days); k3++) oEnd = addDays(oEnd, 1);
@@ -5421,7 +5432,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
    newest version and a few lines on what changed. When it differs from this page's APP_VER, a card offers
    a refresh. Checked when the app comes back to the front and every 10 minutes. Keep APP_VER, version.json
    and the cache name in sw.js the same when publishing. */
-var APP_VER = 'v65';
+var APP_VER = 'v66';
 (function(){
   var shown = null, last = 0;
   function check(force){
