@@ -1,9 +1,9 @@
 {
-  "ver": "v67",
+  "ver": "v69",
   "notes": [
-    "Removing an event asks why: rescheduled, cancelled or a duplicate entry",
-    "Adding an event warns you if it looks like one already on the calendar",
-    "The calendar lists likely duplicate events so you can keep one and remove the other",
-    "Events added only for a day-off travel order show as \"Day off only\""
+    "Assigning people suggests 2 to 5 who fit the event and have had fewer trips lately",
+    "Search the people list by name, skill or division",
+    "A travel order for one day of a multi-day event shows the person only on that day",
+    "Preparing a day-off travel order asks which days use offset"
   ]
 }
