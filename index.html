@@ -904,6 +904,11 @@ button,[role=button],a,input,select,summary,label{touch-action:manipulation}
 }
 .dcard{border:1px solid var(--line);border-left:5px solid var(--ec,var(--line-strong));border-radius:10px;padding:12px 14px;margin:0 0 12px;background:var(--surface)}
 .dcard.need{--ec:var(--red)} .dcard.wait{--ec:var(--gold)} .dcard.ok{--ec:var(--brand)} .dcard.off{--ec:var(--line-strong)}
+.mc-gap{position:absolute;top:0;bottom:0;left:calc(var(--g0) * 100% / var(--gn));width:calc(100% / var(--gn));pointer-events:none;
+  background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--surface) 62%,transparent) 0 4px,color-mix(in srgb,var(--surface) 30%,transparent) 4px 8px)}
+.mc-gap.gl{border-left:2px dashed currentColor}.mc-bar .mc-t{position:relative;z-index:1}.mc-gap.gr{border-right:2px dashed currentColor}
+.legend i.lg-gap{display:inline-block;width:16px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle;background:repeating-linear-gradient(135deg,var(--surface-2) 0 3px,var(--line-strong) 3px 5px);border:1px dashed var(--muted)}
+@media (max-width:640px){ .mc-gap{background:color-mix(in srgb,var(--surface) 58%,transparent)} .mc-gap.gl{border-left:2px solid var(--surface)} .mc-gap.gr{border-right:2px solid var(--surface)} .legend i.lg-gap{height:6px;border:0;background:repeating-linear-gradient(90deg,var(--muted) 0 3px,transparent 3px 6px)} }
 .as-q{margin:0 0 4px}.as-load{display:block;font-size:12px;color:var(--muted)}
 .fairppl .sugp small{white-space:normal}
 .dupwarn{margin:-4px 0 12px;padding:10px 12px;border-radius:12px;background:var(--gold-soft);border:1px solid color-mix(in srgb,var(--gold) 35%,transparent)}
@@ -3000,12 +3005,18 @@ function evTileModal(f){
 }
 function calItems(mine){
   var me = S.me.username, adm = isAdmin(), items = [], live = {};
-  S.events.forEach(function(e){ if (e.status === 'Cancelled') return; live[e.id] = 1; var mm = evMine(e, me); if (mine && !mm) return; var st = evState(e); items.push({ s: e.date, e: e.dateTo, cls: 'b-' + st, t: e.title, un: e.status === 'Pending', mine: mm, pr: st === 'need' ? 0 : st === 'wait' ? 1 : 2 }); });
+  S.events.forEach(function(e){ if (e.status === 'Cancelled') return; live[e.id] = 1; var mm = evMine(e, me); if (mine && !mm) return; var st = evState(e); items.push({ s: e.date, e: e.dateTo, gap: evGaps(e), cls: 'b-' + st, t: e.title, un: e.status === 'Pending', mine: mm, pr: st === 'need' ? 0 : st === 'wait' ? 1 : 2 }); });
   activeTOs().forEach(function(t){ if ((t.eventId && live[t.eventId]) || isOffsetTO(t)) return; var mm = (t.usernames || []).indexOf(me) >= 0; if (mine && !mm) return; items.push({ s: t.dateFrom, e: t.dateTo, cls: 'b-to', t: 'TO · ' + t.event, mine: mm, pr: 3 }); });
   S.leaves.forEach(function(l){ if (/^ADJ/.test(l.type)) return; var mm = l.username === me; if (mine && !mm) return; items.push({ s: l.dateFrom, e: l.dateTo, cls: 'b-lv', t: (adm && !mm ? firstName(l.username) + ' · ' : '') + leaveName(l.type), mine: mm, pr: 4 }); });
   S.entries.forEach(function(e){ if (e.type !== 'USE' || e.status === 'Rejected') return; var mm = e.username === me; if (mine && !mm) return; items.push({ s: e.date, e: e.date, cls: 'b-lv', t: (adm && !mm ? firstName(e.username) + ' · ' : '') + 'Day off', un: e.status === 'Pending', mine: mm, pr: 4 }); });
   if (!adm) S.board.forEach(function(b){ if (b.username === me || mine) return; items.push({ s: b.from, e: b.to, cls: 'b-lv', t: firstName(b.username) + ' · ' + (b.kind === 'leave' ? 'On leave' : 'Day off'), pr: 4 }); });
   return items;
+}
+/* days of a multi-day event that nobody covers, when somebody covers other days of it (null otherwise) */
+function evGaps(e){
+  var e2 = e.dateTo || e.date; if (e2 === e.date || evKind(e) === 'tasking' || !evLinked(e).length) return null;
+  var out = [], n = 0; for (var d = e.date; d <= e2 && n < 62; d = addDays(d, 1), n++){ if (!evPeople(e, d).length) out.push(d); }
+  return out.length && out.length < n ? out : null;
 }
 function calWeek(ws, items, m){
   // events per day before "+N more": 6 on desktop and tablet; 8 on phones, where each event is a thin strip.
@@ -3017,13 +3028,20 @@ function calWeek(ws, items, m){
   var more = [0, 0, 0, 0, 0, 0, 0]; segs.forEach(function(sg){ if (sg.l >= MAXL) for (var c = sg.c0; c <= sg.c1; c++) more[c]++; });
   var cells = '';
   for (var c = 0; c < 7; c++){
-    var k = addDays(ws, c), d = pd(k), h = holidayOn(k), col = c, names = segs.filter(function(sg){ return sg.c0 <= col && sg.c1 >= col; }).map(function(sg){ return sg.it.t; });
+    var k = addDays(ws, c), d = pd(k), h = holidayOn(k), col = c, names = segs.filter(function(sg){ return sg.c0 <= col && sg.c1 >= col; }).map(function(sg){ return sg.it.t + (sg.it.gap && sg.it.gap.indexOf(k) >= 0 ? ' (no one on this day)' : ''); });
     var cls = 'mc-day' + (d.getMonth() !== m ? ' out' : '') + (h ? ' hol' : '') + (k === td ? ' today' : '');
     var aria = fDate(k, { weekday:'long', month:'long', day:'numeric' }) + (h ? ', ' + h.name : '') + (names.length ? ': ' + names.join('; ') : ', nothing scheduled');
     cells += '<button type="button" class="' + cls + '" data-act="dayPop" data-d="' + k + '" aria-label="' + esc(aria) + '"><span class="mc-n">' + d.getDate() + '</span>' + (h ? '<span class="mc-hl">' + esc(h.name) + '</span>' : '') + (more[c] ? '<span class="mc-more">+' + more[c] + (narrow ? '' : ' more') + '</span>' : '') + '</button>';
   }
-  var bars = segs.filter(function(sg){ return sg.l < MAXL; }).map(function(sg){ var it = sg.it; return '<span class="mc-bar ' + it.cls + (it.un ? ' b-un' : '') + (it.mine ? ' b-mine' : '') + (sg.cl ? ' cl' : '') + (sg.cr ? ' cr' : '') + '" style="--c0:' + sg.c0 + ';--c1:' + sg.c1 + ';--l:' + sg.l + ';--il:' + (sg.cl ? 0 : 4) + 'px;--ir:' + (sg.cr ? 0 : 4) + 'px">' + esc(it.t) + '</span>'; }).join('');
+  var bars = segs.filter(function(sg){ return sg.l < MAXL; }).map(function(sg){ var it = sg.it; return '<span class="mc-bar ' + it.cls + (it.un ? ' b-un' : '') + (it.mine ? ' b-mine' : '') + (sg.cl ? ' cl' : '') + (sg.cr ? ' cr' : '') + '" style="--c0:' + sg.c0 + ';--c1:' + sg.c1 + ';--l:' + sg.l + ';--il:' + (sg.cl ? 0 : 4) + 'px;--ir:' + (sg.cr ? 0 : 4) + 'px">' + (it.gap ? '<span class="mc-t">' + esc(it.t) + '</span>' : esc(it.t)) + gapMarks(it, sg, ws) + '</span>'; }).join('');
   return '<div class="mc-wk" style="--lanes:' + Math.max(1, Math.min(MAXL, ends.length)) + '"><div class="mc-days">' + cells + '</div><div class="mc-bars" aria-hidden="true">' + bars + '</div></div>';
+}
+function gapMarks(it, sg, ws){
+  if (!it.gap) return ''; var out = '', n = sg.c1 - sg.c0 + 1;
+  for (var c = sg.c0; c <= sg.c1; c++){ var d = addDays(ws, c); if (it.gap.indexOf(d) < 0) continue;
+    var prevGap = c > sg.c0 && it.gap.indexOf(addDays(ws, c - 1)) >= 0, edge = c > sg.c0 || sg.cl;
+    out += '<i class="mc-gap' + (edge && !prevGap && c > sg.c0 ? ' gl' : '') + (c < sg.c1 && it.gap.indexOf(addDays(ws, c + 1)) < 0 ? ' gr' : '') + '" style="--g0:' + (c - sg.c0) + ';--gn:' + n + '"></i>'; }
+  return out;
 }
 function dupNotice(){ if (!canSched()) return ''; var n = dupPairs().length; return n ? '<div class="dup-note"><span>' + ic('flag') + '<b>' + n + '</b> possible duplicate event' + (n > 1 ? 's' : '') + ' on the calendar</span><button type="button" class="btn btn-sm btn-ghost" data-act="dupReview">Review</button></div>' : ''; }
 function viewCalendar(){
@@ -3042,7 +3060,7 @@ function viewCalendar(){
   ].map(function(x){ return tile(x[1], x[3], x[4], x[5], x[2], 'data-act="evTile" data-f="' + x[0] + '"'); }).join('') + '</div>';
   var st = { to: 0, leave: 0, off: 0 }, act = S.users.filter(function(u){ return u.active; }); act.forEach(function(u){ var s = statusOn(u.username, td); if (s) st[s.kind === 'off' ? 'off' : s.kind]++; });
   var strip = '<div class="mcstrip"><span><b>' + (act.length - st.to - st.leave - st.off) + '</b> in the office today</span><span><b>' + st.to + '</b> on travel</span><span><b>' + (st.leave + st.off) + '</b> on leave or day off</span><button type="button" class="btn btn-sm btn-ghost" data-act="dayPop" data-d="' + td + '">See who</button></div>';
-  var legend = '<div class="legend lgscroll" style="padding:0"><b class="lgh">Events</b><span><i class="lg b-need"></i>! Incomplete</span><span><i class="lg b-wait"></i>… Waiting for TO</span><span><i class="lg b-ok"></i>✓ Ready</span><span class="lgsep" aria-hidden="true"></span><b class="lgh">People</b><span><i class="lg b-to"></i>Travel order (no event)</span><span><i class="lg b-lv"></i>Leave or day off</span><span class="lgsep" aria-hidden="true"></span><span><i class="lg b-un"></i>Not yet confirmed</span><span>★ Yours</span></div>';
+  var legend = '<div class="legend lgscroll" style="padding:0"><b class="lgh">Events</b><span><i class="lg b-need"></i>! Incomplete</span><span><i class="lg b-wait"></i>… Waiting for TO</span><span><i class="lg b-ok"></i>✓ Ready</span><span class="lgsep" aria-hidden="true"></span><b class="lgh">People</b><span><i class="lg b-to"></i>Travel order (no event)</span><span><i class="lg b-lv"></i>Leave or day off</span><span class="lgsep" aria-hidden="true"></span><span><i class="lg b-un"></i>Not yet confirmed</span><span><i class="lg lg-gap"></i>No one that day</span><span>★ Yours</span></div>';
   return { eyebrow: 'Calendar', title: first.toLocaleDateString('en-PH', { month:'long', year:'numeric' }), sub: 'Events, travel and days off. Tap a day for details.',
     actions: '<button type="button" class="btn btn-glass" data-act="calPrev" aria-label="Previous month">' + ic('left') + '</button><button type="button" class="btn btn-glass" data-act="calToday">Today</button><button type="button" class="btn btn-glass" data-act="calNext" aria-label="Next month">' + ic('right') + '</button>' + (cs ? '<button type="button" class="btn btn-sun" data-act="evNew">' + ic('plus') + 'Add event</button>' : ''),
     body: tiles + '<section class="panel"><div class="mcbar">' + strip + '<label class="keep" style="font-size:13.5px"><input type="checkbox" id="calMine"' + (S.calMine ? ' checked' : '') + '>Only mine</label></div>' + dupNotice() + '<div class="mcbar" style="padding-top:0">' + legend + '</div>' +
@@ -5691,7 +5709,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
    newest version and a few lines on what changed. When it differs from this page's APP_VER, a card offers
    a refresh. Checked when the app comes back to the front and every 10 minutes. Keep APP_VER, version.json
    and the cache name in sw.js the same when publishing. */
-var APP_VER = 'v69';
+var APP_VER = 'v70';
 (function(){
   var shown = null, last = 0;
   function check(force){
@@ -6361,7 +6379,7 @@ function inMyDiv(u){ var x = userOf(u); return !!x && !!S.me.division && x.divis
     var me = S.me.username, adm = isAdmin(), items = [], live = {}, sc = calScope();
     var keep = function(us, isEvent, e){ if (sc === 'all') return true; if (sc === 'mine') return us.indexOf(me) >= 0;
       return us.some(inMyDiv) || us.indexOf(me) >= 0 || (isEvent && canSched() && evState(e) === 'need') || (isEvent && e.createdBy && inMyDiv(e.createdBy)); };
-    S.events.forEach(function(e){ if (e.status === 'Cancelled') return; live[e.id] = 1; var us = evPeople(e).map(function(p){ return p.u; }).filter(Boolean); if (!keep(us, true, e)) return; var st = evState(e); items.push({ s: e.date, e: e.dateTo, cls: 'b-' + st, t: e.title, un: e.status === 'Pending', mine: us.indexOf(me) >= 0, pr: st === 'need' ? 0 : st === 'wait' ? 1 : 2 }); });
+    S.events.forEach(function(e){ if (e.status === 'Cancelled') return; live[e.id] = 1; var us = evPeople(e).map(function(p){ return p.u; }).filter(Boolean); if (!keep(us, true, e)) return; var st = evState(e); items.push({ s: e.date, e: e.dateTo, gap: evGaps(e), cls: 'b-' + st, t: e.title, un: e.status === 'Pending', mine: us.indexOf(me) >= 0, pr: st === 'need' ? 0 : st === 'wait' ? 1 : 2 }); });
     activeTOs().forEach(function(t){ if ((t.eventId && live[t.eventId]) || isOffsetTO(t)) return; var us = t.usernames || []; if (!keep(us)) return; items.push({ s: t.dateFrom, e: t.dateTo, cls: 'b-to', t: 'TO · ' + t.event, mine: us.indexOf(me) >= 0, pr: 3 }); });
     S.leaves.forEach(function(l){ if (/^ADJ/.test(l.type) || !keep([l.username])) return; var mm = l.username === me; items.push({ s: l.dateFrom, e: l.dateTo, cls: 'b-lv', t: (adm && !mm ? firstName(l.username) + ' · ' : '') + leaveName(l.type), mine: mm, pr: 4 }); });
     S.entries.forEach(function(e){ if (e.type !== 'USE' || e.status === 'Rejected' || !keep([e.username])) return; var mm = e.username === me; items.push({ s: e.date, e: e.date, cls: 'b-lv', t: (adm && !mm ? firstName(e.username) + ' · ' : '') + 'Day off', un: e.status === 'Pending', mine: mm, pr: 4 }); });

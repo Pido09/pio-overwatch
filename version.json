@@ -1,9 +1,9 @@
 {
-  "ver": "v69",
+  "ver": "v70",
   "notes": [
+    "Calendar: days of an event that nobody covers are hatched, with a dashed line where coverage stops",
     "Assigning people suggests 2 to 5 who fit the event and have had fewer trips lately",
     "Search the people list by name, skill or division",
-    "A travel order for one day of a multi-day event shows the person only on that day",
     "Preparing a day-off travel order asks which days use offset"
   ]
 }
