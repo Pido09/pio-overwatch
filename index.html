@@ -5709,7 +5709,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
    newest version and a few lines on what changed. When it differs from this page's APP_VER, a card offers
    a refresh. Checked when the app comes back to the front and every 10 minutes. Keep APP_VER, version.json
    and the cache name in sw.js the same when publishing. */
-var APP_VER = 'v70';
+var APP_VER = 'v71';
 (function(){
   var shown = null, last = 0;
   function check(force){
@@ -6293,15 +6293,24 @@ document.addEventListener('input', function(ev){ if (ev.target.id !== 'asQ') ret
     TM(id, pre);
     var evId = (pre && pre.eventId) || (id && (toOf(id) || {}).eventId), e = evId && S.events.filter(function(x){ return x.id === evId; })[0];
     var f = document.querySelector('#modal form[data-form="saveTO"]'); if (!e || !f) return;
-    var sug = suggestFor(e); if (!sug.length) return;
+    var sug = suggestFor(e), LM = loadMap(), fp = fairPicks(e, LM); if (!sug.length && !fp.length) return;
     var pick = f.querySelector('#toChips'); pick = pick && pick.closest('.field'); if (!pick) return;
+    var have = function(u){ return TO.names.indexOf(u.name.toUpperCase()) >= 0; };
     var div = document.createElement('div'); div.className = 'tosug';
-    div.innerHTML = '<span class="label" style="margin:0 0 6px">Suggested for what is needed</span>' + sug.map(function(g){
-      return '<div class="sugrow"><b>' + esc(g.need) + '</b><div class="sugppl">' + (g.people.length ? g.people.map(function(p){ return '<button type="button" class="sugp' + (p.busy && p.busy.hard ? ' busy' : '') + '" data-act="toSug" data-n="' + esc(p.u.name.toUpperCase()) + '">' + ic('plus') + '<span>' + esc(p.u.name) + '<small>' + esc(p.busy ? p.busy.why : 'Free') + '</small></span></button>'; }).join('') : '<span class="hint">Nobody has this skill yet.</span>') + '</div></div>'; }).join('');
+    // giving others a turn: people who fit and have had fewer trips lately
+    div.innerHTML = (fp.length ? '<span class="label" style="margin:0 0 4px">Suggested · giving others a turn</span><p class="hint" style="margin:0 0 8px">Covers what the event needs, favouring people with fewer trips in the last 30 days.</p>' +
+      '<div class="sugppl fairto">' + fp.map(function(p){ var on = have(p.u); return '<button type="button" class="sugp' + (on ? ' on' : '') + '" data-act="toSug" data-n="' + esc(p.u.name.toUpperCase()) + '">' + ic(on ? 'check' : 'plus') + '<span>' + esc(p.u.name) + '<small>' + (p.why ? esc(p.why) + ' · ' : '') + esc(loadText(p.load)) + '</small></span></button>'; }).join('') +
+      '</div><div class="row-btns" style="margin:8px 0 12px"><button type="button" class="btn btn-sm btn-ghost" data-act="toFairAll">' + ic('users') + 'Add all ' + fp.length + '</button></div>' : '') +
+      (sug.length ? '<span class="label" style="margin:0 0 6px">Suggested for what is needed</span>' : '') + sug.map(function(g){
+      return '<div class="sugrow"><b>' + esc(g.need) + '</b><div class="sugppl">' + (g.people.length ? g.people.map(function(p){ return '<button type="button" class="sugp' + (p.busy && p.busy.hard ? ' busy' : '') + '" data-act="toSug" data-n="' + esc(p.u.name.toUpperCase()) + '">' + ic('plus') + '<span>' + esc(p.u.name) + '<small>' + esc(p.busy ? p.busy.why : 'Free') + ' · ' + esc(loadText(LM[p.u.username])) + '</small></span></button>'; }).join('') : '<span class="hint">Nobody has this skill yet.</span>') + '</div></div>'; }).join('');
     pick.appendChild(div);
   };
 })();
-document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="toSug"]'); if (!t) return; addName(t.dataset.n); t.classList.add('on'); t.querySelector('svg').outerHTML = ic('check'); });
+document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="toSug"]'); if (!t) return; addName(t.dataset.n);
+  // the same person may appear in several suggestion rows: mark them all
+  document.querySelectorAll('#modal [data-act="toSug"][data-n="' + t.dataset.n.replace(/"/g, '') + '"]').forEach(function(b){ b.classList.add('on'); var sv = b.querySelector('svg'); if (sv) sv.outerHTML = ic('check'); }); });
+document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="toFairAll"]'); if (!t) return;
+  document.querySelectorAll('#modal .fairto [data-act="toSug"]:not(.on)').forEach(function(b){ b.click(); }); });
 
 /* ---------- staff skills (admins and division leaders) ---------- */
 function skillsModal(){
