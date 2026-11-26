@@ -975,6 +975,19 @@ html.vt-pf.vt-back::view-transition-new(root){animation-name:pfxInB}
 @media (max-width:640px){ .pfx-row{gap:18px 14px} .pfx-tile{width:calc((100% - 28px) / 3);max-width:120px} .pfx-h{font-size:28px} .pfx-box{width:44px;height:54px} .pfx-boxes{gap:8px} }
 @media (prefers-reduced-motion:reduce){ .pfx-intro .pfx-h,.pfx-intro .pfx-tile,.pfx-box.on::after,.pfx-busy .pfx-me{animation:none} }
 
+/* welcome */
+.wel{position:fixed;inset:0;z-index:300;display:grid;place-items:center;background:radial-gradient(900px 500px at 50% 40%,rgba(47,163,78,.22),transparent 65%),#09100D;color:#fff;cursor:pointer;animation:welIn .35s ease-out both}
+.wel.out{animation:welOut .6s cubic-bezier(.55,0,1,.45) forwards}
+.wel-in{display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px}
+.wel-av{width:120px!important;height:120px!important;border-radius:26px!important;box-shadow:0 24px 60px -24px rgba(0,0,0,.9),0 0 0 3px rgba(255,255,255,.9);animation:welPop .7s cubic-bezier(.22,1.3,.36,1) .1s both}
+.wel-k{margin:22px 0 2px;color:#A4B2AA;font-size:clamp(16px,2vw,20px);animation:welUp .6s cubic-bezier(.22,1,.36,1) .35s both}
+.wel-n{margin:0;font-family:var(--f-display);font-weight:800;font-size:clamp(36px,6vw,64px);letter-spacing:-.01em;background:linear-gradient(90deg,#fff,#8FE3A6 60%,#F5B92E);-webkit-background-clip:text;background-clip:text;color:transparent;animation:welUp .7s cubic-bezier(.22,1,.36,1) .5s both}
+@keyframes welIn{from{opacity:0}}
+@keyframes welOut{to{opacity:0;transform:scale(1.06);filter:blur(6px)}}
+@keyframes welPop{from{opacity:0;transform:scale(.6)}}
+@keyframes welUp{from{opacity:0;transform:translateY(16px)}}
+@media (prefers-reduced-motion:reduce){ .wel,.wel.out,.wel-av,.wel-k,.wel-n{animation:none} .wel.out{opacity:0} }
+
 /* sidebar: a floating glass panel that collapses to icons */
 .nav button{transition:background-color .2s,color .2s,box-shadow .25s,transform .15s}
 .nav button[aria-current="page"]{background:#fff;color:#0B4A25;font-weight:700;box-shadow:0 8px 20px -10px rgba(0,0,0,.55)}
@@ -1573,8 +1586,8 @@ function viewPicker(){
       '<span class="pfx-av pfx-me" style="view-transition-name:pf-user">' + avatarHtml(me1, 150) + '</span><b class="pfx-name">' + esc(me1.name) + '</b>' +
       '<p class="pfx-ask">Enter your PIN</p>' +
       '<input type="text" name="username" autocomplete="username" value="' + esc(me1.username) + '" readonly hidden><input type="hidden" name="division" value="' + esc(S.authDiv === '_' ? '' : S.authDiv || '') + '">' +
-      '<div class="pfx-boxes"><input id="lp" name="pin" type="password" autocomplete="current-password" inputmode="numeric" pattern="[0-9]*" maxlength="6" required aria-label="PIN, 4 to 6 digits">' +
-        [0, 1, 2, 3, 4, 5].map(function(i){ return '<i class="pfx-box' + (i > 3 ? ' opt' : '') + '" aria-hidden="true"></i>'; }).join('') + '</div>' +
+      '<div class="pfx-boxes"><input id="lp" name="pin" type="password" autocomplete="current-password" inputmode="numeric" pattern="[0-9]*" maxlength="4" required aria-label="4-digit PIN">' +
+        [0, 1, 2, 3].map(function(){ return '<i class="pfx-box" aria-hidden="true"></i>'; }).join('') + '</div>' +
       '<p class="error pfx-err" id="err" role="alert"></p>' +
       '<button class="pfx-go" type="submit">Sign in</button>' + keepBox() +
       '<p class="pfx-hint">Forgot your PIN? Ask an admin to reset it.</p></form>';
@@ -1608,14 +1621,26 @@ document.addEventListener('click', function(ev){
 });
 /* PIN boxes follow what is typed; a wrong PIN shakes them and clears the boxes */
 function pfxBoxes(){ var i = document.getElementById('lp'); if (!i || !i.closest('.pfx-boxes')) return; var n = i.value.length, f = document.activeElement === i;
-  i.parentNode.querySelectorAll('.pfx-box').forEach(function(b, k){ b.classList.toggle('on', k < n); b.classList.toggle('cur', f && k === Math.min(n, 5)); }); }
-document.addEventListener('input', function(ev){ if (ev.target.id === 'lp' && ev.target.closest('.pfx-boxes')){ ev.target.value = ev.target.value.replace(/\D/g, '').slice(0, 6); pfxBoxes(); var e = document.getElementById('err'); if (e) e.textContent = ''; } });
+  i.parentNode.querySelectorAll('.pfx-box').forEach(function(b, k){ b.classList.toggle('on', k < n); b.classList.toggle('cur', f && k === Math.min(n, 3)); }); }
+document.addEventListener('input', function(ev){ if (ev.target.id === 'lp' && ev.target.closest('.pfx-boxes')){ ev.target.value = ev.target.value.replace(/\D/g, '').slice(0, 4); pfxBoxes(); var e = document.getElementById('err'); if (e) e.textContent = '';
+    var fm = ev.target.form; if (ev.target.value.length === 4 && fm && !fm.closest('.pfx-busy')) setTimeout(function(){ if (ev.target.value.length === 4 && document.body.contains(fm) && !fm.closest('.pfx-busy')){ if (fm.requestSubmit) fm.requestSubmit(); else fm.querySelector('[type=submit]').click(); } }, 180); } });
 document.addEventListener('focusin', pfxBoxes); document.addEventListener('focusout', function(){ setTimeout(pfxBoxes, 0); });
 document.addEventListener('submit', function(ev){ var f = ev.target.closest && ev.target.closest('.pfx-pin'); if (f) f.closest('.pfx').classList.add('pfx-busy'); }, true);
 new MutationObserver(function(){ var e = document.querySelector('.pfx-pin #err'); if (!e || !e.textContent) return; var x = document.querySelector('.pfx'); if (!x || !x.classList.contains('pfx-busy')) return;
   x.classList.remove('pfx-busy'); var bx = document.querySelector('.pfx-boxes'), i = document.getElementById('lp');
   if (bx && !lessMotion()) bx.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-10px)' }, { transform: 'translateX(9px)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 420, easing: 'ease-out' });
   if (i){ i.value = ''; i.focus(); pfxBoxes(); } }).observe(document.documentElement, { subtree: true, childList: true, characterData: true });
+/* after signing in: "Welcome to Overwatch, <first name>" with your picture, then the app fades in underneath */
+function welcome(){
+  if (!S.me) return;
+  var u = userOf(S.me.username) || S.me, first = String(S.me.name || '').trim().split(/\s+/)[0] || firstName(S.me.username);
+  var el = document.createElement('div'); el.className = 'wel'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
+  el.innerHTML = '<div class="wel-in">' + avatarHtml(u, 120, 'wel-av') + '<p class="wel-k">Welcome to Overwatch,</p><h1 class="wel-n">' + esc(first) + '</h1></div>';
+  document.body.appendChild(el);
+  var quick = lessMotion(), out = function(){ el.classList.add('out'); setTimeout(function(){ el.remove(); }, 650); };
+  setTimeout(out, quick ? 900 : 1700);
+  el.addEventListener('click', out);
+}
 function keepBox(){ return '<label class="keep"><input type="checkbox" name="remember" checked><span>Keep me signed in on this device</span></label>'; }
 function viewLogin(){
   if ((S.profiles || []).length && !S.authManual) return viewPicker();
@@ -1633,7 +1658,7 @@ function viewSetup(){
     '<p class="lede">This account confirms offsets and manages staff, divisions and holidays. You can add more admins later.</p>' +
     '<div class="field"><label for="sn">Full name</label><input class="input" id="sn" name="name" required></div>' +
     '<div class="field"><label for="su">Username</label><input class="input" id="su" name="username" autocapitalize="none" spellcheck="false" required><span class="hint">Lowercase letters, numbers, dots or dashes.</span></div>' +
-    '<div class="two"><div class="field"><label for="sp">PIN</label><input class="input pin" id="sp" name="pin" type="password" inputmode="numeric" maxlength="6" required></div><div class="field"><label for="sp2">Repeat PIN</label><input class="input pin" id="sp2" name="pin2" type="password" inputmode="numeric" maxlength="6" required></div></div>' +
+    '<div class="two"><div class="field"><label for="sp">PIN</label><input class="input pin" id="sp" name="pin" type="password" inputmode="numeric" maxlength="4" required></div><div class="field"><label for="sp2">Repeat PIN</label><input class="input pin" id="sp2" name="pin2" type="password" inputmode="numeric" maxlength="4" required></div></div>' +
     divPicker('') + keepBox() + '<p class="error" id="err" role="alert"></p><button class="btn btn-primary btn-block btn-lg" type="submit">Create admin account</button></form></div></div>';
 }
 
@@ -2066,7 +2091,7 @@ document.addEventListener('click', function(ev){ var t = ev.target.closest('[dat
   var ym = S.sdMon || today().slice(0, 7), dt = new Date(+ym.slice(0, 4), +ym.slice(5, 7) - 1 + Number(t.dataset.d), 1); S.sdMon = ymd(dt).slice(0, 7); render(); });
 function addStaffModal(){
   modal('Add staff', '<div class="field"><label for="an">Full name</label><input class="input" id="an" name="name" required></div>' +
-    '<div class="two"><div class="field"><label for="au">Username</label><input class="input" id="au" name="username" autocapitalize="none" spellcheck="false" placeholder="e.g. jdelacruz" required></div><div class="field"><label for="ap">Starting PIN</label><input class="input pin" id="ap" name="pin" inputmode="numeric" maxlength="6" placeholder="4–6 digits" required></div></div>' +
+    '<div class="two"><div class="field"><label for="au">Username</label><input class="input" id="au" name="username" autocapitalize="none" spellcheck="false" placeholder="e.g. jdelacruz" required></div><div class="field"><label for="ap">Starting PIN</label><input class="input pin" id="ap" name="pin" inputmode="numeric" maxlength="4" placeholder="4 digits" required></div></div>' +
     '<div class="two"><div class="field"><label for="ad">Division</label>' + divSelect('ad', '', 'Division', false, true) + '</div><div class="field"><label for="ar">Role</label><select class="input" id="ar" name="role"><option value="employee">Employee</option><option value="scheduler">Division leader</option><option value="admin">Admin</option></select></div></div>' +
     '<div class="field"><label for="aet">Employment</label><select class="input" id="aet" name="empType"><option value="JO">JO (Job order)</option><option value="COS">COS (Contract of service)</option><option>Casual</option><option>Regular</option></select><span class="hint">Regular and casual get CSC leave credits. JO and COS get wellness leave. Everyone can log offsets.</span></div>' +
     '<span class="hint">Give the PIN to the employee in person. They can change it after signing in.</span>',
@@ -2487,9 +2512,9 @@ document.addEventListener('click', function(ev){
   if (a === 'divNoLogo'){ M.logo = ''; divPreview(); return; }
   if (a === 'divDelete'){ if (!sure(t, 'Tap again to delete')) return; busy(t, act('deleteDivision', { id: M.id }, 'Division deleted').then(closeModal), 'merr'); return; }
   if (a === 'delHoliday'){ busy(t, act('deleteHoliday', { date: t.dataset.date }, 'Holiday deleted')); return; }
-  if (a === 'changePin') return modal('Change your PIN', '<div class="field"><label for="op">Current PIN</label><input class="input pin" id="op" name="oldPin" type="password" inputmode="numeric" maxlength="6" required></div><div class="field"><label for="np">New PIN</label><input class="input pin" id="np" name="newPin" type="password" inputmode="numeric" maxlength="6" required><span class="hint">4 to 6 digits. Other devices will be signed out.</span></div>',
+  if (a === 'changePin') return modal('Change your PIN', '<div class="field"><label for="op">Current PIN</label><input class="input pin" id="op" name="oldPin" type="password" inputmode="numeric" maxlength="6" required></div><div class="field"><label for="np">New PIN</label><input class="input pin" id="np" name="newPin" type="password" inputmode="numeric" maxlength="4" required><span class="hint">4 to 6 digits. Other devices will be signed out.</span></div>',
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Save PIN</button>', 'changePin');
-  if (a === 'pinModal') return modal('Reset PIN for ' + esc(userName(t.dataset.u)), '<input type="hidden" name="username" value="' + esc(t.dataset.u) + '"><div class="field"><label for="rp">New PIN</label><input class="input pin" id="rp" name="pin" inputmode="numeric" maxlength="6" required><span class="hint">They will be signed out on all devices. Tell them the new PIN in person.</span></div>',
+  if (a === 'pinModal') return modal('Reset PIN for ' + esc(userName(t.dataset.u)), '<input type="hidden" name="username" value="' + esc(t.dataset.u) + '"><div class="field"><label for="rp">New PIN</label><input class="input pin" id="rp" name="pin" inputmode="numeric" maxlength="4" required><span class="hint">They will be signed out on all devices. Tell them the new PIN in person.</span></div>',
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Reset PIN</button>', 'resetPin');
   if (a === 'del'){ busy(t, act('deleteEntry', { id: t.dataset.id }, 'Entry removed').then(closeModal), 'merr'); return; }
   if (a === 'startEntryTO'){ busy(t, act('startEntryTO', { id: t.dataset.id }, 'Travel order started. Prepare it in Travel orders.').then(closeModal), 'merr'); return; }
@@ -2591,7 +2616,7 @@ document.addEventListener('submit', function(ev){
     if (kind === 'setup' && d.pin !== d.pin2){ err.textContent = 'The two PINs do not match.'; return; }
     var remember = !!d.remember; d.remember = remember;
     if (d.division) lSet('pio_div', d.division);
-    p = call(kind, d).then(function(r){ S.needsSetup = false; S.token = r.token; saveSession(r.token, remember); S.view = 'dashboard'; if (!S.me) return refresh().then(function(){ window.scrollTo(0,0); }); if (remember) lSet('pio_cache', JSON.stringify({ me:S.me, users:S.users, entries:S.entries, divisions:S.divisions, holidays:S.holidays, settings:S.settings, activity:S.activity })); render(); window.scrollTo(0,0); });
+    p = call(kind, d).then(function(r){ S.needsSetup = false; S.token = r.token; saveSession(r.token, remember); S.view = 'dashboard'; S.welcome = true; if (!S.me) return refresh().then(function(){ window.scrollTo(0,0); }); if (remember) lSet('pio_cache', JSON.stringify({ me:S.me, users:S.users, entries:S.entries, divisions:S.divisions, holidays:S.holidays, settings:S.settings, activity:S.activity })); render(); window.scrollTo(0,0); });
   }
   else if (kind === 'earn'){ d.noTravelOrder = !!d.noTravelOrder; d.notInPayroll = !!d.notInPayroll; var selfLog = !isAdmin() || !d.username || d.username === S.me.username;
     p = act('logEarn', d, isAdmin() && !(selfLog && otherAdmins()) ? 'Offset saved and confirmed' : 'Sent for confirmation').then(function(){ S.view = 'dashboard'; render(); window.scrollTo(0,0); }); }
@@ -3496,7 +3521,7 @@ function invOutModal(id){
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Check out</button>', 'checkoutItem');
 }
 var _nav0 = navItems; navItems = function(){ var a = _nav0(); if (inProd()) a.push(['inventory', 'camera', 'Inventory', 'Production']); return a; };
-var _render0 = render; render = function(){ _render0.apply(this, arguments); try { checkNotify(); } catch(e){} if (S.me && !S._profSync) profSync(); };
+var _render0 = render; render = function(){ _render0.apply(this, arguments); if (S.welcome && S.me){ S.welcome = false; welcome(); } try { checkNotify(); } catch(e){} if (S.me && !S._profSync) profSync(); };
 function pgIn(){ var m = document.querySelector('main'); if (!m) return; m.setAttribute('tabindex', '-1'); try { m.focus({ preventScroll: true }); } catch(e){} if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return; m.classList.remove('pgin'); void m.offsetWidth; m.classList.add('pgin'); }
 
 function dayoffHint(t){
@@ -5082,7 +5107,7 @@ document.addEventListener('submit', function(ev){
     var un = String(d.username || '').trim().toLowerCase();
     if (!/^[a-z0-9._-]{3,30}$/.test(un)) return bad(errId, 'Usernames use 3–30 letters, numbers, dots or dashes.');
     if (S.users.some(function(x){ return x.username === un; })) return bad(errId, 'That username is taken.');
-    if (!/^\d{4,6}$/.test(d.pin || '')) return bad(errId, 'PIN must be 4 to 6 digits.');
+    if (!/^\d{4}$/.test(d.pin || '')) return bad(errId, 'PIN must be exactly 4 digits.');
     if (!String(d.name || '').trim()) return bad(errId, 'Full name is required.');
     var nu = { username: un, name: d.name.trim(), role: d.role === 'admin' ? 'admin' : d.role === 'scheduler' ? 'scheduler' : 'employee', division: d.division || '', active: true, empType: d.empType || 'JO', _saving: true };
     f.reset(); if (errId === 'merr') closeModal();
@@ -5468,7 +5493,7 @@ var Fire = (function(){
   }
   function loginOf(username){ return F.getDoc(D('logins/' + username)).then(function(s){ return s.exists() ? s.data() : null; }); }
   function setPin(username, pin){
-    if (!/^\d{4,6}$/.test(String(pin || ''))) return Promise.resolve(fail('PIN must be 4 to 6 digits.'));
+    if (!/^\d{4}$/.test(String(pin || ''))) return Promise.resolve(fail('PIN must be exactly 4 digits.'));
     var u = store.users.docs[username]; if (!u) return Promise.resolve(fail('Employee not found.'));
     return loginOf(username).then(function(l){
       return makeAccount(username, pin, l ? (l.k || 0) + 1 : 0).then(function(acct){
@@ -5574,7 +5599,7 @@ var Fire = (function(){
   function setup(p){
     var u = String(p.username || '').trim().toLowerCase();
     if (!/^[a-z0-9._-]{3,30}$/.test(u)) return Promise.resolve(fail('Usernames use 3–30 letters, numbers, dots or dashes.'));
-    if (!/^\d{4,6}$/.test(String(p.pin || ''))) return Promise.resolve(fail('PIN must be 4 to 6 digits.'));
+    if (!/^\d{4}$/.test(String(p.pin || ''))) return Promise.resolve(fail('PIN must be exactly 4 digits.'));
     if (!String(p.name || '').trim()) return Promise.resolve(fail('Full name is required.'));
     return F.getDoc(D('meta/app')).then(function(m){
       if (m.exists()) return fail('The admin account already exists. Sign in instead.');
@@ -5598,7 +5623,7 @@ var Fire = (function(){
     var u = String(p.username || '').trim().toLowerCase();
     if (!/^[a-z0-9._-]{3,30}$/.test(u)) return Promise.resolve(fail('Usernames use 3–30 letters, numbers, dots or dashes.'));
     if (store.users.docs[u]) return Promise.resolve(fail('That username is taken.'));
-    if (!/^\d{4,6}$/.test(String(p.pin || ''))) return Promise.resolve(fail('PIN must be 4 to 6 digits.'));
+    if (!/^\d{4}$/.test(String(p.pin || ''))) return Promise.resolve(fail('PIN must be exactly 4 digits.'));
     if (!String(p.name || '').trim()) return Promise.resolve(fail('Full name is required.'));
     return loginOf(u).then(function(l){
       return makeAccount(u, p.pin, l ? (l.k || 0) + 1 : 0).then(function(acct){
@@ -5608,7 +5633,7 @@ var Fire = (function(){
     });
   }
   function changePin(p){
-    if (!/^\d{4,6}$/.test(String(p.newPin || ''))) return Promise.resolve(fail('PIN must be 4 to 6 digits.'));
+    if (!/^\d{4}$/.test(String(p.newPin || ''))) return Promise.resolve(fail('PIN must be exactly 4 digits.'));
     return loginOf(me).then(function(l){
       var cred = F.EmailAuthProvider.credential(l.email, pw(p.oldPin));
       return F.reauthenticateWithCredential(auth.currentUser, cred).then(function(){ return F.updatePassword(auth.currentUser, pw(p.newPin)); })
@@ -5625,14 +5650,14 @@ document.addEventListener('click', function(ev){
   var list = S.users.filter(function(u){ return u.noPin; });
   modal('Set starting PINs', '<p style="margin:0">These ' + list.length + ' people came from the Google Sheet and cannot sign in yet. Give them one starting PIN; each can change it after signing in.</p>' +
     '<ul class="list boxed">' + list.map(function(u){ return '<li class="row"><span class="avatar">' + esc(initials(u.name)) + '</span><div class="body"><div class="t">' + esc(u.name) + '</div><div class="m">@' + esc(u.username) + '</div></div></li>'; }).join('') + '</ul>' +
-    '<div class="field"><label for="spn">Starting PIN</label><input class="input pin" id="spn" name="pin" inputmode="numeric" maxlength="6" placeholder="4–6 digits" required></div>',
+    '<div class="field"><label for="spn">Starting PIN</label><input class="input pin" id="spn" name="pin" inputmode="numeric" maxlength="4" placeholder="4 digits" required></div>',
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">' + ic('key') + 'Set PINs</button>', 'setPins');
 });
 document.addEventListener('submit', function(ev){
   var f = ev.target.closest('form[data-form="setPins"]'); if (!f) return;
   ev.preventDefault(); ev.stopImmediatePropagation();
   var pin = f.querySelector('#spn').value, names = S.users.filter(function(u){ return u.noPin; }).map(function(u){ return u.username; });
-  if (!/^\d{4,6}$/.test(pin)) return bad('merr', 'PIN must be 4 to 6 digits.');
+  if (!/^\d{4}$/.test(pin)) return bad('merr', 'PIN must be exactly 4 digits.');
   busy(f.querySelector('[type=submit]'), act('setPins', { usernames: names, pin: pin }, 'PINs set. They can sign in now.').then(closeModal), 'merr');
 }, true);
 document.addEventListener('change', function(ev){
@@ -5813,7 +5838,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
       var au = adm && others(me) === 0; entries.push({ id:'e' + nid(), username:me.username, type:'USE', date:p.date, category:'Used', days:dd, event:'', venue:'', endTime:'', status: au ? 'Confirmed' : 'Pending', note: early ? 'Uses offsets earned this month' : '', early: early, createdBy:me.username, createdAt:now, reviewedBy: au ? me.username : '', reviewedAt: au ? now : '' }); if (au) autoTO(entries[entries.length - 1], me, now);
       log(me, 'Requested a day off', me.username, p.date + ' · ' + dd + ' day(s)' + (early ? ' · uses this month’s offsets' : '')); return ok(me); }
     if (a === 'deleteEntry'){ var i = entries.findIndex(function(e){ return e.id === p.id; }); if (i < 0) return fail('Entry not found.'); var e = entries[i]; if (!adm && !(e.username === me.username && e.status === 'Pending')) return fail('You can only remove your own pending entries.'); entries.splice(i,1); log(me, 'Removed an entry', e.username, e.date + ' · ' + e.days + ' day(s)'); return ok(me); }
-    if (a === 'changePin'){ if (p.oldPin !== me.pin) return fail('Current PIN is wrong.'); if (!/^\d{4,6}$/.test(p.newPin)) return fail('PIN must be 4 to 6 digits.'); me.pin = p.newPin; log(me, 'Changed own PIN', me.username); return ok(me); }
+    if (a === 'changePin'){ if (p.oldPin !== me.pin) return fail('Current PIN is wrong.'); if (!/^\d{4}$/.test(p.newPin)) return fail('PIN must be exactly 4 digits.'); me.pin = p.newPin; log(me, 'Changed own PIN', me.username); return ok(me); }
     if (a === 'saveItem' || a === 'checkoutItem' || a === 'checkinItem' || a === 'setItemStatus' || a === 'deleteItem'){
       if (!canInv(me)) return fail('Inventory is for the Production team and admins.');
       if (a === 'saveItem'){
@@ -6026,8 +6051,8 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
     if (a === 'recordUse'){ var dy = Number(p.days), early2 = yes(p.early), over = adm && yes(p.override), b = bal(p.username) + (early2 ? earnedNow(p.username) : 0); if (!(dy >= 0.5) || dy > 30 || dy * 2 !== Math.round(dy * 2)) return fail('Days must be in half-day steps, from ½ to 30.'); if (!over && dy > b + 1e-9) return fail(find(p.username).name + ' has only ' + fD(Math.max(b, 0)) + ' available. Tick Override to record it anyway.');
       var rn = over && dy > b + 1e-9 ? 'Recorded without enough offset (override)' : early2 ? 'Uses offsets earned this month' : '';
       entries.push({ id:'e' + nid(), username:p.username, type:'USE', date:p.date, category:'Used', days:dy, event:'', venue:'', endTime:'', status:'Confirmed', note:rn, early: early2, createdBy:me.username, createdAt:now, reviewedBy:me.username, reviewedAt:now }); autoTO(entries[entries.length - 1], me, now); log(me, 'Recorded offset use', p.username, p.date + ' · ' + dy + ' day(s)' + (rn ? ' · ' + rn : '')); return ok(me); }
-    if (a === 'addUser'){ var nu = String(p.username||'').trim().toLowerCase(); if (!/^[a-z0-9._-]{3,30}$/.test(nu)) return fail('Usernames use 3–30 letters, numbers, dots or dashes.'); if (find(nu)) return fail('That username is taken.'); if (!/^\d{4,6}$/.test(p.pin)) return fail('PIN must be 4 to 6 digits.'); users.push({ username:nu, name:p.name, role:(['admin','scheduler'].indexOf(p.role) >= 0 ? p.role : 'employee'), division:p.division||'', pin:p.pin, active:true, empType:p.empType || 'JO' }); log(me, 'Added an account', nu, p.role); return ok(me); }
-    if (a === 'resetPin'){ if (!/^\d{4,6}$/.test(p.pin)) return fail('PIN must be 4 to 6 digits.'); find(p.username).pin = p.pin; log(me, 'Reset a PIN', p.username); return ok(me); }
+    if (a === 'addUser'){ var nu = String(p.username||'').trim().toLowerCase(); if (!/^[a-z0-9._-]{3,30}$/.test(nu)) return fail('Usernames use 3–30 letters, numbers, dots or dashes.'); if (find(nu)) return fail('That username is taken.'); if (!/^\d{4}$/.test(p.pin)) return fail('PIN must be exactly 4 digits.'); users.push({ username:nu, name:p.name, role:(['admin','scheduler'].indexOf(p.role) >= 0 ? p.role : 'employee'), division:p.division||'', pin:p.pin, active:true, empType:p.empType || 'JO' }); log(me, 'Added an account', nu, p.role); return ok(me); }
+    if (a === 'resetPin'){ if (!/^\d{4}$/.test(p.pin)) return fail('PIN must be exactly 4 digits.'); find(p.username).pin = p.pin; log(me, 'Reset a PIN', p.username); return ok(me); }
     if (a === 'setActive'){ find(p.username).active = p.active; log(me, p.active ? 'Activated an account' : 'Deactivated an account', p.username); return ok(me); }
     if (a === 'setRole'){ if (['admin','employee','scheduler'].indexOf(p.role) < 0) return fail('Unknown role.'); find(p.username).role = p.role; log(me, 'Changed a role', p.username, 'Now ' + p.role); return ok(me); }
     if (a === 'setDivision'){ find(p.username).division = p.division || ''; log(me, 'Changed a division', p.username); return ok(me); }
@@ -6051,7 +6076,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
    newest version and a few lines on what changed. When it differs from this page's APP_VER, a card offers
    a refresh. Checked when the app comes back to the front and every 10 minutes. Keep APP_VER, version.json
    and the cache name in sw.js the same when publishing. */
-var APP_VER = 'v73';
+var APP_VER = 'v74';
 (function(){
   var shown = null, last = 0;
   function check(force){

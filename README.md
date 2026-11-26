@@ -62,7 +62,7 @@ In the current app (still on the Google Sheet): Settings > **Backup (.json)**. K
 ## How it works
 
 ### Accounts
-- Sign in with username and 4–6 digit PIN. "Keep me signed in" keeps the device signed in; without it, closing the browser signs out.
+- Sign in by picking your division, then your name, then typing your 4-digit PIN (older, longer PINs still work through "Sign in with your username"). "Keep me signed in" keeps the device signed in; without it, closing the browser signs out.
 - Too many wrong PINs and Firebase blocks sign-in from that device for a few minutes.
 - Deactivating or removing an account blocks it right away. Resetting a PIN makes the old PIN stop working.
 - Admins see everything. Staff see only their own entries, leaves and TEVs, plus who is out. The rules in `firestore.rules` enforce this on Firebase's side, not only in the app.

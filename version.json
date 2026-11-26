@@ -1,9 +1,9 @@
 {
-  "ver": "v73",
+  "ver": "v74",
   "notes": [
-    "New sign-in: pick your division, tap your name, then enter your PIN",
-    "Add your profile photo: tap your picture at the bottom of the menu",
-    "A floating glass menu that folds down to icons",
-    "Smoother page changes, and light/dark mode now spreads from where you tap"
+    "Sign in like picking a profile: your division, your name, then your PIN",
+    "PINs are now 4 digits, and you're signed in as soon as you type the fourth",
+    "A welcome screen greets you by name after signing in",
+    "Add your profile photo: tap your picture at the bottom of the menu"
   ]
 }
