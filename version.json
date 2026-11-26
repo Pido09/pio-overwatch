@@ -1,9 +1,8 @@
 {
-  "ver": "v74",
+  "ver": "v75",
   "notes": [
-    "Sign in like picking a profile: your division, your name, then your PIN",
-    "PINs are now 4 digits, and you're signed in as soon as you type the fourth",
-    "A welcome screen greets you by name after signing in",
-    "Add your profile photo: tap your picture at the bottom of the menu"
+    "Your dashboard now opens with Your dispatches: your next trip, when, where and who's going with you",
+    "Sign in like picking a profile, with a 4-digit PIN",
+    "A welcome screen greets you by name after signing in"
   ]
 }
