@@ -1008,6 +1008,16 @@ html.vt-pf.vt-back::view-transition-new(root){animation-name:pfxInB}
 @media (max-width:640px){ .mt-next{gap:12px;padding:12px} .mt-date{width:60px;height:72px} .mt-date b{font-size:25px} .mt-go{display:none} .mt-wrap{padding:4px 10px 12px} }
 @media (prefers-reduced-motion:reduce){ .mt-live{animation:none} }
 
+/* adjust (crop and zoom) */
+.crop{display:flex;flex-direction:column;align-items:center;gap:14px;padding:4px 0}
+.crop-view{position:relative;width:min(300px,72vw);aspect-ratio:1;overflow:hidden;border-radius:22%;background:#0B1310;cursor:grab;touch-action:none;box-shadow:0 0 0 1px var(--line-strong),0 18px 40px -22px rgba(0,0,0,.6);user-select:none}
+.crop-view.grab{cursor:grabbing}.crop-view:focus-visible{outline:3px solid var(--brand-glow);outline-offset:3px}
+.crop-view img{position:absolute;left:0;top:0;transform-origin:0 0;max-width:none;pointer-events:none;will-change:transform}
+.crop-grid{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .2s;background:linear-gradient(to right,transparent calc(33.33% - .5px),rgba(255,255,255,.45) 33.33%,transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.45) 66.66%,transparent calc(66.66% + .5px)),linear-gradient(to bottom,transparent calc(33.33% - .5px),rgba(255,255,255,.45) 33.33%,transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(255,255,255,.45) 66.66%,transparent calc(66.66% + .5px))}
+.crop-view.grab .crop-grid{opacity:1}
+.crop-zoom{display:flex;align-items:center;gap:10px;width:min(300px,72vw)}
+.crop-zoom input{flex:1;accent-color:var(--brand)}
+
 /* photo dialog: paste or drop */
 .ph-drop{width:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:16px;border:2px dashed var(--line-strong);border-radius:16px;color:var(--ink-2);cursor:pointer;transition:border-color .2s,background-color .2s}
 .ph-drop svg.i{width:22px;height:22px;color:var(--brand-strong)}.ph-drop span{font-size:13px;color:var(--muted)}
@@ -2230,7 +2240,7 @@ function modal(title, body, foot, form){
     else { s0.md.style.transform = ''; setTimeout(function(){ s0.md.style.transition = ''; }, 300); } };
   document.addEventListener('pointerup', end); document.addEventListener('pointercancel', end);
 })();
-function closeModal(){
+function closeModal(){ if (typeof CROP !== 'undefined' && CROP){ try { URL.revokeObjectURL(CROP.url); } catch(e){} CROP = null; }
   var open = !!document.querySelector('#modal .scrim');
   document.getElementById('modal').innerHTML = ''; document.body.classList.remove('locked'); M = {};
   if (open && lastFocus && document.body.contains(lastFocus)) lastFocus.focus();
@@ -2458,7 +2468,7 @@ function photoModal(username){
     '<div class="ph-drop" id="phDrop" tabindex="0" role="button" aria-label="Paste or drop a picture here">' + ic('upload') + '<b>Paste a picture here</b><span>Copy a picture from a website (right-click, Copy image), then press <kbd>Ctrl</kbd>+<kbd>V</kbd>. You can also drop a file here.</span></div>' +
     '<p class="hint" style="margin:0;text-align:center">Shown on the sign-in page and around the app. A clear face works best.</p></div>' +
     '<input type="file" id="phFile" accept="image/*" hidden>',
-    '<button type="button" class="btn btn-ghost" data-act="close">Close</button>' + (u.photo ? '<button type="button" class="btn btn-ghost" data-act="phRemove">' + ic('trash') + 'Remove</button>' : '') + (navigator.clipboard && navigator.clipboard.read ? '<button type="button" class="btn btn-ghost" data-act="phPaste">' + ic('download') + 'Paste</button>' : '') + '<button type="button" class="btn btn-primary" data-act="phPick">' + ic('upload') + (u.photo ? 'Change photo' : 'Add a photo') + '</button>');
+    '<button type="button" class="btn btn-ghost" data-act="close">Close</button>' + (u.photo ? '<button type="button" class="btn btn-ghost" data-act="phRemove">' + ic('trash') + 'Remove</button><button type="button" class="btn btn-ghost" data-act="phAdjust">' + ic('sliders') + 'Adjust</button>' : '') + (navigator.clipboard && navigator.clipboard.read ? '<button type="button" class="btn btn-ghost" data-act="phPaste">' + ic('download') + 'Paste</button>' : '') + '<button type="button" class="btn btn-primary" data-act="phPick">' + ic('upload') + (u.photo ? 'Change photo' : 'Add a photo') + '</button>');
 }
 document.addEventListener('click', function(ev){
   var t = ev.target.closest('[data-act="photoModal"],[data-act="phPick"],[data-act="phRemove"]'); if (!t) return;
@@ -2466,12 +2476,63 @@ document.addEventListener('click', function(ev){
   if (t.dataset.act === 'phPick'){ var f = document.getElementById('phFile'); if (f) f.click(); return; }
   busy(t, act('setPhoto', { username: M.photoU, photo: '' }, 'Photo removed').then(function(){ photoModal(M.photoU); }), 'merr');
 });
-function savePhoto(blob){
-  var who = M.photoU, er = document.getElementById('merr'), dz = document.getElementById('phDrop'); if (!who) return;
-  if (er) er.textContent = ''; if (dz) dz.classList.add('busy');
-  resizePhoto(blob).then(function(ph){ return act('setPhoto', { username: who, photo: ph }, 'Photo saved'); }).then(function(){ photoModal(who); })
-    .catch(function(e){ if (dz) dz.classList.remove('busy'); if (er) er.textContent = e.message; });
+/* every new picture goes through "Adjust": drag to move, zoom with the slider, wheel or a pinch, then save the square you see */
+function savePhoto(blob){ if (!M.photoU) return; cropModal(blob); }
+var CROP = null;
+function cropModal(blob){
+  var who = M.photoU, url = URL.createObjectURL(blob), img = new Image();
+  img.onload = function(){
+    modal('Adjust the photo', '<div class="crop"><div class="crop-view" id="cropV" tabindex="0" aria-label="Photo preview. Drag or use the arrow keys to move it; plus and minus to zoom."><img id="cropI" alt="" draggable="false"><i class="crop-grid" aria-hidden="true"></i></div>' +
+      '<div class="crop-zoom"><button type="button" class="icon-btn" data-act="cropZ" data-d="-1" aria-label="Zoom out">' + ic('minus') + '</button><input type="range" id="cropZ" min="1" max="4" step="0.01" value="1" aria-label="Zoom"><button type="button" class="icon-btn" data-act="cropZ" data-d="1" aria-label="Zoom in">' + ic('plus') + '</button></div>' +
+      '<p class="hint" style="margin:0;text-align:center">Drag to move it. Zoom with the slider, the mouse wheel or two fingers.</p></div>',
+      '<button type="button" class="btn btn-ghost" data-act="cropBack">Back</button><button type="button" class="btn btn-ghost" data-act="cropReset">Reset</button><button type="button" class="btn btn-primary" data-act="cropSave">' + ic('check') + 'Save photo</button>');
+    var v = document.getElementById('cropV'), im = document.getElementById('cropI'); im.src = url;
+    CROP = { who: who, img: img, url: url, w: img.naturalWidth, h: img.naturalHeight, z: 1, x: 0, y: 0, V: v.clientWidth };
+    CROP.base = CROP.V / Math.min(CROP.w, CROP.h);
+    cropCenter(); cropDraw();
+  };
+  img.onerror = function(){ URL.revokeObjectURL(url); var er = document.getElementById('merr'); if (er) er.textContent = 'That file is not a picture.'; };
+  img.src = url;
 }
+function cropScale(){ return CROP.base * CROP.z; }
+function cropClamp(){ var sc = cropScale(), mw = CROP.V - CROP.w * sc, mh = CROP.V - CROP.h * sc; CROP.x = Math.min(0, Math.max(mw, CROP.x)); CROP.y = Math.min(0, Math.max(mh, CROP.y)); }
+function cropCenter(){ var sc = cropScale(); CROP.x = (CROP.V - CROP.w * sc) / 2; CROP.y = (CROP.V - CROP.h * sc) / 2; }
+function cropDraw(){ var im = document.getElementById('cropI'); if (!im || !CROP) return; cropClamp();
+  im.style.width = CROP.w + 'px'; im.style.height = CROP.h + 'px'; im.style.transform = 'translate(' + CROP.x + 'px,' + CROP.y + 'px) scale(' + cropScale() + ')';
+  var zr = document.getElementById('cropZ'); if (zr && +zr.value !== CROP.z) zr.value = CROP.z; }
+/* zoom around a point in the viewport (the middle, the pointer, or between two fingers) */
+function cropZoomTo(z, px, py){ if (!CROP) return; z = Math.min(4, Math.max(1, z)); if (px == null){ px = CROP.V / 2; py = CROP.V / 2; }
+  var s0 = cropScale(); CROP.z = z; var s1 = cropScale(); CROP.x = px - (px - CROP.x) * s1 / s0; CROP.y = py - (py - CROP.y) * s1 / s0; cropDraw(); }
+(function(){
+  var pts = {}, last = null, pinch = null;
+  var local = function(ev){ var r = document.getElementById('cropV').getBoundingClientRect(); return { x: (ev.clientX - r.left) * CROP.V / r.width, y: (ev.clientY - r.top) * CROP.V / r.height }; };
+  document.addEventListener('pointerdown', function(ev){ var v = ev.target.closest && ev.target.closest('#cropV'); if (!v || !CROP) return; ev.preventDefault(); v.setPointerCapture(ev.pointerId); pts[ev.pointerId] = local(ev); last = local(ev); v.classList.add('grab');
+    var ids = Object.keys(pts); if (ids.length === 2){ var a = pts[ids[0]], b = pts[ids[1]]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: CROP.z }; } });
+  document.addEventListener('pointermove', function(ev){ if (!CROP || !pts[ev.pointerId]) return; var p = local(ev); pts[ev.pointerId] = p; var ids = Object.keys(pts);
+    if (ids.length === 2 && pinch){ var a = pts[ids[0]], b = pts[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y); cropZoomTo(pinch.z * d / Math.max(1, pinch.d), (a.x + b.x) / 2, (a.y + b.y) / 2); return; }
+    CROP.x += p.x - last.x; CROP.y += p.y - last.y; last = p; cropDraw(); });
+  var up = function(ev){ if (!pts[ev.pointerId]) return; delete pts[ev.pointerId]; pinch = null; var ids = Object.keys(pts); last = ids.length ? pts[ids[0]] : null; var v = document.getElementById('cropV'); if (v && !ids.length) v.classList.remove('grab'); };
+  document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+  document.addEventListener('wheel', function(ev){ var v = ev.target.closest && ev.target.closest('#cropV'); if (!v || !CROP) return; ev.preventDefault(); var p = local(ev); cropZoomTo(CROP.z * Math.exp(-ev.deltaY * 0.0015), p.x, p.y); }, { passive: false });
+  document.addEventListener('input', function(ev){ if (ev.target.id === 'cropZ' && CROP) cropZoomTo(+ev.target.value); });
+  document.addEventListener('keydown', function(ev){ if (!CROP || document.activeElement !== document.getElementById('cropV')) return;
+    var k = ev.key, step = 12; if (k === 'ArrowLeft') CROP.x += step; else if (k === 'ArrowRight') CROP.x -= step; else if (k === 'ArrowUp') CROP.y += step; else if (k === 'ArrowDown') CROP.y -= step;
+    else if (k === '+' || k === '=') return cropZoomTo(CROP.z * 1.12); else if (k === '-') return cropZoomTo(CROP.z / 1.12); else return; ev.preventDefault(); cropDraw(); });
+  document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="cropZ"],[data-act="cropBack"],[data-act="cropReset"],[data-act="cropSave"]'); if (!t || !CROP) return;
+    var a = t.dataset.act;
+    if (a === 'cropZ') return cropZoomTo(CROP.z * (t.dataset.d === '1' ? 1.2 : 1 / 1.2));
+    if (a === 'cropReset'){ CROP.z = 1; cropCenter(); return cropDraw(); }
+    if (a === 'cropBack'){ var w0 = CROP.who; URL.revokeObjectURL(CROP.url); CROP = null; return photoModal(w0); }
+    // save exactly the square shown
+    var c = document.createElement('canvas'), n = 288, sc = cropScale(); c.width = c.height = n;
+    c.getContext('2d').drawImage(CROP.img, -CROP.x / sc, -CROP.y / sc, CROP.V / sc, CROP.V / sc, 0, 0, n, n);
+    var ph = c.toDataURL('image/jpeg', 0.84), who = CROP.who; URL.revokeObjectURL(CROP.url); CROP = null;
+    busy(t, act('setPhoto', { username: who, photo: ph }, 'Photo saved').then(function(){ photoModal(who); }), 'merr');
+  });
+})();
+/* adjust the photo already saved (it was saved small, so zooming far in will look soft) */
+document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="phAdjust"]'); if (!t) return; var u = userOf(M.photoU); if (!u || !u.photo) return;
+  fetch(u.photo).then(function(r){ return r.blob(); }).then(cropModal); });
 /* a picture's web address was pasted: try to fetch it (many sites block this; then say how to copy the picture itself) */
 function photoFromUrl(url){
   var er = document.getElementById('merr');
@@ -6287,7 +6348,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
    newest version and a few lines on what changed. When it differs from this page's APP_VER, a card offers
    a refresh. Checked when the app comes back to the front and every 10 minutes. Keep APP_VER, version.json
    and the cache name in sw.js the same when publishing. */
-var APP_VER = 'v78';
+var APP_VER = 'v79';
 (function(){
   var shown = null, last = 0;
   function check(force){

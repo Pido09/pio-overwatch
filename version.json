@@ -1,8 +1,7 @@
 {
-  "ver": "v78",
+  "ver": "v79",
   "notes": [
-    "Paste your profile picture straight from a website: copy the picture, then press Ctrl+V",
-    "A bigger photo on the welcome screen",
-    "Dispatch orders within the Capitol now count as office days; only travel orders are field days"
+    "Adjust your profile photo before saving: drag to move it, zoom in or out, and keep the part you want",
+    "Paste your profile picture straight from a website: copy the picture, then press Ctrl+V"
   ]
 }
