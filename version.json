@@ -1,9 +1,10 @@
 {
-  "ver": "v71",
+  "ver": "v72",
   "notes": [
-    "Travel orders made from an event suggest people who fit and have had fewer trips lately",
-    "Calendar: days of an event that nobody covers are hatched, with a dashed line where coverage stops",
-    "Assigning people suggests 2 to 5 who fit the event and have had fewer trips lately",
-    "Search the people list by name, skill or division"
+    "Dispatch is per day: pick which days each person goes on a multi-day event",
+    "Someone on one day of an event can be sent somewhere else on the other days",
+    "Day offs, planned or requested, now count when checking who is free",
+    "Staff page shows each person's field, office and off days this month",
+    "A new frosted-glass look"
   ]
 }
