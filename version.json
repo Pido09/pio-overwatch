@@ -1,8 +1,7 @@
 {
-  "ver": "v75",
+  "ver": "v76",
   "notes": [
-    "Your dashboard now opens with Your dispatches: your next trip, when, where and who's going with you",
-    "Sign in like picking a profile, with a 4-digit PIN",
-    "A welcome screen greets you by name after signing in"
+    "Your dispatches now opens every dashboard, including admins' and division leaders'",
+    "See your next trip, when, where and who's going with you, then tap it for the day's details"
   ]
 }

@@ -1765,13 +1765,13 @@ WIDGETS.admin = WIDGETS.admin.filter(function(w){ return w[0] !== 'mine'; });
 function ensureComing(){ Object.keys(WIDGETS).forEach(function(k){ var L = WIDGETS[k], at = 0, has = false; for (var i = 0; i < L.length; i++){ if (L[i][0] === 'coming') has = true; if (L[i][0] === 'kpis' || L[i][0] === 'leave' || L[i][0] === 'hero') at = i + 1; } if (!has) L.splice(at, 0, ['coming', 'Coming up', 12]);
     // "This week" (coverage + who is out per day) sits right after the summary, before Coming up
     if (!L.some(function(w){ return w[0] === 'week'; })) L.splice(at, 0, ['week', 'This week', 12]);
-    if (k !== 'admin' && !L.some(function(w){ return w[0] === 'mytrips'; })) L.unshift(['mytrips', 'Your dispatches', 12]); }); }
+    if (!L.some(function(w){ return w[0] === 'mytrips'; })) L.unshift(['mytrips', 'Your dispatches', 12]); }); }
 function widgetPrefs(){ ensureComing();
   var role = wRole(), all = WIDGETS[role].map(function(w){ return w[0]; }), saved = null;
   try { saved = JSON.parse(lGet('pio_w_' + role) || 'null'); } catch(e){}
   // Phones start with a shorter dashboard; everything can be turned back on in Customize.
   // Admins start with what needs action (reviews, who's out, what's coming), then the reference panels.
-  if ((!saved || !saved.order) && role === 'admin'){ var first = ['kpis','queue','week','out','coming','tos','daysoff','tevsum','balances'];
+  if ((!saved || !saved.order) && role === 'admin'){ var first = ['mytrips','kpis','queue','week','out','coming','tos','daysoff','tevsum','balances'];
     all = all.slice().sort(function(a, b){ var i = first.indexOf(a), j = first.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); }); }
   if (!saved || !saved.order) return { order: all, hidden: window.innerWidth < 700 ? (role === 'admin' ? ['balances','trend','divisions','daysoff','holidays','activity'] : role === 'regular' ? ['trend','recent','hero','holidays'] : ['trend','holidays','recent']) : [] };
   if (all.indexOf('mytrips') >= 0 && saved.order.indexOf('mytrips') < 0) saved.order.unshift('mytrips');
@@ -1845,7 +1845,7 @@ function quip(){
 function viewDashboard(){
   var adm = isAdmin(), P = widgetPrefs(), html = '';
   var staff = S.users.filter(function(u){ return u.active && (!adm || S.dashDiv === 'all' || u.division === S.dashDiv); });
-  var W = adm ? adminWidgets(staff) : empWidgets(); W.coming = comingWidget; W.week = weekWidget; if (!adm) W.mytrips = myTripsWidget;
+  var W = adm ? adminWidgets(staff) : empWidgets(); W.coming = comingWidget; W.week = weekWidget; W.mytrips = myTripsWidget;
   // Pack widgets into full rows of 12 so side-by-side boxes always line up:
   // a box that would leave a gap at the end of its row is widened to fill it.
   // Folded panels are half width, so they pair up into tidy rows.
@@ -6160,7 +6160,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
    newest version and a few lines on what changed. When it differs from this page's APP_VER, a card offers
    a refresh. Checked when the app comes back to the front and every 10 minutes. Keep APP_VER, version.json
    and the cache name in sw.js the same when publishing. */
-var APP_VER = 'v75';
+var APP_VER = 'v76';
 (function(){
   var shown = null, last = 0;
   function check(force){
