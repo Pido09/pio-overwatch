@@ -1,7 +1,9 @@
 {
-  "ver": "v76",
+  "ver": "v77",
   "notes": [
-    "Your dispatches now opens every dashboard, including admins' and division leaders'",
-    "See your next trip, when, where and who's going with you, then tap it for the day's details"
+    "See how many days you worked this month, in the office and in the field",
+    "Tap it for this month's travel orders and dispatches",
+    "On phones, drag a pop-up down to close it",
+    "Snappier buttons and easier-to-tap icons"
   ]
 }
