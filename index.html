@@ -385,14 +385,14 @@ details.ivmore[open]>summary{margin-bottom:6px}
 .main{min-width:0;padding-bottom:56px}
 .band{background:var(--topo),var(--band);border-radius:0 0 28px 28px;color:#fff;padding:28px max(24px,env(safe-area-inset-right,0px)) 76px max(24px,env(safe-area-inset-left,0px));position:relative;overflow:hidden}
 
-.band-in{max-width:1180px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;position:relative;z-index:1}
+.band-in{max-width:1440px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;position:relative;z-index:1}
 .band .eyebrow{color:#8FE3A6}
 .band h1{font-size:28px;font-weight:800;margin-top:4px}
 .band p{margin:6px 0 0;color:#CFE6D7;max-width:62ch}
 .band .dchip{color:#E8F3EC}
 .quip{display:flex;align-items:center;gap:8px;margin-top:10px;width:fit-content;max-width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px 6px 10px;font-size:13.5px;color:#fff;font-weight:500}
 .quip svg.i{width:16px;height:16px;color:#F5B92E;flex:none}
-.wrap{max-width:1180px;margin:-52px auto 0;padding-inline:max(24px,env(safe-area-inset-left,0px));position:relative;z-index:2;display:flex;flex-direction:column;gap:20px;animation:rise .28s ease-out}
+.wrap{max-width:1440px;margin:-52px auto 0;padding-inline:max(24px,env(safe-area-inset-left,0px));position:relative;z-index:2;display:flex;flex-direction:column;gap:20px;animation:rise .28s ease-out}
 @keyframes rise{from{opacity:.001;transform:translateY(8px)}to{opacity:1;transform:none}}
 
 /* ---------- panels & widgets ---------- */
@@ -1007,6 +1007,60 @@ html.vt-pf.vt-back::view-transition-new(root){animation-name:pfxInB}
 .mt-ic{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-strong)}
 @media (max-width:640px){ .mt-next{gap:12px;padding:12px} .mt-date{width:60px;height:72px} .mt-date b{font-size:25px} .mt-go{display:none} .mt-wrap{padding:4px 10px 12px} }
 @media (prefers-reduced-motion:reduce){ .mt-live{animation:none} }
+
+/* day pop-up: an agenda. One column of events top to bottom, each with its time on the left; who's out on the side on wide screens */
+.agenda{display:flex;flex-direction:column}
+.ag-time{display:none}
+@media (min-width:900px){
+  .modal.day-wide{max-width:min(1120px,calc(100vw - 48px));width:100%}
+  .agenda{position:relative}
+  .ag-row{display:grid;grid-template-columns:84px minmax(0,1fr);gap:0 16px;position:relative}
+  .ag-row::before{content:"";position:absolute;left:80px;top:0;bottom:0;width:2px;background:var(--line)}
+  .ag-row:first-child::before{top:18px}.ag-row:last-child::before{bottom:calc(100% - 26px)}
+  .ag-time{display:flex;flex-direction:column;align-items:flex-end;padding:12px 18px 0 0;position:relative;text-align:right}
+  .ag-time b{font-family:var(--f-display);font-size:18px;line-height:1.1;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .ag-time b.ag-all{font-size:13px;color:var(--muted)}
+  .ag-time small{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.04em}
+  .ag-time .ag-day{margin-top:4px;color:var(--brand-strong);white-space:nowrap}
+  .ag-dot{position:absolute;right:-3px;top:15px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:3px solid var(--line-strong);z-index:1}
+  .ag-time.need .ag-dot{border-color:var(--st-need)}.ag-time.wait .ag-dot{border-color:var(--st-wait)}.ag-time.ok .ag-dot{border-color:var(--st-ok)}.ag-time.dayoff .ag-dot{border-color:var(--rose)}
+  .ag-row .dcard{margin-bottom:14px}
+  .modal.day-wide .popsort{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between}
+  .modal.day-wide .dcard dl{grid-template-columns:120px minmax(0,1fr)}
+}
+@media (min-width:1200px){
+  .modal.day-wide .dlay{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:24px;align-items:start}
+  .modal.day-wide .dside{position:sticky;top:0;padding:2px 0 8px 20px;border-left:1px solid var(--line)}
+  .modal.day-wide .dside .pp{flex-direction:column;align-items:flex-start}
+}
+/* phones: tighter, so more fits on the screen */
+@media (max-width:640px){
+  #modal .panel-b{padding:12px 12px 14px}
+  .dcard{padding:11px 12px;margin-bottom:10px}
+  .dcard h4{margin-bottom:8px;font-size:15px}
+  .dcard dl{grid-template-columns:86px minmax(0,1fr);gap:5px 10px}
+  .dsec{margin:12px 0 6px}
+  .panel-h{padding:12px 14px}
+  .wrap{gap:14px}
+}
+
+/* people as picture bubbles */
+.pbubs{display:flex;flex-wrap:wrap;gap:6px 8px}
+.pbub{display:inline-flex;align-items:center;gap:7px;padding:3px 10px 3px 3px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);max-width:100%}
+.pbub .av{flex:none;box-shadow:0 0 0 2px var(--surface)}
+.pbub-t{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.pbub-t>span,.pbub-t>.lnk{font-weight:700;font-size:13.5px;color:var(--ink);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbub-t small{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.pbub.ok{border-color:color-mix(in srgb,var(--brand) 40%,transparent);background:color-mix(in srgb,var(--brand-soft) 70%,var(--surface))}
+.pbub.ok .pbub-t small{color:var(--brand-strong)}
+.pbub.wait{border-color:color-mix(in srgb,var(--gold) 40%,transparent);background:color-mix(in srgb,var(--gold-soft) 70%,var(--surface))}
+.pbub.wait .pbub-t small{color:var(--gold)}
+.pill-av{display:inline-flex;align-items:center;gap:6px;padding-left:3px}.pill-av .av{flex:none}
+.as-who{display:inline-flex;align-items:center;gap:8px}.as-who b{font-size:14px}
+.sugp .av{flex:none;margin-left:-4px}
+.name-tog{align-self:flex-start;font-size:12.5px}.name-tog svg.i{width:14px;height:14px}
+.name-tog[aria-pressed="true"]{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-strong)}
+.dsec-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
 
 /* adjust (crop and zoom) */
 .crop{display:flex;flex-direction:column;align-items:center;gap:14px;padding:4px 0}
@@ -2992,6 +3046,24 @@ function toMini(t){
 /* ---------- links between records ----------
    Anything that names another record opens it: a travel order, an offset or day off, an event, a person (admins). */
 function nameToUser(n){ var u = S.users.filter(function(x){ return x.name.toUpperCase() === n; })[0]; return u ? u.username : ''; }
+function fullNamesOn(){ return lGet('pio_names') === 'full'; }
+function shortName(u){
+  u = typeof u === 'string' ? userOf(u) : u; if (!u || !u.name) return '';
+  if (fullNamesOn()) return u.name;
+  var parts = String(u.name).trim().split(/\s+/), f = parts[0];
+  var dup = S.users.some(function(x){ return x.active && x.username !== u.username && String(x.name || '').trim().split(/\s+/)[0].toLowerCase() === f.toLowerCase(); });
+  return dup && parts.length > 1 ? f + ' ' + parts[parts.length - 1].charAt(0) + '.' : f;
+}
+/* a person as a picture bubble: photo (or initials), short name, optional status; full name on hover and for screen readers */
+function personBubble(username, fallbackName, opts){
+  opts = opts || {}; var u = userOf(username) || { username: username || fallbackName, name: fallbackName || username };
+  var lbl = shortName(u) || fallbackName || username, full = u.name || fallbackName || username;
+  var name = isAdmin() && u.username && userOf(u.username) ? '<button type="button" class="lnk" data-person="' + esc(u.username) + '" aria-label="' + esc(full) + '">' + esc(lbl) + '</button>' : '<span aria-label="' + esc(full) + '">' + esc(lbl) + '</span>';
+  return '<span class="pbub ' + (opts.cls || '') + '" data-tip="' + esc(full + (opts.tip ? '\n' + opts.tip : '')) + '">' + avatarHtml(u, opts.size || 28) + '<span class="pbub-t">' + name + (opts.sub ? '<small>' + opts.sub + '</small>' : '') + '</span></span>';
+}
+document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="nameMode"]'); if (!t) return;
+  lSet('pio_names', fullNamesOn() ? null : 'full'); render(); if (S.pop && document.querySelector('#modal .dcard, #modal .dsec')) dayPop(S.pop, true); });
+function nameToggle(){ return '<button type="button" class="chip name-tog" data-act="nameMode" aria-pressed="' + fullNamesOn() + '">' + ic('users') + 'Full names</button>'; }
 function linkPerson(u, label){ return isAdmin() && u ? '<button type="button" class="lnk" data-person="' + esc(u) + '">' + esc(label) + '</button>' : esc(label); }
 function linkTO(t, label){ return t ? '<button type="button" class="lnk" data-act="toView" data-id="' + esc(t.id) + '">' + esc(label || t.event) + '</button>' : ''; }
 function toStatusPill(t){ return '<span class="pill ' + (t.status === 'Prepared' ? 'Confirmed' : t.status === 'Cancelled' ? 'Rejected' : 'Pending') + '">' + (t.status === 'Filed' ? 'To prepare' : t.status) + '</span>'; }
@@ -3440,7 +3512,7 @@ function assignModal(id){
 function evCard(e){
   var st = evState(e), cs = canSched(), adm = isAdmin(), tasking = evKind(e) === 'tasking', ppl = evPeople(e, evDayFor(e)), mine = evMine(e, S.me.username), ts = evLinked(e);
   var row = function(k, v){ return '<dt>' + k + '</dt><dd>' + v + '</dd>'; };
-  var people = ppl.length ? '<div class="pp">' + ppl.map(function(p){ return '<span class="pill ' + (p.st === 'To prepare' || p.st === 'Assigned' ? 'Pending' : 'Confirmed') + '">' + linkPerson(p.u, p.name) + (p.st ? ' · ' + p.st : '') + (p.part ? ' · <b>' + esc(p.part) + '</b>' : '') + '</span>'; }).join('') + '</div>' : (e.status === 'Cancelled' ? '<span class="hint">None</span>' : st === 'dayoff' ? '<span class="hint">No one needed: this event only carries a day-off travel order</span>' : '<span class="pill e-need">No one dispatched yet</span>');
+  var people = ppl.length ? '<div class="pp pbubs">' + ppl.map(function(p){ return personBubble(p.u, p.name, { cls: p.st === 'To prepare' || p.st === 'Assigned' ? 'wait' : p.st ? 'ok' : '', sub: esc([p.st, p.part].filter(Boolean).join(' · ')), tip: [p.st, p.part].filter(Boolean).join(' · ') }); }).join('') + '</div>' : (e.status === 'Cancelled' ? '<span class="hint">None</span>' : st === 'dayoff' ? '<span class="hint">No one needed: this event only carries a day-off travel order</span>' : '<span class="pill e-need">No one dispatched yet</span>');
   // people whose day-off travel order names this event: shown apart, never as dispatched
   var offN = []; evOffsetTOs(e).forEach(function(t){ (t.names || []).forEach(function(n){ if (offN.indexOf(n) < 0) offN.push(n); }); });
   if (offN.length) people += '<div class="hint" style="margin-top:6px">' + ic('plane') + ' Day off only, not dispatched: ' + offN.map(function(n){ return linkPerson(nameToUser(n), dispName(n)); }).join(', ') + '</div>';
@@ -3491,32 +3563,39 @@ function dayPop(k, inPlace){
   var popF = S.popF && cnt[S.popF] ? S.popF : null, total = evs.length;
   if (popF) evs = evs.filter(function(e){ return evState(e) === popF; });
   var sortBar = total > 1 ? '<div class="popsort"><div class="pop-cnt" role="group" aria-label="Show only">' + [['need', 'Need people'], ['wait', 'Waiting for TO'], ['ok', 'Ready']].filter(function(x){ return cnt[x[0]]; }).map(function(x){ return '<button type="button" class="pcnt" data-act="popF" data-f="' + x[0] + '" aria-pressed="' + (popF === x[0]) + '"><i class="lg b-' + x[0] + '" aria-hidden="true"></i><b>' + cnt[x[0]] + '</b> ' + x[1] + (popF === x[0] ? ic('x') : '') + '</button>'; }).join('') + '</div>' +
-    '<div class="tabs" role="group" aria-label="Sort events">' + [['need', 'Needs people first'], ['ok', 'Ready first'], ['time', 'By time']].map(function(x){ return '<button type="button" data-act="popSort" data-s="' + x[0] + '" aria-pressed="' + (popSort === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></div>' : '';
+    nameToggle() + '<div class="tabs" role="group" aria-label="Sort events">' + [['need', 'Needs people first'], ['ok', 'Ready first'], ['time', 'By time']].map(function(x){ return '<button type="button" data-act="popSort" data-s="' + x[0] + '" aria-pressed="' + (popSort === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></div>' : '';
   var away = []; S.users.filter(function(u){ return u.active; }).forEach(function(u){ var s = statusOn(u.username, k); if (s) away.push({ u: u, s: s }); });
   var ents = S.entries.filter(function(e){ return e.date === k && e.status !== 'Rejected' && (adm || e.username === S.me.username); });
   var body = (h ? '<div class="info-note">' + ic('flag') + '<span>' + esc(h.name) + ' · ' + esc(h.kind) + ' holiday</span></div>' : '') +
-    '<div class="dsec">Events' + (total ? ' <span class="hint">· ' + (popF ? evs.length + ' of ' + total : total) + '</span>' : '') + '</div>' + sortBar + (evs.length ? (EV_DAY = k, evs.map(evCard).join('') + (EV_DAY = '')) : '<p class="hint" style="margin:0 0 8px">No events on this day.</p>') +
-    '<div class="dsec">Out of the office</div>' + (away.length ? '<div class="pp">' + away.map(function(x){ return '<span class="pill st-' + (x.s.kind === 'to' ? 'to' : 'lv') + '">' + esc(firstName(x.u.username)) + ' · ' + esc(x.s.kind === 'to' ? 'Travel: ' + x.s.label : x.s.label) + '</span>'; }).join('') + '</div>' : '<p class="hint" style="margin:0">Everyone is in.</p>') +
-    (ents.length ? '<div class="dsec">Offsets</div><ul class="list">' + ents.map(function(e){ return entryRow(e, { showName: adm }); }).join('') + '</ul>' : '');
+    '<div class="dlay"><div class="dmain"><div class="dsec">Events' + (total ? ' <span class="hint">· ' + (popF ? evs.length + ' of ' + total : total) + '</span>' : '') + '</div>' + sortBar + (evs.length ? '<div class="agenda">' + (EV_DAY = k, evs.map(function(e){ return agRow(e, k); }).join('') + (EV_DAY = '')) + '</div>' : '<p class="hint" style="margin:0 0 8px">No events on this day.</p>') +
+    '</div><aside class="dside"><div class="dsec">Out of the office</div>' + (away.length ? '<div class="pp">' + away.map(function(x){ return '<span class="pill st-' + (x.s.kind === 'to' ? 'to' : 'lv') + ' pill-av">' + avatarHtml(x.u, 20) + esc(shortName(x.u) || firstName(x.u.username)) + ' · ' + esc(x.s.kind === 'to' ? 'Travel: ' + x.s.label : x.s.label) + '</span>'; }).join('') + '</div>' : '<p class="hint" style="margin:0">Everyone is in.</p>') +
+    (ents.length ? '<div class="dsec">Offsets</div><ul class="list">' + ents.map(function(e){ return entryRow(e, { showName: adm }); }).join('') + '</ul>' : '') + '</aside></div>';
   var foot = '<button type="button" class="btn btn-ghost" data-act="close">Close</button>' + (cs ? '<button type="button" class="btn btn-primary" data-act="evNew" data-d="' + k + '">' + ic('plus') + 'Add event</button>' : '') +
     (adm ? '<button type="button" class="btn btn-ghost" data-act="useModal" data-date="' + k + '">' + ic('minus') + 'Record use</button>' : '') +
     (future ? '<button type="button" class="btn btn-ghost" data-act="requestModal" data-date="' + k + '">' + ic('plane') + 'Use offset</button>' : '<button type="button" class="btn btn-ghost" data-act="logOn" data-date="' + k + '">' + ic('plus') + 'Log offset</button>');
   if (inPlace && document.querySelector('#modal .panel-b')) return popSwap(body);
   modal(fDate(k, { weekday:'long', month:'long', day:'numeric', year:'numeric' }), body, foot);
+  var md = document.querySelector('#modal .modal'); if (md) md.classList.add('day-wide');
 }
 /* change the pop-up's contents without reopening it: cards that stay glide to their new place,
    cards that come back fade in, so sorting and filtering read as a reorder, not a reload */
+function agRow(e, k){
+  var st = evState(e), t = String(e.time || ''), h = +t.slice(0, 2), m = t.slice(3, 5);
+  var time = /^\d\d:\d\d$/.test(t) ? '<b>' + ((h % 12) || 12) + ':' + m + '</b><small>' + (h < 12 ? 'AM' : 'PM') + '</small>' : '<b class="ag-all">All day</b>';
+  var e2 = e.dateTo || e.date, n = dayDiff(e2, e.date) + 1, at = dayDiff(k, e.date) + 1;
+  return '<div class="ag-row" data-ag="' + esc(e.id) + '"><div class="ag-time ' + st + '">' + time + (n > 1 ? '<small class="ag-day">Day ' + at + ' of ' + n + '</small>' : '') + '<i class="ag-dot" aria-hidden="true"></i></div>' + evCard(e) + '</div>';
+}
 function popSwap(body){
   var sc = document.querySelector('#modal .panel-b'), old = {}, top = sc.scrollTop;
-  sc.querySelectorAll('.dcard[data-ev]').forEach(function(c){ old[c.dataset.ev] = c.getBoundingClientRect().top; });
+  sc.querySelectorAll('.ag-row[data-ag]').forEach(function(c){ var r0 = c.getBoundingClientRect(); old[c.dataset.ag] = { t: r0.top, l: r0.left }; });
   var foc = document.activeElement && document.activeElement.closest('#modal [data-act]'), fsel = foc && (foc.dataset.act === 'popF' ? '[data-act="popF"][data-f="' + foc.dataset.f + '"]' : foc.dataset.act === 'popSort' ? '[data-act="popSort"][data-s="' + foc.dataset.s + '"]' : null);
   sc.innerHTML = body + '<p class="error" id="merr" role="alert"></p>'; sc.scrollTop = top;
   var nf = fsel && sc.querySelector(fsel); if (nf) nf.focus({ preventScroll: true });
   if (lessMotion()) return;
   var i = 0, dur = 340;
-  sc.querySelectorAll('.dcard[data-ev]').forEach(function(c){
-    var o = old[c.dataset.ev];
-    if (o != null){ var dy = o - c.getBoundingClientRect().top; if (Math.abs(dy) > 1) settle(c.animate([{ transform: 'translateY(' + dy + 'px)' }, { transform: 'none' }], { duration: dur, easing: MOTION.easeOut }), dur); }
+  sc.querySelectorAll('.ag-row[data-ag]').forEach(function(c){
+    var o = old[c.dataset.ag];
+    if (o != null){ var r1 = c.getBoundingClientRect(), dy = o.t - r1.top, dx = o.l - r1.left; if (Math.abs(dy) > 1 || Math.abs(dx) > 1) settle(c.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' }, { transform: 'none' }], { duration: dur, easing: MOTION.easeOut }), dur); }
     else { var d = Math.min(i++, 6) * 40; settle(c.animate([{ opacity: 0, transform: 'translateY(10px) scale(.98)' }, { opacity: 1, transform: 'none' }], { duration: MOTION.inMs, delay: d, easing: MOTION.easeOut, fill: 'backwards' }), MOTION.inMs + d); }
   });
 }
@@ -6348,7 +6427,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
    newest version and a few lines on what changed. When it differs from this page's APP_VER, a card offers
    a refresh. Checked when the app comes back to the front and every 10 minutes. Keep APP_VER, version.json
    and the cache name in sw.js the same when publishing. */
-var APP_VER = 'v79';
+var APP_VER = 'v81';
 (function(){
   var shown = null, last = 0;
   function check(force){
@@ -6888,24 +6967,24 @@ function suggestFor(e){
     f.querySelectorAll('input[name=user]').forEach(function(cb){
       var lab = cb.closest('label'), u = userOf(cb.value), b = busyRange(cb.value, e), sp = lab && lab.querySelector('span');
       if (!sp) return;
-      sp.innerHTML = esc(u ? u.name : cb.value) + (b ? ' <small class="hint' + (b.hard ? ' busy' : '') + '">' + esc(b.why) + '</small>' : '') + skillChips(u);
+      sp.innerHTML = '<span class="as-who">' + avatarHtml(u || { username: cb.value, name: cb.value }, 30) + '<b title="' + esc(u ? u.name : cb.value) + '">' + esc(u ? shortName(u) : cb.value) + '</b></span>' + (b ? ' <small class="hint' + (b.hard ? ' busy' : '') + '">' + esc(b.why) + '</small>' : '') + skillChips(u);
       if (b && b.hard) lab.classList.add('is-busy');
     });
     var sug = suggestFor(e), pb = f.querySelector('.panel-b') || f, sb = f.querySelector('.sumbox');
     var LM = loadMap(), fp = fairPicks(e, LM);
     var html = fp.length ? '<div class="dsec">Suggested · giving others a turn</div><p class="hint" style="margin:0 0 8px">Covers what the event needs, favouring people with fewer trips in the last 30 days.</p>' +
       '<div class="sugppl fairppl">' + fp.map(function(p){ var on = cur.indexOf(p.u.username) >= 0;
-        return '<button type="button" class="sugp' + (on ? ' on' : '') + '" data-act="sugPick" data-u="' + esc(p.u.username) + '" aria-pressed="' + on + '">' + (on ? ic('check') : ic('plus')) + '<span>' + esc(p.u.name) + '<small>' + (p.why ? esc(p.why) + ' · ' : '') + esc(loadText(p.load)) + '</small></span></button>'; }).join('') +
+        return '<button type="button" class="sugp' + (on ? ' on' : '') + '" data-act="sugPick" data-u="' + esc(p.u.username) + '" aria-pressed="' + on + '">' + (on ? ic('check') : ic('plus')) + avatarHtml(p.u, 26) + '<span title="' + esc(p.u.name) + '">' + esc(shortName(p.u)) + '<small>' + (p.why ? esc(p.why) + ' · ' : '') + esc(loadText(p.load)) + '</small></span></button>'; }).join('') +
       '</div><div class="row-btns" style="margin:8px 0 4px"><button type="button" class="btn btn-sm btn-ghost" data-act="fairAll">' + ic('users') + 'Pick all ' + fp.length + '</button></div>' : '';
     if (sug.length){
       html += '<div class="dsec">Suggested for what is needed</div>' + sug.map(function(g){
         var list = g.people.length ? g.people.map(function(p){ var on = cur.indexOf(p.u.username) >= 0;
-          return '<button type="button" class="sugp' + (on ? ' on' : '') + (p.busy && p.busy.hard ? ' busy' : '') + '" data-act="sugPick" data-u="' + esc(p.u.username) + '" aria-pressed="' + on + '">' + (on ? ic('check') : ic('plus')) + '<span>' + esc(p.u.name) + (p.busy ? '<small>' + esc(p.busy.why) + '</small>' : '<small>Free</small>') + '</span></button>'; }).join('')
+          return '<button type="button" class="sugp' + (on ? ' on' : '') + (p.busy && p.busy.hard ? ' busy' : '') + '" data-act="sugPick" data-u="' + esc(p.u.username) + '" aria-pressed="' + on + '">' + (on ? ic('check') : ic('plus')) + avatarHtml(p.u, 26) + '<span title="' + esc(p.u.name) + '">' + esc(shortName(p.u)) + (p.busy ? '<small>' + esc(p.busy.why) + '</small>' : '<small>Free</small>') + '</span></button>'; }).join('')
           : '<span class="hint">Nobody has the ' + esc(g.skills.join(' or ')) + ' skill yet. Add skills from <b>Staff skills</b>.</span>';
         return '<div class="sugrow"><b>' + esc(g.need) + '</b><div class="sugppl">' + list + '</div></div>'; }).join('');
     } else html += '<p class="hint" style="margin:8px 0 0">Tick what the event needs (Edit event) to get suggested people by skill.</p>';
     html += '<div class="row-btns" style="margin-top:8px">' + (canSkills() ? '<button type="button" class="btn btn-sm btn-ghost" data-act="skillsModal">' + ic('users') + 'Staff skills</button>' : '') +
-      (inProd() ? '<button type="button" class="btn btn-sm btn-ghost" data-act="gearModal" data-id="' + esc(e.id) + '">' + ic('camera') + 'Equipment to bring</button>' : '') + '</div><div class="dsec">Everyone, by division</div>' +
+      (inProd() ? '<button type="button" class="btn btn-sm btn-ghost" data-act="gearModal" data-id="' + esc(e.id) + '">' + ic('camera') + 'Equipment to bring</button>' : '') + '</div><div class="dsec dsec-row">Everyone, by division' + nameToggle() + '</div>' +
       '<input class="input as-q" id="asQ" type="search" placeholder="Search name, skill or division" aria-label="Search people" autocomplete="off"><p class="hint as-none" hidden style="margin:8px 0 0">No one matches.</p>';
     var box = document.createElement('div'); box.innerHTML = html;
     if (sb && sb.nextSibling) pb.insertBefore(box, sb.nextSibling); else pb.insertBefore(box, pb.firstChild);
@@ -6978,10 +7057,10 @@ document.addEventListener('change', function(ev){
     var div = document.createElement('div'); div.className = 'tosug';
     // giving others a turn: people who fit and have had fewer trips lately
     div.innerHTML = (fp.length ? '<span class="label" style="margin:0 0 4px">Suggested · giving others a turn</span><p class="hint" style="margin:0 0 8px">Covers what the event needs, favouring people with fewer trips in the last 30 days.</p>' +
-      '<div class="sugppl fairto">' + fp.map(function(p){ var on = have(p.u); return '<button type="button" class="sugp' + (on ? ' on' : '') + '" data-act="toSug" data-n="' + esc(p.u.name.toUpperCase()) + '">' + ic(on ? 'check' : 'plus') + '<span>' + esc(p.u.name) + '<small>' + (p.why ? esc(p.why) + ' · ' : '') + esc(loadText(p.load)) + '</small></span></button>'; }).join('') +
+      '<div class="sugppl fairto">' + fp.map(function(p){ var on = have(p.u); return '<button type="button" class="sugp' + (on ? ' on' : '') + '" data-act="toSug" data-n="' + esc(p.u.name.toUpperCase()) + '">' + ic(on ? 'check' : 'plus') + avatarHtml(p.u, 26) + '<span title="' + esc(p.u.name) + '">' + esc(shortName(p.u)) + '<small>' + (p.why ? esc(p.why) + ' · ' : '') + esc(loadText(p.load)) + '</small></span></button>'; }).join('') +
       '</div><div class="row-btns" style="margin:8px 0 12px"><button type="button" class="btn btn-sm btn-ghost" data-act="toFairAll">' + ic('users') + 'Add all ' + fp.length + '</button></div>' : '') +
       (sug.length ? '<span class="label" style="margin:0 0 6px">Suggested for what is needed</span>' : '') + sug.map(function(g){
-      return '<div class="sugrow"><b>' + esc(g.need) + '</b><div class="sugppl">' + (g.people.length ? g.people.map(function(p){ return '<button type="button" class="sugp' + (p.busy && p.busy.hard ? ' busy' : '') + '" data-act="toSug" data-n="' + esc(p.u.name.toUpperCase()) + '">' + ic('plus') + '<span>' + esc(p.u.name) + '<small>' + esc(p.busy ? p.busy.why : 'Free') + ' · ' + esc(loadText(LM[p.u.username])) + '</small></span></button>'; }).join('') : '<span class="hint">Nobody has this skill yet.</span>') + '</div></div>'; }).join('');
+      return '<div class="sugrow"><b>' + esc(g.need) + '</b><div class="sugppl">' + (g.people.length ? g.people.map(function(p){ return '<button type="button" class="sugp' + (p.busy && p.busy.hard ? ' busy' : '') + '" data-act="toSug" data-n="' + esc(p.u.name.toUpperCase()) + '">' + ic('plus') + avatarHtml(p.u, 26) + '<span title="' + esc(p.u.name) + '">' + esc(shortName(p.u)) + '<small>' + esc(p.busy ? p.busy.why : 'Free') + ' · ' + esc(loadText(LM[p.u.username])) + '</small></span></button>'; }).join('') : '<span class="hint">Nobody has this skill yet.</span>') + '</div></div>'; }).join('');
     pick.appendChild(div);
   };
 })();

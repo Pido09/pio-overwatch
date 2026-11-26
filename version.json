@@ -1,7 +1,8 @@
 {
-  "ver": "v79",
+  "ver": "v81",
   "notes": [
-    "Adjust your profile photo before saving: drag to move it, zoom in or out, and keep the part you want",
-    "Paste your profile picture straight from a website: copy the picture, then press Ctrl+V"
+    "On laptops, a day opens as an agenda: events top to bottom with their time on the left, who's out on the side",
+    "Pages use more of wide screens; phones fit more on screen",
+    "Events show who's going as picture bubbles with first names (tap Full names to switch)"
   ]
 }
