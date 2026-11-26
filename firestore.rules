@@ -27,10 +27,13 @@ service cloud.firestore {
       allow create: if isAdmin() || (setupBatch() && uid == request.auth.uid && request.resource.data.role == 'admin');
       allow update, delete: if isAdmin();
     }
-    // username -> sign-in address; needed before signing in
+    // username -> sign-in address, plus name, division and photo for the sign-in page; needed before signing in
     match /logins/{username} {
       allow read: if true;
       allow write: if adminWrite();
+      // everyone may change their own photo
+      allow update: if isMember() && username == myName()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['photo']);
     }
     match /divisions/{id} {
       allow read: if true;                       // the sign-in page shows the divisions
@@ -39,9 +42,9 @@ service cloud.firestore {
     match /users/{username} {
       allow read: if isMember();
       allow write: if adminWrite() && stamped();
-      // staff may change only their own division (picked on the sign-in page)
+      // staff may change only their own division (picked on the sign-in page) and their own photo
       allow update: if isMember() && username == myName() && stamped()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['division', '_t']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['division', 'photo', '_t']);
       // division leaders may change skills only
       allow update: if isLeader() && stamped()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['skills', '_t']);

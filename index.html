@@ -904,6 +904,125 @@ button,[role=button],a,input,select,summary,label{touch-action:manipulation}
 }
 .dcard{border:1px solid var(--line);border-left:5px solid var(--ec,var(--line-strong));border-radius:10px;padding:12px 14px;margin:0 0 12px;background:var(--surface)}
 .dcard.need{--ec:var(--red)} .dcard.wait{--ec:var(--gold)} .dcard.ok{--ec:var(--brand)} .dcard.off{--ec:var(--line-strong)}
+/* avatars */
+.av{display:inline-block;border-radius:50%;object-fit:cover;flex:none;background:var(--surface-2)}
+.av-i{display:inline-grid;place-items:center;color:#fff;font-weight:800;font-family:var(--f-display);letter-spacing:.02em}
+.av-i svg.i{width:45%;height:45%}
+.av-btn{all:unset;position:relative;display:inline-flex;border-radius:50%;cursor:pointer;flex:none;transition:transform .2s var(--ease-out,ease)}
+.av-btn:hover{transform:scale(1.05)}.av-btn:focus-visible{outline:3px solid var(--brand-glow);outline-offset:2px}
+.av-cam{position:absolute;right:-2px;bottom:-2px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--brand);color:#fff;border:2px solid var(--surface)}
+.av-cam svg.i{width:12px;height:12px}
+.ph-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;padding:8px 0}
+.ph-av{box-shadow:0 12px 30px -12px rgba(0,0,0,.4)}
+
+/* sign-in: a full-screen profile picker (always dark, like a TV app) */
+.pfx{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;padding:20px 16px 36px;color:#fff;background:radial-gradient(1100px 560px at 50% -8%,rgba(47,163,78,.2),transparent 62%),radial-gradient(800px 500px at 50% 115%,rgba(245,185,46,.07),transparent 65%),#09100D;color-scheme:dark}
+.pfx-top{align-self:stretch;display:flex;align-items:center;gap:10px;max-width:1240px;width:100%;margin:0 auto}
+.pfx-top img{width:40px;height:40px}.pfx-top b{font-family:var(--f-display);font-weight:800;font-size:16px;letter-spacing:.01em}
+.pfx-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:1060px;padding:24px 0}
+.pfx-h{font-family:var(--f-display);font-weight:600;font-size:clamp(28px,4.4vw,54px);letter-spacing:-.01em;margin:0 0 clamp(22px,3.4vw,40px);text-align:center;color:#fff}
+.pfx-row{display:flex;flex-wrap:wrap;justify-content:center;gap:clamp(16px,2.4vw,30px)}
+.pfx-tile{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:12px;width:clamp(100px,11vw,150px);text-align:center;-webkit-tap-highlight-color:transparent}
+.pfx-av{display:block;width:100%;aspect-ratio:1;border-radius:clamp(10px,1.1vw,16px);overflow:hidden;outline:3px solid transparent;outline-offset:0;transition:outline-color .22s ease,transform .35s cubic-bezier(.22,1,.36,1)}
+.pfx-av>.av,.pfx-av>.dbadge{display:grid!important;place-items:center;width:100%!important;height:100%!important;border-radius:0!important}
+.pfx-av>.dbadge svg.i{width:42%;height:42%}.pfx-av>.dbadge img{width:70%;height:70%;object-fit:contain}
+.pfx-n{font-size:clamp(13px,1.25vw,17px);font-weight:500;line-height:1.25;color:#8E9B94;transition:color .22s ease;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pfx-s{font-size:12px;color:#62706A;margin-top:-6px}
+.pfx-tile:hover .pfx-av,.pfx-tile:focus-visible .pfx-av{outline-color:#fff;transform:scale(1.035)}
+.pfx-tile:hover .pfx-n,.pfx-tile:focus-visible .pfx-n{color:#fff}
+.pfx-tile:active .pfx-av{transform:scale(.97)}
+.pfx-alt{all:unset;cursor:pointer;margin-top:clamp(28px,5vw,60px);border:1px solid #5C6B63;color:#A4B2AA;padding:10px 22px;font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;transition:color .2s,border-color .2s}
+.pfx-alt:hover,.pfx-alt:focus-visible{color:#fff;border-color:#fff}
+.pfx-back{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;color:#A4B2AA;font-weight:600;font-size:15px;padding:6px 12px 6px 6px;border-radius:999px;margin-bottom:18px;transition:color .2s,background-color .2s}
+.pfx-back:hover,.pfx-back:focus-visible{color:#fff;background:rgba(255,255,255,.07)}.pfx-back>svg.i{width:20px;height:20px}
+.pfx-chip{display:inline-flex}
+.pfx-pin{display:flex;flex-direction:column;align-items:center;width:100%;max-width:420px}
+.pfx-me{width:clamp(108px,12vw,140px);outline:0;box-shadow:0 22px 50px -20px rgba(0,0,0,.8)}
+.pfx-name{font-family:var(--f-display);font-size:clamp(20px,2vw,26px);margin-top:14px}
+.pfx-ask{color:#A4B2AA;margin:6px 0 18px;font-size:15px}
+.pfx-boxes{position:relative;display:flex;gap:10px}
+.pfx-boxes input{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;border:0;cursor:text;z-index:1}
+.pfx-box{width:clamp(42px,6vw,54px);height:clamp(52px,7vw,64px);border:2px solid #4A5852;border-radius:10px;display:grid;place-items:center;transition:border-color .18s,transform .18s cubic-bezier(.22,1,.36,1),background-color .18s}
+.pfx-box.opt{border-style:dashed;border-color:#34403A}
+.pfx-box.on{border-color:#fff;border-style:solid;background:rgba(255,255,255,.05)}
+.pfx-box.on::after{content:"";width:12px;height:12px;border-radius:50%;background:#fff;animation:pfxDot .22s cubic-bezier(.22,1,.36,1)}
+.pfx-box.cur{border-color:var(--mint);transform:translateY(-2px)}
+@keyframes pfxDot{from{transform:scale(0)}}
+.pfx-boxes:focus-within .pfx-box.cur{box-shadow:0 0 0 4px rgba(91,208,119,.18)}
+.pfx-err{min-height:20px;margin:12px 0 0;color:#FF8A80;text-align:center}
+.pfx-go{all:unset;cursor:pointer;margin-top:10px;background:#fff;color:#0B2A18;font-weight:700;padding:12px 40px;border-radius:999px;transition:transform .15s,background-color .2s,box-shadow .2s}
+.pfx-go:hover{box-shadow:0 10px 26px -10px rgba(255,255,255,.45)}.pfx-go:active{transform:scale(.97)}.pfx-go:focus-visible{outline:3px solid var(--mint);outline-offset:3px}
+.pfx .keep{margin-top:16px;color:#A4B2AA}
+.pfx-hint{color:#62706A;font-size:13px;margin:10px 0 0}
+.pfx-busy .pfx-me{animation:pfxPulse 1.1s ease-in-out infinite}
+@keyframes pfxPulse{50%{box-shadow:0 0 0 10px rgba(91,208,119,.15),0 22px 50px -20px rgba(0,0,0,.8)}}
+/* first arrival: the heading, then the pictures one after another */
+.pfx-intro .pfx-h{animation:pfxUp .5s cubic-bezier(.22,1,.36,1) both}
+.pfx-intro .pfx-tile{animation:pfxUp .55s cubic-bezier(.22,1,.36,1) both}
+.pfx-intro .pfx-tile:nth-child(2){animation-delay:.05s}.pfx-intro .pfx-tile:nth-child(3){animation-delay:.1s}.pfx-intro .pfx-tile:nth-child(4){animation-delay:.15s}.pfx-intro .pfx-tile:nth-child(5){animation-delay:.2s}.pfx-intro .pfx-tile:nth-child(n+6){animation-delay:.25s}
+@keyframes pfxUp{from{opacity:0;transform:translateY(14px) scale(.96)}}
+/* between steps: the rest fades through a gentle zoom (in when going forward, out when going back); the picked picture morphs */
+html.vt-pf::view-transition-old(root){animation:pfxOut .2s cubic-bezier(.55,0,1,.45) both}
+html.vt-pf::view-transition-new(root){animation:pfxIn .42s cubic-bezier(.22,1,.36,1) .06s both}
+html.vt-pf.vt-back::view-transition-old(root){animation-name:pfxOutB}
+html.vt-pf.vt-back::view-transition-new(root){animation-name:pfxInB}
+@keyframes pfxOut{to{opacity:0;transform:scale(.97)}}
+@keyframes pfxIn{from{opacity:0;transform:scale(1.03)}}
+@keyframes pfxOutB{to{opacity:0;transform:scale(1.03)}}
+@keyframes pfxInB{from{opacity:0;transform:scale(.97)}}
+::view-transition-group(pf-user),::view-transition-group(pf-div){animation-duration:.5s;animation-timing-function:cubic-bezier(.22,1,.36,1)}
+::view-transition-old(pf-user),::view-transition-new(pf-user),::view-transition-old(pf-div),::view-transition-new(pf-div){height:100%;object-fit:cover}
+@media (max-width:640px){ .pfx-row{gap:18px 14px} .pfx-tile{width:calc((100% - 28px) / 3);max-width:120px} .pfx-h{font-size:28px} .pfx-box{width:44px;height:54px} .pfx-boxes{gap:8px} }
+@media (prefers-reduced-motion:reduce){ .pfx-intro .pfx-h,.pfx-intro .pfx-tile,.pfx-box.on::after,.pfx-busy .pfx-me{animation:none} }
+
+/* sidebar: a floating glass panel that collapses to icons */
+.nav button{transition:background-color .2s,color .2s,box-shadow .25s,transform .15s}
+.nav button[aria-current="page"]{background:#fff;color:#0B4A25;font-weight:700;box-shadow:0 8px 20px -10px rgba(0,0,0,.55)}
+.nav button[aria-current="page"]::before{content:none}
+.nav button[aria-current="page"] svg.i{color:#127238}
+.side-tog{display:none}
+@media (min-width:1101px){
+  .shell{grid-template-columns:var(--sidew,268px) minmax(0,1fr);transition:grid-template-columns .36s cubic-bezier(.22,1,.36,1)}
+  html.side-mini .shell{--sidew:96px}
+  .side{top:12px;margin:12px 0 12px 12px;height:calc(100vh - 24px);border-radius:26px;padding:16px 12px;background:linear-gradient(185deg,rgba(17,86,46,.88),rgba(7,40,22,.93));-webkit-backdrop-filter:blur(22px) saturate(1.4);backdrop-filter:blur(22px) saturate(1.4);border:1px solid rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 24px 50px -24px rgba(4,30,16,.6);scrollbar-width:none;overflow-x:hidden}
+  .side::-webkit-scrollbar{display:none}
+  .brand{position:relative;padding:4px 4px 16px}
+  .side-tog{display:grid;place-items:center;position:absolute;right:-2px;top:12px;width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:#E8F3EC;cursor:pointer;transition:background-color .2s,transform .36s cubic-bezier(.22,1,.36,1)}
+  .side-tog:hover{background:rgba(255,255,255,.16)}.side-tog svg.i{width:16px;height:16px}
+  .side-tog:focus-visible{outline:3px solid var(--brand-glow);outline-offset:2px}
+  .nav button{border-radius:14px}
+  .brand-t,.nav button>span:not(.badge),.who-t,.side-search kbd,.nav-h{transition:opacity .2s ease,max-width .36s cubic-bezier(.22,1,.36,1);max-width:200px;white-space:nowrap;overflow:hidden}
+  html.side-mini .side{padding:16px 10px}
+  html.side-mini .brand{flex-direction:column;gap:12px;align-items:center;padding:4px 0 14px}
+  html.side-mini .side-tog{position:static;transform:rotate(180deg)}
+  html.side-mini .brand-t,html.side-mini .nav button>span:not(.badge),html.side-mini .who-t,html.side-mini .side-search kbd{opacity:0;max-width:0}
+  html.side-mini .nav-h{font-size:0;padding:0;margin:8px 14px;height:1px;background:rgba(232,243,236,.12)}
+  html.side-mini .nav button{justify-content:center;gap:0;padding:11px 0}
+  html.side-mini .nav .side-search{justify-content:center;gap:0;padding:11px 0;margin-left:0;margin-right:0;width:auto}
+  html.side-mini .nav .badge{position:absolute;top:4px;right:10px;min-width:16px;height:16px;font-size:10px;padding:0 4px}
+  html.side-mini .who{justify-content:center;padding:6px 0}
+  html.side-mini .themepick{grid-template-columns:1fr;gap:4px}
+  html.side-mini .themepick span{display:none}
+}
+
+/* motion: one rhythm for buttons, tiles and pop-ups */
+.btn{transition:background-color .18s,border-color .18s,color .18s,box-shadow .22s,transform .15s cubic-bezier(.22,1,.36,1)}
+.btn:active:not(:disabled){transform:scale(.97)}
+button.tile{transition:transform .28s cubic-bezier(.22,1,.36,1),box-shadow .28s,border-color .2s}
+button.tile:hover{transform:translateY(-2px);box-shadow:0 18px 34px -20px rgba(14,30,51,.4)}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.965)}to{opacity:1;transform:none}}
+.modal{animation:pop .32s cubic-bezier(.22,1,.36,1)}
+@keyframes scrimIn{from{opacity:0}}
+.scrim{animation:scrimIn .24s ease-out}
+/* page changes: the content slides over gently; the menu stays put */
+main.main{view-transition-name:page}
+html.vt-theme main.main{view-transition-name:none}
+::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+::view-transition-old(page){animation:vtOut .16s cubic-bezier(.55,0,1,.45) both}
+::view-transition-new(page){animation:vtIn .34s cubic-bezier(.22,1,.36,1) both}
+@keyframes vtOut{to{opacity:0;transform:translateY(-6px)}}
+@keyframes vtIn{from{opacity:0;transform:translateY(12px)}}
+@media (prefers-reduced-motion:reduce){ ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important} .modal,.scrim{animation:none} }
 .ad-row{padding:8px 0;border-top:1px solid var(--line)}.ad-row>b{display:block;font-size:14px;margin-bottom:6px}
 .ad-days{display:flex;flex-wrap:wrap;gap:6px}
 .ad-day{position:relative;cursor:pointer}.ad-day input{position:absolute;opacity:0;pointer-events:none}
@@ -1026,12 +1145,29 @@ function applyTheme(t){
 }
 applyTheme(themePref());
 if (window.matchMedia) try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){ applyTheme(themePref()); }); } catch(e){}
+/* light / dark: the new look spreads out in a circle from where you tapped */
+function themeSwitch(t, x, y){
+  var before = document.documentElement.getAttribute('data-theme') || '', dark0 = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
+  var willDark = t === 'dark' || (t === 'auto' && dark0), wasDark = before === 'dark' || (!before && dark0);
+  if (!document.startViewTransition || lessMotion() || willDark === wasDark){ applyTheme(t); return; }
+  x = x || window.innerWidth / 2; y = y || window.innerHeight / 2;
+  var r = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+  document.documentElement.classList.add('vt-theme');
+  var vt = document.startViewTransition(function(){ applyTheme(t); });
+  vt.ready.then(function(){ document.documentElement.animate({ clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + r + 'px at ' + x + 'px ' + y + 'px)'] }, { duration: 560, easing: 'cubic-bezier(.22,1,.36,1)', pseudoElement: '::view-transition-new(root)' }); }).catch(function(){});
+  var clr = function(){ document.documentElement.classList.remove('vt-theme'); }; vt.finished.finally(clr); setTimeout(clr, 1500);   // never left on if the page stops drawing
+}
 function themePick(){ var t = themePref();
   return '<div class="themepick" role="group" aria-label="Appearance">' + [['auto', 'Auto', 'sliders'], ['light', 'Light', 'sun'], ['dark', 'Dark', 'moon']].map(function(x){
     return '<button type="button" data-act="setTheme" data-t="' + x[0] + '" aria-pressed="' + (t === x[0]) + '" title="' + (x[0] === 'auto' ? 'Follow this device' : x[1] + ' mode') + '">' + ic(x[2]) + '<span>' + x[1] + '</span></button>'; }).join('') + '</div>'; }
 document.addEventListener('click', function(ev){ var b = ev.target.closest('[data-act="setTheme"]'); if (!b) return;
   try { if (b.dataset.t === 'auto') localStorage.removeItem('pio_theme'); else localStorage.setItem('pio_theme', b.dataset.t); } catch(e){}
-  applyTheme(b.dataset.t); document.querySelectorAll('[data-act="setTheme"]').forEach(function(x){ x.setAttribute('aria-pressed', String(x.dataset.t === b.dataset.t)); }); });
+  themeSwitch(b.dataset.t, ev.clientX, ev.clientY); document.querySelectorAll('[data-act="setTheme"]').forEach(function(x){ x.setAttribute('aria-pressed', String(x.dataset.t === b.dataset.t)); }); });
+function sideMini(){ try { return localStorage.getItem('pio_side') === 'mini'; } catch(e){ return false; } }
+try { if (localStorage.getItem('pio_side') === 'mini') document.documentElement.classList.add('side-mini'); } catch(e){}
+document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="sideMini"]'); if (!t) return;
+  var on = !document.documentElement.classList.contains('side-mini'); document.documentElement.classList.toggle('side-mini', on); lSet('pio_side', on ? 'mini' : null);
+  t.setAttribute('aria-expanded', String(!on)); t.setAttribute('aria-label', on ? 'Expand menu' : 'Collapse menu'); });
 function lSet(k,v){ try {v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch(e){} }
 function remembered(){ return lGet('pio_tok') != null; }
 function saveSession(token, remember){
@@ -1173,7 +1309,12 @@ function call(action, p){
 }
 /* force: rebuild the server's snapshot from the Sheet (the Refresh button), e.g. after someone edited the Sheet by hand. */
 function refresh(force){ return call('data', force ? { force: true } : {}).then(function(d){ apply(d); render(); }); }
-function act(action, p, msg){ return call(action, p).then(function(r){ if (msg) toast(typeof msg === 'function' ? msg(r) : msg); render(); return r; }); }
+function act(action, p, msg){ return call(action, p).then(function(r){ if (msg) toast(typeof msg === 'function' ? msg(r) : msg); render(); profSync(action); return r; }); }
+function profSync(action){
+  if (!LIVE || !S.me || !isAdmin()) return;
+  if (action && S._profSync && !/User|Role|Active|Photo|Pin|Div|Name|Emp|import/i.test(action)) return;
+  S._profSync = true; setTimeout(function(){ call('syncProfiles').catch(function(){}); }, 600);
+}
 
 /* ---------- balances ----------
    Offsets earned in a month become usable on the 1st of the next month and carry over.
@@ -1312,7 +1453,7 @@ function render(){
   var banner = LIVE ? '' : '<div class="preview">Preview mode with sample data. Nothing is saved. Sign in as <b>admin</b> or <b>jdelacruz</b>, PIN <b>1234</b>. To go live, put your Firebase settings in config.js (see README).</div>';
   if (!S.me){ app.innerHTML = banner + (S.needsSetup ? viewSetup() : viewLogin()); return; }
   var nav = navItems(), pc = isAdmin() ? pending().filter(canReview).length : 0;
-  function navBtn(n){ return '<button data-go="' + n[0] + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ic(n[1]) + '<span>' + n[2] + '</span>' + navBadge(n[0], pc) + '</button>'; }
+  function navBtn(n){ return '<button data-go="' + n[0] + '" data-tip="' + esc(n[2]) + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ic(n[1]) + '<span>' + n[2] + '</span>' + navBadge(n[0], pc) + '</button>'; }
   var tabs = nav.slice(0, 5);
   var views = { dashboard: viewDashboard, log: viewLog, approvals: viewApprovals, calendar: viewCalendar, events: viewCalendar, inventory: viewInventory, monthly: viewMonthly, records: viewRecords, staff: viewStaff, settings: viewSettings, availability: viewCalendar, travel: viewTravel, leaves: viewLeaves, tev: viewTEV };
   if (!views[S.view] || ((['staff','approvals','settings'].indexOf(S.view) >= 0 && !isAdmin()) || (S.view === 'inventory' && !inProd()))) S.view = 'dashboard';
@@ -1321,10 +1462,10 @@ function render(){
   S.lastView = S.view;
   var html = banner + '<a class="skip" href="#main">Skip to content</a>' +
     '<div class="shell">' +
-      '<div class="drawer-scrim" data-act="drawerClose"></div><aside class="side" id="sidenav"><div class="brand"><img src="' + LOGO + '" alt="Provincial Information Office seal"><div><b>PIO Overwatch</b><small>Camarines Norte</small></div></div>' +
+      '<div class="drawer-scrim" data-act="drawerClose"></div><aside class="side" id="sidenav"><div class="brand"><img src="' + LOGO + '" alt="Provincial Information Office seal"><div class="brand-t"><b>PIO Overwatch</b><small>Camarines Norte</small></div><button type="button" class="side-tog" data-act="sideMini" aria-label="' + (sideMini() ? 'Expand menu' : 'Collapse menu') + '" aria-expanded="' + !sideMini() + '">' + ic('left') + '</button></div>' +
         '<nav class="nav" aria-label="Main">' + '<button data-act="search" class="side-search" aria-keyshortcuts="/">' + ic('search') + '<span>Search</span><kbd>/</kbd></button>' + sideNav(nav, navBtn) + '</nav>' +
-        '<div class="side-foot"><div class="who">' + (myDiv ? divBadge(myDiv, 36) : '<span class="avatar">' + esc(initials(S.me.name)) + '</span>') +
-          '<div style="min-width:0"><b>' + esc(S.me.name) + '</b><small><span class="cap">' + esc(S.me.role === 'scheduler' ? 'division leader' : S.me.role) + '</span> · ' + (myDiv ? esc(myDiv.short) : '@' + esc(S.me.username)) + '</small></div></div>' +
+        '<div class="side-foot"><div class="who"><button type="button" class="av-btn" data-act="photoModal" data-u="' + esc(S.me.username) + '" aria-label="Your photo" data-tip="Your photo">' + avatarHtml(userOf(S.me.username) || S.me, 38) + '</button>' +
+          '<div class="who-t" style="min-width:0"><b>' + esc(S.me.name) + '</b><small><span class="cap">' + esc(S.me.role === 'scheduler' ? 'division leader' : S.me.role) + '</span> · ' + (myDiv ? esc(myDiv.short) : '@' + esc(S.me.username)) + '</small></div></div>' +
         themePick() + '<div class="nav">' + (S.view === 'dashboard' ? '<button data-act="customize" class="show-sm">' + ic('sliders') + '<span>Customize dashboard</span></button>' : '') + bellBtn(true) + '<button data-act="refresh">' + ic('refresh') + '<span>Refresh</span></button><button data-act="changePin">' + ic('key') + '<span>Change PIN</span></button><button data-act="logout">' + ic('out') + '<span>Sign out</span></button></div></div>' +
       '</aside>' +
       '<div style="min-width:0">' +
@@ -1403,15 +1544,88 @@ function divPicker(selected){
     return '<input type="radio" name="division" id="dv' + i + '" value="' + esc(d.id) + '"' + (selected === d.id ? ' checked' : '') + '><label for="dv' + i + '" title="' + esc(d.name) + '">' + divBadge(d, 34) + '<span>' + esc(d.short || d.name) + '</span><span class="tick">' + ic('tick') + '</span></label>';
   }).join('') + '</div></fieldset>';
 }
+/* profile pictures: a photo when there is one, otherwise initials on a colour picked from the name */
+var AV_COLORS = ['#1F8A50', '#C2410C', '#7C3AED', '#0E7490', '#B4235A', '#A16207', '#1D4ED8', '#0F766E', '#9D174D', '#4D7C0F'];
+function avColor(s){ var h = 0; s = String(s || ''); for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return AV_COLORS[Math.abs(h) % AV_COLORS.length]; }
+function avatarHtml(u, size, cls){
+  size = size || 36; var st = 'width:' + size + 'px;height:' + size + 'px';
+  if (u && u.photo && /^data:image\//.test(u.photo)) return '<img class="av ' + (cls || '') + '" src="' + esc(u.photo) + '" alt="" style="' + st + '">';
+  return '<span class="av av-i ' + (cls || '') + '" style="' + st + ';background:' + avColor((u && (u.username || u.name)) || '') + ';font-size:' + Math.round(size * 0.36) + 'px" aria-hidden="true">' + esc(initials((u && u.name) || '?')) + '</span>';
+}
+/* sign in like picking a profile: division, then your name, then your PIN */
+function profilesIn(dv){ return (S.profiles || []).filter(function(x){ return x.active !== false && (dv === '_' ? !S.divisions.some(function(d){ return d.id === x.division; }) : x.division === dv); }).sort(function(a, b){ return a.name.localeCompare(b.name); }); }
+function viewPicker(){
+  var step = S.authUser ? 3 : S.authDiv ? 2 : 1, intro = !S.pfIntro ? ' pfx-intro' : '', body = '';
+  var tile = function(inner, label, sub, attrs, vt){ return '<button type="button" class="pfx-tile" ' + attrs + '><span class="pfx-av"' + (vt ? ' style="view-transition-name:' + vt + '"' : '') + '>' + inner + '</span><span class="pfx-n">' + esc(label) + '</span>' + (sub ? '<small class="pfx-s">' + sub + '</small>' : '') + '</button>'; };
+  if (step === 1){
+    var divs = S.divisions.filter(function(d){ return profilesIn(d.id).length; }).map(function(d){ return [d.id, d.short || d.name, divBadge(d, 150)]; });
+    if (profilesIn('_').length) divs.push(['_', 'Others', '<span class="av av-i" style="width:150px;height:150px;background:#3B4A42;font-size:54px">' + ic('users') + '</span>']);
+    body = '<h1 class="pfx-h">Which division are you in?</h1><div class="pfx-row">' + divs.map(function(d){
+      var n = profilesIn(d[0]).length; return tile(d[2], d[1], n + ' ' + (n === 1 ? 'person' : 'people'), 'data-act="authDiv" data-d="' + esc(d[0]) + '"', S.pfDiv === d[0] ? 'pf-div' : ''); }).join('') + '</div>';
+  } else if (step === 2){
+    var dv = S.divisions.filter(function(d){ return d.id === S.authDiv; })[0], last = lGet('pio_lastu');
+    body = '<button type="button" class="pfx-back" data-act="authBack">' + ic('left') + '<span class="pfx-chip" style="view-transition-name:pf-div">' + (dv ? divBadge(dv, 28) : '') + '</span>' + esc(dv ? dv.short || dv.name : 'Others') + '</button>' +
+      '<h1 class="pfx-h">Who’s signing in?</h1><div class="pfx-row">' + profilesIn(S.authDiv).map(function(x){
+        return tile(avatarHtml(x, 150), x.name, x.username === last ? 'Last signed in' : '', 'data-act="authUser" data-u="' + esc(x.username) + '"', S.pfUser === x.username ? 'pf-user' : ''); }).join('') + '</div>';
+  } else {
+    var me1 = (S.profiles || []).filter(function(x){ return x.username === S.authUser; })[0] || { username: S.authUser, name: S.authUser };
+    body = '<form class="pfx-pin" data-form="login" autocomplete="on"><button type="button" class="pfx-back" data-act="authBack">' + ic('left') + 'Not you?</button>' +
+      '<span class="pfx-av pfx-me" style="view-transition-name:pf-user">' + avatarHtml(me1, 150) + '</span><b class="pfx-name">' + esc(me1.name) + '</b>' +
+      '<p class="pfx-ask">Enter your PIN</p>' +
+      '<input type="text" name="username" autocomplete="username" value="' + esc(me1.username) + '" readonly hidden><input type="hidden" name="division" value="' + esc(S.authDiv === '_' ? '' : S.authDiv || '') + '">' +
+      '<div class="pfx-boxes"><input id="lp" name="pin" type="password" autocomplete="current-password" inputmode="numeric" pattern="[0-9]*" maxlength="6" required aria-label="PIN, 4 to 6 digits">' +
+        [0, 1, 2, 3, 4, 5].map(function(i){ return '<i class="pfx-box' + (i > 3 ? ' opt' : '') + '" aria-hidden="true"></i>'; }).join('') + '</div>' +
+      '<p class="error pfx-err" id="err" role="alert"></p>' +
+      '<button class="pfx-go" type="submit">Sign in</button>' + keepBox() +
+      '<p class="pfx-hint">Forgot your PIN? Ask an admin to reset it.</p></form>';
+  }
+  return '<div class="pfx pfx-s' + step + intro + '"><header class="pfx-top"><img src="' + LOGO + '" alt="Provincial Information Office seal"><b>PIO Overwatch</b></header>' +
+    '<main class="pfx-main">' + body + '</main>' +
+    (step < 3 ? '<button type="button" class="pfx-alt" data-act="authManual">Sign in with your username</button>' : '') + '</div>';
+}
+/* moving between the steps: the picture you pick glides into place (where the browser can), everything else fades */
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act="authDiv"],[data-act="authUser"],[data-act="authBack"],[data-act="authManual"]'); if (!t || S.me) return;
+  var a = t.dataset.act, back = a === 'authBack';
+  var apply = function(){
+    if (a === 'authDiv'){ S.authDiv = t.dataset.d; S.pfDiv = t.dataset.d; }
+    else if (a === 'authUser'){ S.authUser = t.dataset.u; S.pfUser = t.dataset.u; lSet('pio_lastu', t.dataset.u); }
+    else if (back){ if (S.authUser) S.authUser = null; else S.authDiv = null; }
+    else { S.authManual = !S.authManual; S.authUser = null; }
+    S.pfIntro = true; render();
+    var f = document.getElementById('lp') || document.querySelector('.pfx-tile'); if (f) try { f.focus({ preventScroll: true }); } catch(e){}
+  };
+  // the tapped tile carries its picture into the next step
+  // one name per picture at a time, or the browser skips the glide
+  var av = t.querySelector('.pfx-av'); if (av) document.querySelectorAll('.pfx-tile .pfx-av').forEach(function(x){ x.style.viewTransitionName = ''; });
+  if (av && a === 'authDiv') av.style.viewTransitionName = 'pf-div';
+  if (av && a === 'authUser') av.style.viewTransitionName = 'pf-user';
+  if (document.startViewTransition && !lessMotion() && a !== 'authManual'){
+    var h = document.documentElement; h.classList.add('vt-pf'); h.classList.toggle('vt-back', back);
+    var vt = document.startViewTransition(apply), done = function(){ h.classList.remove('vt-pf', 'vt-back'); };
+    vt.finished.finally(done); setTimeout(done, 1500);
+  } else apply();
+});
+/* PIN boxes follow what is typed; a wrong PIN shakes them and clears the boxes */
+function pfxBoxes(){ var i = document.getElementById('lp'); if (!i || !i.closest('.pfx-boxes')) return; var n = i.value.length, f = document.activeElement === i;
+  i.parentNode.querySelectorAll('.pfx-box').forEach(function(b, k){ b.classList.toggle('on', k < n); b.classList.toggle('cur', f && k === Math.min(n, 5)); }); }
+document.addEventListener('input', function(ev){ if (ev.target.id === 'lp' && ev.target.closest('.pfx-boxes')){ ev.target.value = ev.target.value.replace(/\D/g, '').slice(0, 6); pfxBoxes(); var e = document.getElementById('err'); if (e) e.textContent = ''; } });
+document.addEventListener('focusin', pfxBoxes); document.addEventListener('focusout', function(){ setTimeout(pfxBoxes, 0); });
+document.addEventListener('submit', function(ev){ var f = ev.target.closest && ev.target.closest('.pfx-pin'); if (f) f.closest('.pfx').classList.add('pfx-busy'); }, true);
+new MutationObserver(function(){ var e = document.querySelector('.pfx-pin #err'); if (!e || !e.textContent) return; var x = document.querySelector('.pfx'); if (!x || !x.classList.contains('pfx-busy')) return;
+  x.classList.remove('pfx-busy'); var bx = document.querySelector('.pfx-boxes'), i = document.getElementById('lp');
+  if (bx && !lessMotion()) bx.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-10px)' }, { transform: 'translateX(9px)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 420, easing: 'ease-out' });
+  if (i){ i.value = ''; i.focus(); pfxBoxes(); } }).observe(document.documentElement, { subtree: true, childList: true, characterData: true });
 function keepBox(){ return '<label class="keep"><input type="checkbox" name="remember" checked><span>Keep me signed in on this device</span></label>'; }
 function viewLogin(){
+  if ((S.profiles || []).length && !S.authManual) return viewPicker();
   return '<div class="auth">' + brandPanel() + '<div class="auth-main"><form class="auth-card" data-form="login" autocomplete="on">' +
     '<div class="auth-title"><img class="seal" src="' + LOGO + '" alt="Provincial Information Office, Camarines Norte seal"><div><p class="eyebrow">Provincial Information Office</p><h1>PIO Overwatch</h1></div></div>' +
     '<p class="lede">Offsets, travel orders, leaves and who is available, in one place.</p>' + divPicker(lGet('pio_div')) +
     '<div class="field"><label for="lu">Username</label><input class="input" id="lu" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>' +
     '<div class="field"><label for="lp">PIN</label><div class="pinwrap"><input class="input pin" id="lp" name="pin" type="password" autocomplete="current-password" inputmode="numeric" pattern="[0-9]*" maxlength="6" required><button type="button" data-act="showPin" aria-label="Show PIN" aria-pressed="false">' + ic('eye') + '</button></div></div>' +
     keepBox() + '<p class="error" id="err" role="alert"></p><button class="btn btn-primary btn-block btn-lg" type="submit">Sign in</button>' +
-    '<p class="hint center">Forgot your PIN? Ask an admin to reset it.</p></form></div></div>';
+    '<p class="hint center">Forgot your PIN? Ask an admin to reset it.</p>' + ((S.profiles || []).length ? '<p class="hint center"><button type="button" class="lnk" data-act="authManual">Pick your name instead</button></p>' : '') + '</form></div></div>';
 }
 function viewSetup(){
   return '<div class="auth">' + brandPanel() + '<div class="auth-main"><form class="auth-card" data-form="setup" autocomplete="off">' +
@@ -2072,6 +2286,7 @@ document.addEventListener('click', function(ev){
 (function(){
   var tip = null;
   function show(el){
+    if (el.closest('.side') && !el.classList.contains('av-btn') && !document.documentElement.classList.contains('side-mini')) return;
     if (!tip){ tip = document.createElement('div'); tip.className = 'vtip'; tip.setAttribute('role', 'tooltip'); document.body.appendChild(tip); }
     tip.textContent = ''; String(el.dataset.tip).split('\n').forEach(function(l, i){ var r = document.createElement('div'); r.textContent = l; if (!i) r.className = 'vtip-h'; tip.appendChild(r); });
     var b = el.getBoundingClientRect(); tip.style.display = 'block';
@@ -2113,10 +2328,29 @@ function rejectModal(id){
     '<div class="chips">' + ['Covered by travel order','Wrong date','Already logged','Not past office hours','Conflicts with schedule'].map(function(r){ return '<button type="button" class="chip" data-reason="' + r + '">' + r + '</button>'; }).join('') + '</div>',
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-danger" type="submit">Reject</button>', 'reject');
 }
+/* profile photo: cropped to a square and shrunk to 192px, so it loads fast on the sign-in page */
+function resizePhoto(file){ return new Promise(function(res, rej){ var img = new Image(), url = URL.createObjectURL(file);
+  img.onload = function(){ var c = document.createElement('canvas'), n = 192, sq = Math.min(img.width, img.height); c.width = c.height = n;
+    c.getContext('2d').drawImage(img, (img.width - sq) / 2, (img.height - sq) / 2, sq, sq, 0, 0, n, n); URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', 0.82)); };
+  img.onerror = function(){ URL.revokeObjectURL(url); rej(new Error('That file is not a picture.')); }; img.src = url; }); }
+function photoModal(username){
+  var u = userOf(username); if (!u) return; M = { photoU: username };
+  modal(username === S.me.username ? 'Your photo' : esc(u.name) + '’s photo', '<div class="ph-wrap">' + avatarHtml(u, 132, 'ph-av') + '<p class="hint" style="margin:0;text-align:center">Shown on the sign-in page and around the app. A clear face works best.</p></div>' +
+    '<input type="file" id="phFile" accept="image/*" hidden>',
+    '<button type="button" class="btn btn-ghost" data-act="close">Close</button>' + (u.photo ? '<button type="button" class="btn btn-ghost" data-act="phRemove">' + ic('trash') + 'Remove</button>' : '') + '<button type="button" class="btn btn-primary" data-act="phPick">' + ic('upload') + (u.photo ? 'Change photo' : 'Add a photo') + '</button>');
+}
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act="photoModal"],[data-act="phPick"],[data-act="phRemove"]'); if (!t) return;
+  if (t.dataset.act === 'photoModal') return photoModal(t.dataset.u || S.me.username);
+  if (t.dataset.act === 'phPick'){ var f = document.getElementById('phFile'); if (f) f.click(); return; }
+  busy(t, act('setPhoto', { username: M.photoU, photo: '' }, 'Photo removed').then(function(){ photoModal(M.photoU); }), 'merr');
+});
+document.addEventListener('change', function(ev){ if (ev.target.id !== 'phFile' || !ev.target.files[0]) return; var who = M.photoU, er = document.getElementById('merr');
+  resizePhoto(ev.target.files[0]).then(function(ph){ return act('setPhoto', { username: who, photo: ph }, 'Photo saved'); }).then(function(){ photoModal(who); }).catch(function(e){ if (er) er.textContent = e.message; }); });
 function personModal(username){
   var u = userOf(username); if (!u) return;
   var st = stats(username), recent = sorted(S.entries.filter(function(e){ return e.username === username; })).slice(0, 5), self = username === S.me.username;
-  modal(esc(u.name), '<div class="detail-top">' + (divOf(u.division) ? divBadge(divOf(u.division), 44) : '<span class="avatar">' + esc(initials(u.name)) + '</span>') + '<div><div class="hint">@' + esc(u.username) + ' · <span class="cap">' + esc(u.role) + '</span> · ' + esc(u.empType) + (u.active ? '' : ' · Inactive') + '</div>' + divChip(u.division) + '</div></div>' +
+  modal(esc(u.name), '<div class="detail-top">' + ((isAdmin() || self) ? '<button type="button" class="av-btn" data-act="photoModal" data-u="' + esc(username) + '" aria-label="Change photo">' + avatarHtml(u, 52) + '<span class="av-cam">' + ic('camera') + '</span></button>' : avatarHtml(u, 52)) + '<div><div class="hint">@' + esc(u.username) + ' · <span class="cap">' + esc(u.role) + '</span> · ' + esc(u.empType) + (u.active ? '' : ' · Inactive') + '</div>' + divChip(u.division) + '</div></div>' +
     '<div class="info-note">' + ic('users') + '<span>Today: ' + (statusOn(username, today()) ? esc(statusOn(username, today()).kind === 'to' ? 'In the field · ' + statusOn(username, today()).label : statusOn(username, today()).label) : 'Available') + '</span></div>' +
     (hasLeaves(u) ? (function(){ var b = leaveBal(username); return '<div class="mini-tiles"><div><span>Vacation leave</span><b>' + (b.set ? fD(b.vl) : '—') + '</b></div><div><span>Sick leave</span><b>' + (b.set ? fD(b.sl) : '—') + '</b></div></div>'; })() : '') +
     '<div class="mini-tiles"><div><span>Offsets available</span><b>' + fD(st.avail) + '</b></div><div><span>' + mShort(curMonth()) + ' so far</span><b>+' + fD(st.month) + '</b></div><div><span>Waiting for review</span><b>' + fD(st.pending + st.reqDays) + '</b></div><div><span>Used this year</span><b>' + fD(st.usedY) + '</b></div></div>' +
@@ -2183,7 +2417,12 @@ function sure(t, label){ if (t.dataset.sure === '1') return true; t.dataset.sure
 document.addEventListener('click', function(ev){
   var t = ev.target.closest('[data-go],[data-act],[data-day],[data-d],[data-rec],[data-entry],[data-person],[data-reason],[data-calday],[data-div]');
   if (!t) return;
-  if (t.dataset.go){ closeModal(); S.view = t.dataset.go; S.selDay = null; render(); window.scrollTo(0,0); pgIn(); return; }
+  if (t.dataset.go){ closeModal(); var toV = t.dataset.go, goV = function(){ S.view = toV; S.selDay = null; render(); window.scrollTo(0,0); };
+    // a smooth hand-over between pages where the browser can do it; otherwise the short fade-in
+    if (document.startViewTransition && !lessMotion() && toV !== S.view){ document.documentElement.classList.add('vt-page'); var vt = document.startViewTransition(goV);
+      setTimeout(function(){ document.documentElement.classList.remove('vt-page'); }, 1500); vt.finished.finally(function(){ document.documentElement.classList.remove('vt-page'); var m = document.querySelector('main'); if (m) try { m.focus({ preventScroll: true }); } catch(e){} }); }
+    else { goV(); pgIn(); }
+    return; }
   if (t.dataset.rec){ var kv = t.dataset.rec.split(':'), o = {}; o[kv[0]] = kv[1]; goRecords(o); return; }
   if (t.dataset.calday){ var cd = pd(t.dataset.calday); S.cal = { y: cd.getFullYear(), m: cd.getMonth() }; S.selDay = t.dataset.calday; S.view = 'calendar'; render(); window.scrollTo(0,0); return; }
   if (t.dataset.div && !t.dataset.act){ S.dashDiv = t.dataset.div; render(); return; }
@@ -3257,7 +3496,7 @@ function invOutModal(id){
     '<button type="button" class="btn btn-ghost" data-act="close">Cancel</button><button class="btn btn-primary" type="submit">Check out</button>', 'checkoutItem');
 }
 var _nav0 = navItems; navItems = function(){ var a = _nav0(); if (inProd()) a.push(['inventory', 'camera', 'Inventory', 'Production']); return a; };
-var _render0 = render; render = function(){ _render0.apply(this, arguments); try { checkNotify(); } catch(e){} };
+var _render0 = render; render = function(){ _render0.apply(this, arguments); try { checkNotify(); } catch(e){} if (S.me && !S._profSync) profSync(); };
 function pgIn(){ var m = document.querySelector('main'); if (!m) return; m.setAttribute('tabindex', '-1'); try { m.focus({ preventScroll: true }); } catch(e){} if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return; m.classList.remove('pgin'); void m.offsetWidth; m.classList.add('pgin'); }
 
 function dayoffHint(t){
@@ -5175,6 +5414,8 @@ var Fire = (function(){
       if (oe && !x.del) return Object.keys(Object.assign({}, oe, x.data)).every(function(k){ return ['gear', 'gearHolder', 'gearBy', 'gearAt', '_t'].indexOf(k) >= 0 || JSON.stringify(oe[k]) === JSON.stringify(x.data[k]); });
       return !oe && !x.del && x.data.status === 'Pending' && x.data.createdBy === me; }   // staff: new unconfirmed event from a travel order
     if (x.c === 'inventory') return true;
+    if (x.c === 'logins') return x.id === me && !x.hard && Object.keys(x.data || {}).every(function(k){ return k === 'photo'; });
+    if (x.c === 'users' && x.id === me && !x.del){ var ou0 = store.users.docs[x.id]; if (ou0 && Object.keys(Object.assign({}, ou0, x.data)).every(function(k){ return k === 'photo' || k === '_t' || JSON.stringify(ou0[k]) === JSON.stringify(x.data[k]); })) return true; }
     if (x.c === 'users'){ if (member.role !== 'scheduler' || x.del) return false; var ou = store.users.docs[x.id]; if (!ou) return false;   // leaders: skills only
       return Object.keys(Object.assign({}, ou, x.data)).every(function(k){ return k === 'skills' || k === '_t' || JSON.stringify(ou[k]) === JSON.stringify(x.data[k]); }); }
     if (x.c === 'travelOrders'){ var old = store.travelOrders.docs[x.id];
@@ -5212,6 +5453,17 @@ var Fire = (function(){
           function(e){ if (/email-already-in-use/.test(e.code || '')) return attempt(k + 1); throw netErr(e); });
       }
       return attempt(startK || 0);
+    });
+  }
+  /* the sign-in page shows names, divisions and photos from the login list, which anyone can read; an admin's app keeps it current */
+  function syncProfiles(){
+    if (!member || member.role !== 'admin') return Promise.resolve(ok());
+    return F.getDocs(F.collection(db, 'logins')).then(function(snap){
+      var have = {}, w = []; snap.forEach(function(x){ have[x.id] = x.data(); });
+      Object.keys(store.users.docs).forEach(function(un){ var u = store.users.docs[un], l = have[un]; if (!u || u._del || !l) return;
+        var want = { name: u.name || un, division: u.division || '', active: u.active !== false, photo: u.photo || '' };
+        if (l.name !== want.name || (l.division || '') !== want.division || (l.active !== false) !== want.active || (l.photo || '') !== want.photo) w.push({ c: 'logins', id: un, data: want, merge: true }); });
+      return commit(w).then(function(){ return ok({ updated: w.length }); });
     });
   }
   function loginOf(username){ return F.getDoc(D('logins/' + username)).then(function(s){ return s.exists() ? s.data() : null; }); }
@@ -5270,10 +5522,11 @@ var Fire = (function(){
   function api(action, p){
     p = p || {};
     return init().then(function(){
-      if (action === 'status') return Promise.all([F.getDoc(D('meta/app')), F.getDocs(F.collection(db, 'divisions'))]).then(function(r){
+      if (action === 'status') return Promise.all([F.getDoc(D('meta/app')), F.getDocs(F.collection(db, 'divisions')), F.getDocs(F.collection(db, 'logins')).catch(function(){ return null; })]).then(function(r){
         var divs = []; r[1].forEach(function(s){ var d = s.data(); if (!d._del) divs.push(strip(d)); });
         divs.sort(function(a, b){ return (a.order || 0) - (b.order || 0); });
-        return ok({ needsSetup: !r[0].exists(), divisions: divs.length ? divs : DEF.divisions });
+        var profs = []; if (r[2]) r[2].forEach(function(s){ var d = s.data(); if (d.name) profs.push({ username: s.id, name: d.name, division: d.division || '', photo: d.photo || '', active: d.active !== false }); });
+        return ok({ needsSetup: !r[0].exists(), divisions: divs.length ? divs : DEF.divisions, profiles: profs });
       });
       if (action === 'setup') return setup(p);
       if (action === 'login') return login(p);
@@ -5285,6 +5538,8 @@ var Fire = (function(){
           Mock.engine.load(arrays()); return ok(fresh());
         }
         if (action === 'changePin') return changePin(p);
+        if (action === 'syncProfiles') return syncProfiles();
+        if (action === 'setPhoto') return run('setPhoto', p, [{ c: 'logins', id: String(p.username || ''), data: { photo: String(p.photo || '') }, merge: true }]);
         if (action === 'backupToDrive') return fail('With Firebase, use Download a backup file (.json) instead.');
         var adm = member.role === 'admin';
         if (!adm && ['addUser', 'resetPin', 'setPins', 'removeUser', 'syncHolidays', 'importBackup'].indexOf(action) >= 0) return fail('Only admins can do that.');
@@ -5460,7 +5715,7 @@ var Mock = (function(){
   add('mbautista','USE',-9,'Used',0.5,'','','Confirmed');
   entries.forEach(function(e){ activity.unshift({ at: e.createdAt, actor: e.createdBy, action: e.type === 'USE' ? (e.status === 'Pending' ? 'Requested a day off' : 'Recorded offset use') : 'Logged an offset', target: e.username, details: (e.event ? e.event + ' · ' : '') + e.date + ' · ' + e.days + ' day(s)' }); });
   activity.sort(function(a,b){ return a.at < b.at ? 1 : -1; });
-  function pub(u){ return { username:u.username, name:u.name, role:u.role, division:u.division, active:u.active, empType:u.empType || 'JO', noPin: u.uid === '', position: u.position || '', skills: Array.isArray(u.skills) ? u.skills.slice() : [] }; }
+  function pub(u){ return { username:u.username, name:u.name, role:u.role, division:u.division, active:u.active, photo: u.photo || '', empType:u.empType || 'JO', noPin: u.uid === '', position: u.position || '', skills: Array.isArray(u.skills) ? u.skills.slice() : [] }; }
   function find(u){ return users.filter(function(x){ return x.username === String(u||'').toLowerCase(); })[0]; }
   function canInv(u){ if (u.role === 'admin') return true; var d = divisions.filter(function(x){ return x.id === u.division; })[0]; return !!(d && /production/i.test(d.name)); }
   // Approved weekday offsets (work) and weekday days off both need a travel order to be valid, so one is
@@ -5538,7 +5793,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
     try {
     var me = sessions[tok] && find(sessions[tok]);
     if (a === 'ping') return { ok:true, data:{ lastWrite: lastWrite } };
-    if (a === 'status') return { ok:true, data:{ needsSetup:false, divisions:copy(divisions) } };
+    if (a === 'status') return { ok:true, data:{ needsSetup:false, divisions:copy(divisions), profiles: users.filter(function(u){ return u.active; }).map(function(u){ return { username: u.username, name: u.name, division: u.division || '', photo: u.photo || '', active: true }; }) } };
     if (a === 'login'){ var u = find(p.username); if (!u || !u.active || u.pin !== p.pin) return fail('Wrong username or PIN.'); if (p.division && divisions.some(function(d){ return d.id === p.division; })) u.division = p.division; var t = 't' + Math.random(); sessions[t] = u.username; return ok(u, { token:t }); }
     if (!me) return { ok:false, error:'Your session has ended. Please sign in again.', expired:true };
     var adm = me.role === 'admin', now = new Date().toISOString();
@@ -5680,6 +5935,9 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
       else { tos.push(Object.assign({ id:'t' + nid(), toNo:'', status:'Filed', tev:'', createdBy:me.username, createdAt:now, usernames:[] }, tf)); log(me, 'Filed a travel order', tf.event, tf.dateFrom + ' · ' + nm.join(', ')); }
       return ok(me); }
     if (a === 'deleteTO'){ var dt = tos.filter(function(t){ return t.id === p.id; })[0]; if (!adm && (dt.createdBy !== me.username || dt.status !== 'Filed')) return fail('You can only delete your own travel orders that are not yet prepared.'); if (dt.offsetDone){ entries = entries.filter(function(e){ return !(e.toId === dt.id && e.type === 'USE'); }); log(me, 'Returned offset for a deleted day-off travel order', dt.event); } tos = tos.filter(function(t){ return t !== dt; }); log(me, 'Deleted a travel order', dt.event); return ok(me); }
+    if (a === 'setPhoto'){ var phu = find(p.username); if (!phu) return fail('Employee not found.'); if (!adm && phu.username !== me.username) return fail('You can only change your own photo.');
+      var ph = String(p.photo || ''); if (ph && (!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(ph) || ph.length > 90000)) return fail('That picture could not be used. Try another one.');
+      phu.photo = ph; log(me, ph ? 'Changed a profile photo' : 'Removed a profile photo', phu.username); return ok(me); }
     if (a === 'setSkills'){ if (!(adm || me.role === 'scheduler')) return fail('Only admins and division leaders can change skills.'); var sk = find(p.username); if (!sk) return fail('Employee not found.'); sk.skills = (Array.isArray(p.skills) ? p.skills : []).map(String).filter(function(x, i, arr){ return SKILLS.indexOf(x) >= 0 && arr.indexOf(x) === i; }); log(me, 'Changed skills', p.username, sk.skills.join(', ') || 'none'); return ok(me); }
     if (a === 'planGear'){ var gp = events.filter(function(x){ return x.id === p.id; })[0]; if (!gp) return fail('Event not found.');
       var prodDiv = divisions.some(function(d){ return d.id === me.division && /production/i.test(d.name || ''); });
@@ -5793,7 +6051,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
    newest version and a few lines on what changed. When it differs from this page's APP_VER, a card offers
    a refresh. Checked when the app comes back to the front and every 10 minutes. Keep APP_VER, version.json
    and the cache name in sw.js the same when publishing. */
-var APP_VER = 'v72';
+var APP_VER = 'v73';
 (function(){
   var shown = null, last = 0;
   function check(force){
@@ -6844,7 +7102,9 @@ function invNext(f){
   var first = S.token ? refresh().catch(function(e){ if (!S.me){ clearSession(); S.token = null; } else toast(e.message); }) : Promise.resolve();
   first.then(function(){
     if (S.me) return;
-    return call('status').then(function(st){ S.needsSetup = st.needsSetup; S.divisions = st.divisions || []; render(); var f = document.getElementById('lu') || document.getElementById('sn'); if (f && window.innerWidth > 860) f.focus(); });
+    return call('status').then(function(st){ S.needsSetup = st.needsSetup; S.divisions = st.divisions || []; S.profiles = st.profiles || [];
+      var lu = lGet('pio_lastu'), lp = S.profiles.filter(function(x){ return x.username === lu && x.active !== false; })[0]; if (lp && !S.authDiv) S.authDiv = S.divisions.some(function(d){ return d.id === lp.division; }) ? lp.division : '_';
+      render(); var f = document.getElementById('lu') || document.getElementById('sn'); if (f && window.innerWidth > 860) f.focus(); });
   }).catch(function(e){ document.getElementById('app').innerHTML = '<div class="loading"><p>' + esc(e.message) + '</p><button class="btn btn-primary" onclick="location.reload()">Try again</button></div>'; });
 })();
 </script>
