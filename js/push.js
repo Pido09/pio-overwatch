@@ -88,6 +88,7 @@ document.addEventListener('click', function(ev){
   var N = notifModal;
   notifModal = function(){
     N.apply(this, arguments);
+    if (arguments[0] === 'list') return;   // only the list was swapped; the status card is already there
     if (!pushCfg() || typeof LIVE === 'undefined' || !LIVE) return;
     var box = document.querySelector('#modal .panel-b'); if (!box) return;
     var on = pushOnHere() && typeof Notification !== 'undefined' && Notification.permission === 'granted', html;

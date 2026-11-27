@@ -1,9 +1,6 @@
 {
-  "ver": "v99",
+  "ver": "v100",
   "notes": [
-    "Phone alerts show the PIO tower icon in the status bar instead of a white circle",
-    "The app icon and launch screen show the seal on green, no more white background",
-    "Notifications can be filtered: New, Dispatches, Tasks, Travel orders, Reminders, Incomplete",
-    "Your turn on a task now shows in the bell too"
+    "Switching notification filters is smooth now: only the list changes, no flicker"
   ]
 }

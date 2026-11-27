@@ -1047,7 +1047,10 @@ function notifModal(keep){
     var sub = a.t ? (a.t.sentBack ? '“' + a.t.sentBack.note + '”' : taskDue(a.t).txt + ' · ' + (a.t.template ? taskTpl(a.t.template).name : 'Task')) : a.e ? evShort(a.e) + (evTimes(a.e) ? ' · ' + evTimes(a.e) : '') + ' · ' + a.e.venue : 'Open Travel orders';
     return '<li class="nrow' + (un ? ' unread' : '') + ' nk-' + a.kind + '"><button type="button" class="nbtn" ' + go + '><span class="nk-ic" aria-hidden="true">' + ic((N_KINDS.filter(function(k){ return k[0] === a.kind; })[0] || [0, 0, 'bell'])[2]) + '</span><span><b>' + esc(a.text) + '</b><small class="hint" style="display:block">' + esc(sub) + '</small></span></button></li>'; }).join('');
   var dev = ds === 'none' ? '<p class="hint" style="margin:0">This browser cannot show device notifications.</p>' : ds === 'denied' ? '<p class="hint" style="margin:0">Notifications are blocked for this site. Allow them in your browser settings to turn them on.</p>' : ds === 'on' ? '<button type="button" class="btn btn-ghost" data-act="notifOff">Turn off device notifications</button>' : '<button type="button" class="btn btn-primary" data-act="notifOn">' + ic('bell') + 'Turn on device notifications</button>';
-  modal('Notifications', chips + (rows ? '<ul class="nlist" style="margin:0;padding:0">' + rows + '</ul>' : '<p class="hint" style="margin:0">' + (all.length ? 'Nothing here. Pick another filter.' : 'Nothing new. Dispatches, your turn on tasks, reminders and ready travel orders show up here.') + '</p>') + '<div class="dsec">On this device</div>' + dev + (typeof pushCfg === 'function' && pushCfg() ? '' : '<p class="hint" style="margin:8px 0 0">You get a notice when the app is open or when you open it.</p>'), '<button type="button" class="btn btn-ghost" data-act="close">Close</button>');
+  var list = '<div id="nfList" class="nf-list" aria-live="polite">' + (rows ? '<ul class="nlist" style="margin:0;padding:0">' + rows + '</ul>' : '<p class="hint" style="margin:0">' + (all.length ? 'Nothing here. Pick another filter.' : 'Nothing new. Dispatches, your turn on tasks, reminders and ready travel orders show up here.') + '</p>') + '</div>';
+  // switching filters: only the list changes, so the window itself doesn't replay its opening
+  if (keep === 'list'){ var cur = document.getElementById('nfList'); if (cur){ nfSwap(cur, list, f); return; } }
+  modal('Notifications', chips + list + '<div class="dsec">On this device</div>' + dev + (typeof pushCfg === 'function' && pushCfg() ? '' : '<p class="hint" style="margin:8px 0 0">You get a notice when the app is open or when you open it.</p>'), '<button type="button" class="btn btn-ghost" data-act="close">Close</button>');
   nSet('seen', all.map(function(a){ return a.id; })); var b = document.querySelector('.badge.bad[data-n]'); 
 }
 function bellBtn(side){ var n = unreadCount(); return side ? '<button data-act="notifs">' + ic('bell') + '<span>Notifications</span>' + (n ? '<span class="badge bad">' + n + '<span class="sr"> new</span></span>' : '') + '</button>' : '<button data-act="notifs" class="bellb" aria-label="Notifications' + (n ? ', ' + n + ' new' : '') + '">' + ic('bell') + (n ? '<span class="badge bad">' + n + '</span>' : '') + '</button>'; }
@@ -1547,4 +1550,22 @@ function toOf(id){ return S.travelOrders.filter(function(t){ return t.id === id;
 
 
 /* filter the notifications by kind */
-document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="nFilter"]'); if (!t) return; S.nFilter = t.dataset.f; notifModal(true); });
+document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="nFilter"]'); if (!t) return; S.nFilter = t.dataset.f; notifModal('list'); });
+/* swap the list in place: the chips update at once, the old rows fade out quickly, the new ones rise in
+   one after another, and the window eases to its new height instead of jumping */
+function nfSwap(cur, html, f){
+  document.querySelectorAll('#modal .nf-chip').forEach(function(c){ c.setAttribute('aria-pressed', c.dataset.f === f); });
+  var tmp = document.createElement('div'); tmp.innerHTML = html; var next = tmp.firstChild;
+  var token = (nfSwap.n = (nfSwap.n || 0) + 1);
+  if (lessMotion() || !cur.animate){ cur.replaceWith(next); return; }
+  cur.getAnimations().forEach(function(a){ a.finish(); });
+  var h0 = cur.offsetHeight;
+  cur.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 90, easing: 'ease-in', fill: 'forwards' }).finished.then(function(){
+    if (token !== nfSwap.n || !cur.isConnected) return;
+    cur.replaceWith(next);
+    var h1 = next.offsetHeight;
+    if (h0 !== h1) next.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: 220, easing: 'cubic-bezier(.22,1,.36,1)' });
+    next.style.overflow = 'hidden'; setTimeout(function(){ next.style.overflow = ''; }, 240);
+    next.querySelectorAll('.nrow, p').forEach(function(r, i){ r.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 220, delay: Math.min(i, 8) * 28, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' }); });
+  });
+}
