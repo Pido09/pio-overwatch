@@ -4,7 +4,7 @@
 function navItems(){
   // The first five are the phone tab bar. Regular and casual staff get leaves up front; JO and COS get offsets.
   var tev = ['tev','peso','TEVs','Field work'];
-  if (isAdmin()) return [['dashboard','grid','Dashboard','Overview'],['travel','route','Travel orders','Field work'],['approvals','check','Approvals','Offsets'],
+  if (isAdmin()) return [['dashboard','grid','Dashboard','Overview'],['travel','route','Travel orders','Field work'],
        ['calendar','cal','Calendar','Overview'],tev,['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets'],['leaves','plane','Leaves','Leaves'],['staff','users','Staff','Admin'],['settings','cog','Settings','Admin']];
   // staff and division leaders: four main places, everything else folded under More
   var main = [['dashboard','grid','Home','Main'],['calendar','cal','Calendar','Main'],['travel','route','My travel orders','Main'],['log','plus','Offsets','Main']];
@@ -225,7 +225,7 @@ function welcome(){
   var el = document.createElement('div'); el.className = 'wel'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
   el.innerHTML = '<div class="wel-in">' + avatarHtml(u, 220, 'wel-av') + '<p class="wel-k">Welcome to Overwatch,</p><h1 class="wel-n">' + esc(first) + '</h1></div>';
   document.body.appendChild(el);
-  var quick = lessMotion(), out = function(){ el.classList.add('out'); setTimeout(function(){ el.remove(); }, 650); };
+  var gone = false, quick = lessMotion(), out = function(){ if (gone) return; gone = true; el.classList.add('out'); if (typeof dashMotion === 'function') setTimeout(function(){ dashMotion(true); }, 120); setTimeout(function(){ el.remove(); }, 650); };
   setTimeout(out, quick ? 1500 : 3000);
   el.addEventListener('click', out);
 }
@@ -418,9 +418,16 @@ function viewDashboard(){
       : (hasLeaves() ? '<button class="btn btn-glass" data-go="leaves">' + ic('plane') + 'My leaves</button>' : '') + '<button class="btn btn-sun" data-go="log">' + ic('plus') + 'Log offset</button>');
   return { eyebrow: fDate(today(), { weekday:'long', month:'long', day:'numeric', year:'numeric' }),
     title: greeting() + ', ' + esc(S.me.name.split(' ')[0]) + '!',
-    sub: (adm ? 'Offsets across the office' + (S.dashDiv === 'all' ? '' : ' · ' + esc(divOf(S.dashDiv).short)) + '.' : (S.me.division ? divChip(S.me.division) + ' · ' : '') + (hasLeaves() ? esc(S.me.empType) + ' · vacation and sick leave grow by 1.25 days a month.' : esc(S.me.empType || 'JO') + ' · unused offsets carry over every month.')) + (function(){ var q = quip(); return q ? '<span class="quip">' + ic('flag') + '<span>' + esc(q) + '</span></span>' : ''; })() + fieldCrew(),
+    sub: (adm ? officeToday() + (S.dashDiv === 'all' ? '' : ' · ' + esc(divOf(S.dashDiv).short)) : (S.me.division ? divChip(S.me.division) + ' · ' : '') + (hasLeaves() ? esc(S.me.empType) + ' · vacation and sick leave grow by 1.25 days a month.' : esc(S.me.empType || 'JO') + ' · unused offsets carry over every month.')) + (function(){ var q = quip(); return q ? '<span class="quip">' + ic('flag') + '<span>' + esc(q) + '</span></span>' : ''; })() + fieldCrew(),
     actions: actions, body: '<div class="grid dash">' + (html || '<div class="span-12 panel">' + empty('sliders', 'Your dashboard is empty', 'Turn widgets back on to see your numbers.', '<button class="btn btn-primary" data-act="customize">Customize</button>') + '</div>') + '</div>' +
       (html ? '<div class="dash-foot"><button class="btn btn-sm btn-ghost" data-act="customize">' + ic('sliders') + 'Customize dashboard</button></div>' : '') };
+}
+/* the line under the greeting: what is happening across the office today */
+function officeToday(){
+  var td = today(), ev = (S.events || []).filter(function(e){ return e.status !== 'Cancelled' && e.date <= td && (e.dateTo || e.date) >= td; });
+  if (!ev.length) return 'A quiet day across the office: no events today.';
+  var need = ev.filter(function(e){ return evState(e) === 'need'; }).length;
+  return 'Today across the office: ' + ev.length + (ev.length === 1 ? ' event' : ' events') + (need ? ', ' + need + ' still ' + (need === 1 ? 'needs' : 'need') + ' people.' : ', all covered.');
 }
 function span(n){ return 'span-' + n; }
 function adminWidgets(staff){
@@ -636,18 +643,23 @@ function filteredRecords(){
 
 /* ----- staff & divisions ----- */
 function viewStaff(){
+  var ym = S.sdMon || today().slice(0, 7);
   var rows = S.users.slice().sort(function(a,b){ return byDiv(a, b) || (b.active - a.active); }).map(function(u){
-    var st = stats(u.username), self = u.username === S.me.username;
-    return '<tr class="tap" data-grp="' + esc(u.division) + '" data-person="' + esc(u.username) + '" tabindex="0"><td><b>' + esc(u.name) + '</b><div class="hint">@' + esc(u.username) + ' · <span class="cap">' + esc(u.role) + '</span></div></td>' +
-      '<td>' + esc(u.empType || 'JO') + '</td>' +
-      '<td>' + (u.noPin ? '<span class="pill Pending">PIN not set</span>' : u.active ? '<span class="pill Confirmed">Active</span>' : '<span class="pill off">Inactive</span>') + '</td><td class="r num">' + fD(st.avail) + '</td>' +
+    var st = stats(u.username), self = u.username === S.me.username, r = staffDays(u.username, ym);
+    var days = u.active ? '<button type="button" class="st-days" data-act="monthTrips" data-m="' + ym + '" data-u="' + esc(u.username) + '" aria-label="' + esc(u.name + ', ' + fMonth(ym) + ': ' + r.field + ' field, ' + r.office + ' office, ' + r.off + ' off or leave. Open the list.') + '">' +
+        '<span class="sd-bar" aria-hidden="true">' + [['field', r.field], ['office', r.office], ['off', r.off]].filter(function(x){ return x[1]; }).map(function(x){ return '<i class="sd-' + x[0] + '" style="flex:' + x[1] + '"></i>'; }).join('') + '</span>' +
+        '<span class="st-dn"><b>' + r.field + '</b> field · <b>' + r.office + '</b> office · <b>' + r.off + '</b> off</span></button>' : '<span class="hint">—</span>';
+    return '<tr class="tap" data-grp="' + esc(u.division) + '" data-person="' + esc(u.username) + '" tabindex="0"><td><div class="st-who">' + avatarHtml(u, 38) + '<div><b>' + esc(u.name) + '</b><div class="hint">@' + esc(u.username) + ' · <span class="cap">' + esc(u.role === 'scheduler' ? 'division leader' : u.role) + '</span> · ' + esc(u.empType || 'JO') + '</div></div></div></td>' +
+      '<td>' + (u.noPin ? '<span class="pill Pending">PIN not set</span>' : u.active ? '<span class="pill Confirmed">Active</span>' : '<span class="pill off">Inactive</span>') + '</td><td class="st-dc">' + days + '</td><td class="r num">' + fD(st.avail) + '</td>' +
       '<td class="r"><button class="btn btn-sm btn-ghost" data-person="' + esc(u.username) + '">Manage' + (self ? ' (you)' : '') + '</button></td></tr>';
   }).join('');
   var divs = S.divisions.map(function(d){ var n = S.users.filter(function(u){ return u.division === d.id && u.active; }).length;
     return '<li class="row tap" data-act="divModal" data-id="' + esc(d.id) + '" tabindex="0">' + divBadge(d, 38) + '<div class="body"><div class="t">' + esc(d.name) + '</div><div class="m">' + n + ' active staff · shown as “' + esc(d.short) + '”</div></div><span class="hint">' + ic('edit') + '</span></li>'; }).join('');
   return { eyebrow: 'People', title: 'Staff', sub: 'Tap a person to manage their account.',
     actions: '<button class="btn btn-sun" data-act="focusAdd">' + ic('plus') + 'Add staff</button>',
-    body: '<div class="grid">' + staffDaysPanel() + panel('Accounts', 'users', '<div class="table-wrap"><table class="cards"><thead><tr><th>Name</th><th>Employment</th><th>Status</th><th class="r">Offsets</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>', (function(){ var np = S.users.filter(function(u){ return u.noPin; }).length; return np ? '<button class="btn btn-sm btn-primary" data-act="setPins">' + ic('key') + 'Set PINs for ' + np + '</button>' : '<span class="hint num">' + S.users.length + ' total</span>'; })(), 'span-12') +
+    body: '<div class="grid">' + panel('Staff and their days', 'users', '<p class="hint" style="margin:0;padding:12px 18px 0">' + (S.users.length ? staffDays(S.users[0].username, ym).work : 0) + ' working days in ' + esc(fMonth(ym)) + ', counting weekdays and leaving out holidays. Field days are travel orders (weekends included); dispatch orders within the Capitol count as office days. Tap the days to see someone’s trips.</p>' +
+      '<div class="table-wrap"><table class="cards st-tab"><thead><tr><th>Name</th><th>Status</th><th><span class="sd-key">' + esc(fMonth(ym)) + ' <i class="sd-field"></i>Field <i class="sd-office"></i>Office <i class="sd-off"></i>Off</span></th><th class="r">Offsets</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>',
+      '<div class="row-btns wk-nav"><button type="button" class="icon-btn" data-act="sdNav" data-d="-1" aria-label="Previous month">' + ic('left') + '</button><span class="wk-lab">' + esc(fMonth(ym)) + '</span><button type="button" class="icon-btn" data-act="sdNav" data-d="1" aria-label="Next month">' + ic('right') + '</button></div>' + (function(){ var np = S.users.filter(function(u){ return u.noPin; }).length; return np ? '<button class="btn btn-sm btn-primary" data-act="setPins">' + ic('key') + 'Set PINs for ' + np + '</button>' : ''; })(), 'span-12') +
       panel('Divisions', 'pie', (divs ? '<ul class="list">' + divs + '</ul>' : empty('pie', 'No divisions', 'Add the PIO divisions so staff can choose theirs at sign-in.')) + '<div class="panel-b hint" style="border-top:1px solid var(--line)">Staff pick their division on the sign-in page.</div>', '<button class="btn btn-sm btn-primary" data-act="divModal">' + ic('plus') + 'Add division</button>', 'span-12') +
 '</div>' };
 }
@@ -666,17 +678,6 @@ function staffDays(u, ym, upto){
     if (wk){ r.office++; if (disp) r.disp = (r.disp || 0) + 1; }
   }
   return r;
-}
-function staffDaysPanel(){
-  var ym = S.sdMon || today().slice(0, 7), y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1;
-  var staff = S.users.filter(function(u){ return u.active; }).sort(byDiv);
-  var rows = staff.map(function(u){ var r = staffDays(u.username, ym);
-    return '<tr class="tap" data-grp="' + esc(u.division) + '" data-act="monthTrips" data-m="' + ym + '" data-u="' + esc(u.username) + '" tabindex="0"><td><b>' + esc(u.name) + '</b><div class="hint sd-sum">' + r.field + ' field · ' + r.office + ' office · ' + r.off + ' off</div></td><td class="r num sd-n">' + r.field + '</td><td class="r num sd-n">' + r.office + '</td><td class="r num sd-n">' + r.off + '</td>' +
-      '<td><div class="sd-bar" role="img" aria-label="' + r.field + ' field, ' + r.office + ' office, ' + r.off + ' off">' + [['field', r.field], ['office', r.office], ['off', r.off]].filter(function(x){ return x[1]; }).map(function(x){ return '<i class="sd-' + x[0] + '" style="flex:' + x[1] + '"></i>'; }).join('') + '</div></td></tr>'; }).join('');
-  var work = staff.length ? staffDays(staff[0].username, ym).work : 0;
-  var nav = '<div class="row-btns wk-nav"><button type="button" class="icon-btn" data-act="sdNav" data-d="-1" aria-label="Previous month">' + ic('left') + '</button><span class="wk-lab">' + esc(fMonth(ym)) + '</span><button type="button" class="icon-btn" data-act="sdNav" data-d="1" aria-label="Next month">' + ic('right') + '</button></div>';
-  return panel('Days this month', 'month', '<p class="hint" style="margin:0;padding:12px 18px 0">' + work + ' working days, counting weekdays and leaving out holidays. Field days are travel orders (weekends included); dispatch orders within the Capitol count as office days. Planned trips later in the month count too.</p>' +
-    '<div class="table-wrap"><table class="sdt"><thead><tr><th>Name</th><th class="r sd-n">Field</th><th class="r sd-n">Office</th><th class="r sd-n">Off or leave</th><th style="width:34%"><span class="sd-key"><i class="sd-field"></i>Field <i class="sd-office"></i>Office <i class="sd-off"></i>Off</span></th></tr></thead><tbody>' + rows + '</tbody></table></div>', nav, 'span-12');
 }
 document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="sdNav"]'); if (!t) return;
   var ym = S.sdMon || today().slice(0, 7), dt = new Date(+ym.slice(0, 4), +ym.slice(5, 7) - 1 + Number(t.dataset.d), 1); S.sdMon = ymd(dt).slice(0, 7); render(); });

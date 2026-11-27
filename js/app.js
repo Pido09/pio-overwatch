@@ -4,7 +4,7 @@
    newest version and a few lines on what changed. When it differs from this page's APP_VER, a card offers
    a refresh. Checked when the app comes back to the front and every 10 minutes. Keep APP_VER, version.json
    and the cache name in sw.js the same when publishing. */
-var APP_VER = 'v85';
+var APP_VER = 'v89';
 (function(){
   var shown = null, last = 0;
   function check(force){
@@ -146,7 +146,7 @@ function searchModal(){
 }
 /* pages search can open, with the words people might use for them */
 var PAGE_WORDS = { dashboard: 'home start overview', calendar: 'events schedule dispatch day', travel: 'travel orders to trips print', log: 'offset offsets log earn overtime', leaves: 'leave vacation sick wellness', tev: 'tev reimbursement claim cheque', monthly: 'monthly report summary', records: 'records history list entries', approvals: 'review approve pending requests', staff: 'staff people accounts pin days field office', settings: 'settings holidays backup rules', inventory: 'equipment camera gear inventory' };
-function searchPages(){ var seen = {}; return navItems().concat(isAdmin() ? [['log', 'plus', 'Log offset']] : []).filter(function(n){ if (seen[n[0]]) return false; seen[n[0]] = 1; return true; }); }
+function searchPages(){ var seen = {}; return navItems().concat(isAdmin() ? [['log', 'plus', 'Log offset'], ['approvals', 'check', 'Approvals']] : []).filter(function(n){ if (seen[n[0]]) return false; seen[n[0]] = 1; return true; }); }
 function sNorm(s){ return String(s || '').toLowerCase(); }
 function searchRun(q){
   var box = document.getElementById('sres'); if (!box) return;
@@ -1096,7 +1096,7 @@ function dashMotion(force){
   if (!S.me || S.view !== 'dashboard') { S._motionView = S.me ? S.view : null; return; }
   var arrived = S._motionView !== 'dashboard'; S._motionView = 'dashboard';
   if (!arrived && !force) return;
-  if (document.getElementById('splash') && !force) { S._motionView = null; return; }   // the splash will call again
+  if ((document.getElementById('splash') || document.querySelector('.wel')) && !force) { S._motionView = null; return; }   // the splash or welcome will call again
   if (lessMotion()) return;
   var g = document.querySelector('.grid.dash'); if (!g) return;
   var kids = [].slice.call(g.children);

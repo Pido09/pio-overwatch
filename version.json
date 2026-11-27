@@ -1,12 +1,11 @@
 {
-  "ver": "v85",
+  "ver": "v89",
   "notes": [
-    "Simpler menu: Home, Calendar, My travel orders and Offsets up front, the rest under More",
-    "Search now finds pages too; tap Search to jump anywhere",
-    "Events that still need people show Quick add picks right on the card",
-    "New opening: the app grows out of the green splash, dashboard cards rise in and numbers count up",
-    "Greeting shows who is out in the field today; tap the faces to open today",
-    "A tick for each working day this month: field, office or off, at a glance",
-    "Signing out now goes back to the pick-your-name screen"
+    "Cleaner menu: the sidebar is now frosted glass, light or dark with your theme",
+    "Staff page: one list with everyone's picture, account and this month's field, office and off days",
+    "Approvals left the menu; open pending requests from the To review tile or Search",
+    "The greeting now sums up today: how many events, and how many still need people",
+    "Dark mode has a slow green and teal glow; the green header gently shimmers",
+    "No more flash of the dashboard behind the welcome screen"
   ]
 }

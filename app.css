@@ -1301,3 +1301,80 @@ main:focus{outline:none} .btn:active:not(:disabled){transform:translateY(1px)}
 }
 :root:not([data-theme="dark"]) body{background:radial-gradient(1100px 600px at 0% 100%,rgba(120,214,160,.16),transparent 60%),radial-gradient(900px 520px at 100% 30%,rgba(245,185,46,.08),transparent 60%),var(--bg);background-attachment:fixed}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body{background:var(--bg)}}
+
+/* ---------- welcome covers the app at once (no see-through fade), so the dashboard never flashes behind it ---------- */
+.wel{animation:none}
+
+/* ---------- slow-moving soft white and green light over the green backgrounds ---------- */
+.band,.pfx,#splash{isolation:isolate}
+.pfx,#splash{position:relative;overflow:hidden}
+#splash{position:fixed}
+.band::before,.pfx::before,#splash::before{content:"";position:absolute;inset:-45%;z-index:-1;pointer-events:none;
+  background:radial-gradient(closest-side at 28% 38%,rgba(255,255,255,.17),transparent),
+             radial-gradient(closest-side at 72% 62%,rgba(143,227,166,.24),transparent),
+             radial-gradient(closest-side at 55% 18%,rgba(255,255,255,.09),transparent),
+             radial-gradient(closest-side at 15% 80%,rgba(91,208,119,.16),transparent);
+  animation:glowDrift 24s ease-in-out infinite alternate;will-change:transform}
+.pfx::before{opacity:.75}
+@keyframes glowDrift{0%{transform:translate3d(-7%,-5%,0) rotate(0deg) scale(1)}50%{transform:translate3d(4%,3%,0) rotate(6deg) scale(1.06)}100%{transform:translate3d(8%,6%,0) rotate(-4deg) scale(1)}}
+@media (prefers-reduced-motion:reduce){.band::before,.pfx::before,#splash::before{animation:none}}
+
+/* ---------- sidebar: clean frosted glass ---------- */
+html .side{--sd-ink:#163323;--sd-muted:#4A6656;--sd-faint:#6A8576;--sd-line:rgba(18,64,38,.10);--sd-hover:rgba(18,90,50,.07);--sd-chip:rgba(255,255,255,.6);
+  background:linear-gradient(180deg,rgba(255,255,255,.74),rgba(255,255,255,.56));-webkit-backdrop-filter:blur(26px) saturate(1.6);backdrop-filter:blur(26px) saturate(1.6);
+  color:var(--sd-ink);border:1px solid rgba(255,255,255,.85);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 24px 60px -32px rgba(10,50,28,.38),0 2px 8px rgba(10,50,28,.05)}
+:root[data-theme="dark"] .side{--sd-ink:#E6F1EA;--sd-muted:#A3BCAD;--sd-faint:#7F9A8A;--sd-line:rgba(255,255,255,.08);--sd-hover:rgba(255,255,255,.06);--sd-chip:rgba(255,255,255,.06);
+  background:linear-gradient(180deg,rgba(24,40,32,.72),rgba(14,24,19,.62));border-color:rgba(255,255,255,.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 24px 60px -30px rgba(0,0,0,.7)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .side{--sd-ink:#E6F1EA;--sd-muted:#A3BCAD;--sd-faint:#7F9A8A;--sd-line:rgba(255,255,255,.08);--sd-hover:rgba(255,255,255,.06);--sd-chip:rgba(255,255,255,.06);
+  background:linear-gradient(180deg,rgba(24,40,32,.72),rgba(14,24,19,.62));border-color:rgba(255,255,255,.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 24px 60px -30px rgba(0,0,0,.7)}}
+html .side .brand{border-bottom-color:var(--sd-line)}
+html .side .brand small,html .side .who small{color:var(--sd-muted)}
+html .side .nav button{color:var(--sd-muted)}
+html .side .nav button:hover{background:var(--sd-hover);color:var(--sd-ink)}
+html .side .nav button[aria-current="page"]{background:linear-gradient(135deg,#1A8A3F,#0E5E2B);color:#fff;box-shadow:0 10px 22px -12px rgba(14,94,43,.75),inset 0 1px 0 rgba(255,255,255,.18)}
+html .side .nav button[aria-current="page"] svg.i{color:#fff}
+html .side .nav-h{color:var(--sd-faint)}
+html.side-mini .side .nav-h{background:var(--sd-line)}
+html .side .side-foot{border-top-color:var(--sd-line)}
+html .side .themepick{background:var(--sd-hover);border-color:var(--sd-line)}
+html .side .themepick button{color:var(--sd-muted)}
+html .side .themepick button:hover{color:var(--sd-ink);background:var(--sd-hover)}
+html .side .themepick button[aria-pressed="true"]{background:var(--surface);color:var(--sd-ink);box-shadow:0 2px 6px -2px rgba(10,50,28,.25)}
+html .side .nav-more>summary{color:var(--sd-muted)}
+html .side .nav-more>summary:hover{background:var(--sd-hover);color:var(--sd-ink)}
+html .side .side-tog{border-color:var(--sd-line);background:var(--sd-chip);color:var(--sd-ink)}
+html .side .side-tog:hover{background:var(--sd-hover)}
+html .side .side-search kbd{border-color:var(--sd-line);color:var(--sd-muted)}
+/* the phone/tablet drawer slides over busy content: a little more solid */
+@media (max-width:1100px){html .side{background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(246,250,247,.88))}
+  :root[data-theme="dark"] .side{background:linear-gradient(180deg,rgba(22,36,29,.94),rgba(13,22,18,.92))}}
+@media (max-width:1100px) and (prefers-color-scheme:dark){:root:not([data-theme="light"]) .side{background:linear-gradient(180deg,rgba(22,36,29,.94),rgba(13,22,18,.92))}}
+
+/* ---------- collapsed sidebar: the hidden "/" key no longer pushes the search icon off-centre ---------- */
+@media (min-width:1101px){ html.side-mini .side .side-search kbd{display:none} }
+
+/* ---------- dark mode: a slow aurora of green, teal and a little gold behind the frosted cards ---------- */
+:root[data-theme="dark"] body::before{content:"";position:fixed;inset:-25%;z-index:-1;pointer-events:none;
+  background:radial-gradient(38% 34% at 82% 12%,rgba(46,170,90,.36),transparent 70%),
+             radial-gradient(34% 30% at 12% 70%,rgba(24,150,135,.28),transparent 70%),
+             radial-gradient(30% 26% at 62% 88%,rgba(245,185,46,.11),transparent 70%),
+             radial-gradient(42% 36% at 40% 40%,rgba(120,214,160,.10),transparent 70%);
+  animation:aurora 40s ease-in-out infinite alternate;will-change:transform}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body::before{content:"";position:fixed;inset:-25%;z-index:-1;pointer-events:none;
+  background:radial-gradient(38% 34% at 82% 12%,rgba(46,170,90,.36),transparent 70%),
+             radial-gradient(34% 30% at 12% 70%,rgba(24,150,135,.28),transparent 70%),
+             radial-gradient(30% 26% at 62% 88%,rgba(245,185,46,.11),transparent 70%),
+             radial-gradient(42% 36% at 40% 40%,rgba(120,214,160,.10),transparent 70%);
+  animation:aurora 40s ease-in-out infinite alternate;will-change:transform}}
+@keyframes aurora{0%{transform:translate3d(-4%,-3%,0) rotate(0deg)}50%{transform:translate3d(3%,4%,0) rotate(5deg) scale(1.05)}100%{transform:translate3d(5%,-2%,0) rotate(-3deg)}}
+@media (prefers-reduced-motion:reduce){body::before{animation:none!important}}
+@media print{body::before{display:none!important}}
+
+/* ---------- Staff: one table with pictures and this month's days ---------- */
+.st-who{display:flex;align-items:center;gap:12px;min-width:0}.st-who>div{min-width:0}
+.st-who .av{flex:none;border-radius:50%!important;object-fit:cover}
+.st-days{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;width:100%;min-width:150px;padding:6px 8px;margin:-6px -8px;border-radius:10px;transition:background-color .15s}
+.st-days:hover{background:var(--surface-2)}.st-days:focus-visible{outline:3px solid var(--brand-glow)}
+.st-dn{font-size:12.5px;color:var(--muted);white-space:nowrap}.st-dn b{color:var(--ink);font-variant-numeric:tabular-nums}
+.st-tab th:nth-child(3){width:30%}
+@media (max-width:640px){ .st-days{margin:0;padding:4px 0;min-width:0} .st-tab th:nth-child(3){width:auto} }
