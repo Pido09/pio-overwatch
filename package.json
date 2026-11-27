@@ -1,0 +1,9 @@
+{
+  "name": "pio-overwatch",
+  "private": true,
+  "description": "PIO Overwatch: offsets, travel orders, leaves and dispatching for the Provincial Information Office. A static web app (no build step).",
+  "scripts": {
+    "test": "node tests/run.js",
+    "bump": "node tools/bump.js"
+  }
+}

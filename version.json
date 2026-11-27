@@ -1,8 +1,12 @@
 {
-  "ver": "v81",
+  "ver": "v85",
   "notes": [
-    "On laptops, a day opens as an agenda: events top to bottom with their time on the left, who's out on the side",
-    "Pages use more of wide screens; phones fit more on screen",
-    "Events show who's going as picture bubbles with first names (tap Full names to switch)"
+    "Simpler menu: Home, Calendar, My travel orders and Offsets up front, the rest under More",
+    "Search now finds pages too; tap Search to jump anywhere",
+    "Events that still need people show Quick add picks right on the card",
+    "New opening: the app grows out of the green splash, dashboard cards rise in and numbers count up",
+    "Greeting shows who is out in the field today; tap the faces to open today",
+    "A tick for each working day this month: field, office or off, at a glance",
+    "Signing out now goes back to the pick-your-name screen"
   ]
 }

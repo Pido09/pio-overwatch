@@ -9,11 +9,21 @@ Current version: **6.0** (Firebase).
 
 | File | What it is |
 |---|---|
-| `index.html` | The whole app (screens, design and rules). Edit this for most patches. |
+| `index.html` | The page shell. It loads the styles and the code files below, in order. |
+| `app.css` | All the styles (look, layout, light and dark themes). |
+| `js/core.js` | Settings, storage, small helpers, talking to the server, balances. |
+| `js/views.js` | Drawing the screens: sign-in, dashboard, offsets, approvals, records, staff, settings. |
+| `js/events.js` | Events and the calendar, availability, assigning, duplicates, notifications, your dispatches, inventory, leaves. |
+| `js/documents.js` | TEVs, the travel order Word document and printing. |
+| `js/data.js` | Settings tabs, forms, instant saving, the Firebase connection and the offline preview (which holds the rules engine). |
+| `js/app.js` | The update prompt, later features and start-up (always loaded last). |
+| `version.json` | The current version and its what’s-new notes, shown in the app’s update prompt. |
+| `tests/run.js` | Automatic checks for the office rules. Run `node tests/run.js` (or `npm test`). |
+| `tools/bump.js` | Sets a new version everywhere at once, then runs the checks. |
 | `config.js` | Your Firebase settings (or the old Apps Script link). Set once. |
 | `firebase.js` | The Firebase tools, bundled so the app needs no outside sites. Don't edit. |
 | `firestore.rules` | Who may read and change what. Paste into Firebase console > Firestore > Rules. |
-| `sw.js` | Lets the app install and open fast. Change the version line (`pio-offsets-v23`) whenever `index.html` changes, so phones pick up the update. |
+| `sw.js` | Lets the app install, open fast and work offline. Its version is set by `tools/bump.js`. |
 | `to-header.png`, `to-footer.png`, `to-watermark.jpg` | Letterhead for printing travel orders from the browser (taken from the template). |
 | `to-template.docx` | The office travel order template, with fill-in spots: `{DATE}` `{NAME}` `{DEST}` `{DEP}` `{ARR}` `{PURPOSE}` `{X1}` `{X2}` `{REC1}`–`{REC3}`. |
 | `jszip.min.js` | Builds the travel order Word file inside the app. Don't edit. |
@@ -38,7 +48,7 @@ In the current app (still on the Google Sheet): Settings > **Backup (.json)**. K
    This lets the app load the Philippine holidays by itself.
 
 ### 3. GitHub
-1. Upload `index.html`, `firebase.js`, `firestore.rules`, `sw.js`, `README.md`. Commit.
+1. Upload `index.html`, `app.css`, the `js` folder, `firebase.js`, `firestore.rules`, `sw.js`, `version.json`, `README.md`. Commit.
 2. Open `config.js` on GitHub, click the pencil, and paste the values into `window.PIO_FIREBASE`. Commit.
 3. After a minute, open the site. It shows **Create the admin account**: use your own username and PIN.
 
@@ -51,7 +61,7 @@ In the current app (still on the Google Sheet): Settings > **Backup (.json)**. K
 
 | What changed | Where | Steps |
 |---|---|---|
-| `index.html`, `sw.js`, template | GitHub | Upload the files (same names) and commit. Live in about a minute. Refresh twice on phones. |
+| App code or styles | Your computer, then GitHub | Run `node tools/bump.js v82 "What changed"` (sets the version everywhere and runs the checks), then commit and push. Live in about a minute; open copies show the Update ready prompt. |
 | `firestore.rules` | Firebase console | Firestore > Rules > paste > Publish. Also update the copy on GitHub. |
 
 ## Free plan limits (Spark)
