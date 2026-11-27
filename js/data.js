@@ -811,7 +811,9 @@ var Fire = (function(){
         .then(function(){ return ok(true, fresh()); }, function(e){ return fail(/invalid-credential|wrong-password/.test(e.code || '') ? 'Current PIN is wrong.' : authMsg(e)); });
     });
   }
-  return { api: api };
+  // the person's sign-in token, so the phone alerts worker knows who is asking
+  function idToken(){ return auth && auth.currentUser ? auth.currentUser.getIdToken() : Promise.resolve(''); }
+  return { api: api, idToken: idToken };
 })();
 
 /* ---------- Firebase-only screens: import and starting PINs ---------- */

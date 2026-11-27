@@ -8,7 +8,7 @@ let pass = 0, fail = 0; const fails = [];
 function check(name, ok, detail){ if (ok){ pass++; } else { fail++; fails.push(name + (detail !== undefined ? '  →  ' + JSON.stringify(detail) : '')); } }
 
 /* ---------- 1. files and versions ---------- */
-const order = ['core.js', 'views.js', 'events.js', 'documents.js', 'data.js', 'tasks.js', 'app.js'];
+const order = ['core.js', 'views.js', 'events.js', 'documents.js', 'data.js', 'tasks.js', 'push.js', 'app.js'];
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const srcs = order.map(function(f){ return fs.readFileSync(path.join(root, 'js', f), 'utf8'); });
 srcs.forEach(function(src, i){ try { new Function(src); check('parses: js/' + order[i], true); } catch (e) { check('parses: js/' + order[i], false, e.message); } });
@@ -224,6 +224,29 @@ withState(Object.assign({}, base, { me: users[0] }), function(){
   const E3 = engine({ divisions: [{ id: 'd1', name: 'Admin and Support Division', short: 'Admin' }, { id: 'd2', name: 'Bantayog Division', short: 'Bantayog' }],
     users: [{ username: 'adm', name: 'Admin One', role: 'admin', active: true, division: 'd1' }, { username: 'bob', name: 'Bob Cruz', role: 'employee', active: true, division: 'd2' }] });
   check('only Bantayog, Social Media and Special Projects staff can post', !E3.run('adm', 'saveTask', { title: 'Pubmat: flag day', template: 'pubmat', who: [['bob'], ['bob'], [], ['adm']] }).ok && E3.run('adm', 'saveTask', { title: 'Pubmat: flag day', template: 'pubmat', who: [['bob'], ['bob'], [], ['bob']] }).ok);
+})();
+
+/* ---------- 8. phone alerts: who is alerted when something changes ---------- */
+(function(){
+  const T = G.taskTpl('pubmat'), mk = function(done){ return [{ id: 'P', title: 'Pubmat: flag day', template: 'pubmat', kind: 'Pubmat', status: 'Open', createdBy: 'adm', createdAt: new Date().toISOString(), assignees: ['bob', 'ann'],
+    steps: T.steps.map(function(x, i){ return { id: 's' + i, name: x[0], skill: x[1], type: x[2], who: i === 0 || i === 3 ? ['bob'] : i === 1 ? ['ann'] : [], doneBy: i < done ? (i === 1 ? 'ann' : 'bob') : '', doneAt: i < done ? new Date().toISOString() : '' }; }) }]; };
+  const st = Object.assign({}, base, { divisions: [{ id: 'd1', name: 'Social Media and Production Division', short: 'Social Media' }], events: [], travelOrders: [] });
+  let before, after;
+  withState(Object.assign({}, st, { tasks: mk(0) }), function(){ before = G.pushSnap(); });
+  check('a new task alerts the first step its turn, the rest that they are on it', before.some(function(a){ return a.to === 'bob' && /^turn:P:0/.test(a.id); }) && before.some(function(a){ return a.to === 'ann' && a.id === 'new:P'; }), before);
+  withState(Object.assign({}, st, { tasks: mk(1) }), function(){ after = G.pushSnap(); });
+  const d = G.pushDiff(before, after);
+  check('finishing the design alerts the caption writer', d.length === 1 && d[0].to === 'ann' && /^turn:P:1/.test(d[0].id), d);
+  withState(Object.assign({}, st, { tasks: mk(2) }), function(){ after = G.pushSnap(); });
+  check('nobody is alerted about their own change', G.pushSnap && after.every(function(a){ return a.to !== 'adm'; }));
+  withState(Object.assign({}, st, { events: [{ id: 'E', title: 'Board session', date: D(1), dateTo: D(1), status: 'Confirmed', kind: 'tasking', assigned: ['bob'] }], tasks: [] }), function(){ after = G.pushSnap(); });
+  check('a new dispatch alerts the person', after.some(function(a){ return a.to === 'bob' && a.id === 'asg:E'; }));
+})();
+/* the push encryption matches the standard's worked example, and our signature verifies */
+(function(){
+  let r = {}; try { r = JSON.parse(require('child_process').execFileSync(process.execPath, [require('path').join(root, 'tests', 'webpush.mjs')], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim().split('\n').pop()); } catch (e) { r = { error: String(e) }; }
+  check('phone alert encryption matches the web push standard (RFC 8291)', r.rfc === true, r);
+  check('phone alert signature verifies (VAPID)', r.vapid === true, r);
 })();
 
 report();

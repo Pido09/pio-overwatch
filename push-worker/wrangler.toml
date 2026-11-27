@@ -1,0 +1,17 @@
+# PIO Overwatch phone alerts. See PUSH-SETUP.md for the steps.
+name = "pio-push"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+
+# Created with: npx wrangler kv namespace create SUBS   (paste the id it prints here)
+[[kv_namespaces]]
+binding = "SUBS"
+id = "980a3e883f404883960f5fe4a3ac9717"
+
+[vars]
+ORIGINS = "https://pido09.github.io,http://localhost:5173"
+FIREBASE_PROJECT = "project-overwatch-pio"
+VAPID_SUBJECT = "https://pido09.github.io/pio-overwatch/"
+# VAPID_PUBLIC is filled in by: node tools/vapid.js
+VAPID_PUBLIC = "BGGw1xlwT2x0eCQIkmNXBxLFp8VWnVHStfdhiZcC6QD-1BU7I2r7li1ANYjJv2Jmzov14NF4Z7vVIIYnRcwpPXg"
+# VAPID_PRIVATE is a secret, set with: wrangler secret put VAPID_PRIVATE  (never put it in this file)

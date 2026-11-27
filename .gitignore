@@ -1,0 +1,4 @@
+push-worker/.vapid-private.json
+push-worker/.wrangler/
+push-worker/node_modules/
+node_modules/
