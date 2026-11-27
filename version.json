@@ -1,7 +1,9 @@
 {
-  "ver": "v97",
+  "ver": "v99",
   "notes": [
-    "Phone alerts: new dispatches, ready travel orders and your turn on tasks, even when the app is closed",
-    "Turn them on from the bell; on iPhone, add the app to the Home Screen first"
+    "Phone alerts show the PIO tower icon in the status bar instead of a white circle",
+    "The app icon and launch screen show the seal on green, no more white background",
+    "Notifications can be filtered: New, Dispatches, Tasks, Travel orders, Reminders, Incomplete",
+    "Your turn on a task now shows in the bell too"
   ]
 }

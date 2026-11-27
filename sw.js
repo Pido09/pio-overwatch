@@ -1,8 +1,8 @@
 // PIO Offset Tracker service worker.
 // Always asks GitHub for the newest files first (skipping the browser cache), so updates show up
 // on the next refresh. The saved copy is used only when offline. Data calls to Apps Script are never cached.
-var CACHE = 'pio-offsets-v97';
-var SHELL = ['./', 'index.html', 'app.css', 'js/core.js', 'js/views.js', 'js/events.js', 'js/documents.js', 'js/data.js', 'js/tasks.js', 'js/push.js', 'js/app.js', 'config.js', 'pio-logo.webp', 'pio-digital.webp', 'capitol.webp', 'icon-192.png', 'manifest.webmanifest'];
+var CACHE = 'pio-offsets-v99';
+var SHELL = ['./', 'index.html', 'app.css', 'js/core.js', 'js/views.js', 'js/events.js', 'js/documents.js', 'js/data.js', 'js/tasks.js', 'js/push.js', 'js/app.js', 'config.js', 'pio-logo.webp', 'pio-digital.webp', 'capitol.webp', 'icon-192.png', 'icon-maskable-192.png', 'apple-touch-icon.png', 'badge-96.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) {
@@ -27,7 +27,7 @@ self.addEventListener('fetch', function (e) {
 /* phone alerts sent by the alerts worker (push-worker/), even when the app is closed */
 self.addEventListener('push', function(e){
   var d = {}; try { d = e.data ? e.data.json() : {}; } catch (x) { d = { body: e.data ? e.data.text() : '' }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'PIO Overwatch', { body: d.body || '', tag: d.tag || undefined, renotify: !!d.tag, icon: 'icon-192.png', badge: 'icon-192.png', data: { url: d.url || './' } }));
+  e.waitUntil(self.registration.showNotification(d.title || 'PIO Overwatch', { body: d.body || '', tag: d.tag || undefined, renotify: !!d.tag, icon: 'icon-192.png', badge: 'badge-96.png', data: { url: d.url || './' } }));
 });
 /* tapping an alert opens the app on the right page */
 self.addEventListener('notificationclick', function(e){

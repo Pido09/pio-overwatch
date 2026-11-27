@@ -1009,13 +1009,16 @@ function myAlerts(){
     else if (canSched() && evState(e) === 'need' && dayDiff(e.date, td) <= 7) out.push({ id: 'need:' + e.id, e: e, kind: 'need', text: 'Incomplete event ' + evRelText(e) + ': ' + e.title });
   });
   S.travelOrders.forEach(function(t){ if (t.status === 'Prepared' && t.dateTo >= td && (t.usernames || []).indexOf(me) >= 0) out.push({ id: 'to:' + t.id, kind: 'to', text: 'Travel order ready: ' + t.event }); });
+  // tasks waiting on you: your turn on a step, or a caption sent back to you
+  if (typeof tasksAll === 'function') tasksAll().forEach(function(t){ if (!myTurn(t)) return; var c = taskCur(t);
+    out.push({ id: 'turn:' + t.id + ':' + c.i + ':' + (t.sentBack ? t.sentBack.at : ''), t: t, kind: 'task', text: (t.sentBack ? 'Sent back to you: ' : 'Your turn: ') + (c.steps.length > 1 ? c.s.name + ' · ' : '') + t.title }); });
   return out;
 }
 function unreadCount(){ if (!S.me) return 0; var seen = nGet('seen'); return myAlerts().filter(function(a){ return seen.indexOf(a.id) < 0; }).length; }
 function devNotifState(){ if (typeof Notification === 'undefined') return 'none'; if (Notification.permission === 'denied') return 'denied'; return Notification.permission === 'granted' && lGet('pio_dn_' + S.me.username) === '1' ? 'on' : 'off'; }
 function showSys(title, body, tag){
   try {
-    var o = { body: body, tag: tag, icon: 'icon-192.png', badge: 'icon-192.png' };
+    var o = { body: body, tag: tag, icon: 'icon-192.png', badge: 'badge-96.png' };
     if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) navigator.serviceWorker.getRegistration().then(function(r){ if (r && r.showNotification) r.showNotification(title, o); else new Notification(title, o); });
     else new Notification(title, o);
   } catch(e){}
@@ -1027,13 +1030,25 @@ function checkNotify(){
   nSet('notified', done.concat(fresh.map(function(a){ return a.id; })).slice(-200));
   fresh.slice(0, 3).forEach(function(a){ showSys(a.kind === 'assigned' ? 'New dispatch' : a.kind === 'reminder' ? 'Reminder' : a.kind === 'need' ? 'Incomplete event' : 'Travel order ready', a.text, a.id); });
 }
-function notifModal(){
-  var al = myAlerts(), seen = nGet('seen'), ds = devNotifState();
-  al.sort(function(a, b){ var ua = seen.indexOf(a.id) < 0, ub = seen.indexOf(b.id) < 0; return ua === ub ? 0 : ua ? -1 : 1; });
-  var rows = al.map(function(a){ var un = seen.indexOf(a.id) < 0; return '<li class="nrow' + (un ? ' unread' : '') + '"><button type="button" class="nbtn" ' + (a.e ? 'data-act="evPick" data-id="' + a.e.id + '"' : 'data-go="travel"') + '><span><b>' + esc(a.text) + '</b><small class="hint" style="display:block">' + (a.e ? esc(evShort(a.e) + (evTimes(a.e) ? ' · ' + evTimes(a.e) : '') + ' · ' + a.e.venue) : 'Open Travel orders') + '</small></span></button></li>'; }).join('');
+/* the kinds of alerts, for the filter chips */
+var N_KINDS = [['all', 'All', 'bell'], ['unread', 'New', 'flag'], ['assigned', 'Dispatches', 'route'], ['task', 'Tasks', 'tick'], ['to', 'Travel orders', 'plane'], ['reminder', 'Reminders', 'clock'], ['need', 'Incomplete', 'megaphone']];
+function notifModal(keep){
+  // what was new when the window opened stays marked new while you switch filters
+  if (!keep || !S.nSnap) S.nSnap = nGet('seen');
+  var all = myAlerts(), seen = S.nSnap, ds = devNotifState(), f = S.nFilter || 'all';
+  var isNew = function(a){ return seen.indexOf(a.id) < 0; };
+  var counts = {}; all.forEach(function(a){ counts[a.kind] = (counts[a.kind] || 0) + 1; if (isNew(a)) counts.unread = (counts.unread || 0) + 1; }); counts.all = all.length;
+  if (f !== 'all' && !counts[f]) f = 'all';
+  var al = all.filter(function(a){ return f === 'all' || (f === 'unread' ? isNew(a) : a.kind === f); });
+  al.sort(function(a, b){ var ua = isNew(a), ub = isNew(b); return ua === ub ? 0 : ua ? -1 : 1; });
+  var chips = all.length ? '<div class="nf-chips" role="group" aria-label="Show">' + N_KINDS.filter(function(k){ return k[0] === 'all' || counts[k[0]]; }).map(function(k){
+    return '<button type="button" class="chip nf-chip" data-act="nFilter" data-f="' + k[0] + '" aria-pressed="' + (f === k[0]) + '">' + ic(k[2]) + k[1] + '<span class="nf-n">' + (counts[k[0]] || 0) + '</span></button>'; }).join('') + '</div>' : '';
+  var rows = al.map(function(a){ var un = isNew(a), go = a.t ? 'data-act="taskOpen" data-id="' + esc(a.t.id) + '"' : a.e ? 'data-act="evPick" data-id="' + a.e.id + '"' : 'data-go="travel"';
+    var sub = a.t ? (a.t.sentBack ? '“' + a.t.sentBack.note + '”' : taskDue(a.t).txt + ' · ' + (a.t.template ? taskTpl(a.t.template).name : 'Task')) : a.e ? evShort(a.e) + (evTimes(a.e) ? ' · ' + evTimes(a.e) : '') + ' · ' + a.e.venue : 'Open Travel orders';
+    return '<li class="nrow' + (un ? ' unread' : '') + ' nk-' + a.kind + '"><button type="button" class="nbtn" ' + go + '><span class="nk-ic" aria-hidden="true">' + ic((N_KINDS.filter(function(k){ return k[0] === a.kind; })[0] || [0, 0, 'bell'])[2]) + '</span><span><b>' + esc(a.text) + '</b><small class="hint" style="display:block">' + esc(sub) + '</small></span></button></li>'; }).join('');
   var dev = ds === 'none' ? '<p class="hint" style="margin:0">This browser cannot show device notifications.</p>' : ds === 'denied' ? '<p class="hint" style="margin:0">Notifications are blocked for this site. Allow them in your browser settings to turn them on.</p>' : ds === 'on' ? '<button type="button" class="btn btn-ghost" data-act="notifOff">Turn off device notifications</button>' : '<button type="button" class="btn btn-primary" data-act="notifOn">' + ic('bell') + 'Turn on device notifications</button>';
-  modal('Notifications', (rows ? '<ul style="margin:0;padding:0">' + rows + '</ul>' : '<p class="hint" style="margin:0">Nothing new. Dispatches, reminders and ready travel orders show up here.</p>') + '<div class="dsec">On this device</div>' + dev + '<p class="hint" style="margin:8px 0 0">You get a notice when the app is open or when you open it. Alerts while the app is closed need an extra server setup.</p>', '<button type="button" class="btn btn-ghost" data-act="close">Close</button>');
-  nSet('seen', al.map(function(a){ return a.id; })); var b = document.querySelector('.badge.bad[data-n]'); 
+  modal('Notifications', chips + (rows ? '<ul class="nlist" style="margin:0;padding:0">' + rows + '</ul>' : '<p class="hint" style="margin:0">' + (all.length ? 'Nothing here. Pick another filter.' : 'Nothing new. Dispatches, your turn on tasks, reminders and ready travel orders show up here.') + '</p>') + '<div class="dsec">On this device</div>' + dev + (typeof pushCfg === 'function' && pushCfg() ? '' : '<p class="hint" style="margin:8px 0 0">You get a notice when the app is open or when you open it.</p>'), '<button type="button" class="btn btn-ghost" data-act="close">Close</button>');
+  nSet('seen', all.map(function(a){ return a.id; })); var b = document.querySelector('.badge.bad[data-n]'); 
 }
 function bellBtn(side){ var n = unreadCount(); return side ? '<button data-act="notifs">' + ic('bell') + '<span>Notifications</span>' + (n ? '<span class="badge bad">' + n + '<span class="sr"> new</span></span>' : '') + '</button>' : '<button data-act="notifs" class="bellb" aria-label="Notifications' + (n ? ', ' + n + ' new' : '') + '">' + ic('bell') + (n ? '<span class="badge bad">' + n + '</span>' : '') + '</button>'; }
 function needSoon(){ var td = today(), lim = addDays(td, 7); return S.events.filter(function(e){ return e.status !== 'Cancelled' && e.dateTo >= td && e.date <= lim && evState(e) === 'need'; }).length; }
@@ -1530,3 +1545,6 @@ var PESO_FMT = new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2, maximu
 function peso(n){ return '₱' + PESO_FMT.format(Number(n) || 0); }
 function toOf(id){ return S.travelOrders.filter(function(t){ return t.id === id; })[0]; }
 
+
+/* filter the notifications by kind */
+document.addEventListener('click', function(ev){ var t = ev.target.closest('[data-act="nFilter"]'); if (!t) return; S.nFilter = t.dataset.f; notifModal(true); });
