@@ -160,7 +160,21 @@ function divChip(id){ var d = divOf(id); return d ? '<span class="dchip" style="
 function toast(msg){ var t = document.getElementById('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(function(){ t.hidden = true; }, 3000); }
 
 /* ---------- server ---------- */
-var TASK_KINDS = ['Graphic design', 'Caption', 'Writing', 'Photo', 'Video', 'Layout', 'Social media post', 'Other'];
+/* task templates: the steps each kind of work goes through, and the skill each step needs.
+   Step types: work (someone does it), proof (someone other than the writer reads it), post (it goes out). */
+var TASK_TPL = [
+  { id: 'pubmat', name: 'Pubmat', icon: 'pen', steps: [['Design', 'Graphic artist', 'work'], ['Caption', 'Writer', 'work'], ['Proofreading', 'Writer', 'proof'], ['Posting', '', 'post']] },
+  { id: 'release', name: 'Press release', icon: 'edit', steps: [['Design', 'Graphic artist', 'work'], ['Caption', 'Writer', 'work'], ['Proofreading', 'Writer', 'proof'], ['Posting', '', 'post']] },
+  { id: 'photo', name: 'Photo', icon: 'camera', steps: [['Selection and editing', 'Photographer', 'work'], ['Caption', 'Writer', 'work'], ['Proofreading', 'Writer', 'proof']] },
+  { id: 'video', name: 'Video', icon: 'camera', steps: [['Editing', 'Videographer', 'work'], ['Caption', 'Writer', 'work'], ['Proofreading', 'Writer', 'proof'], ['Posting', '', 'post']] },
+  { id: 'other', name: 'Other task', icon: 'tick', steps: [['Do the task', '', 'work']] }
+];
+function taskTpl(id){ return TASK_TPL.filter(function(t){ return t.id === id; })[0] || TASK_TPL[TASK_TPL.length - 1]; }
+/* a task's steps; older tasks without steps are one step done by everyone on it */
+function taskStepsOf(t){
+  if (Array.isArray(t.steps) && t.steps.length) return t.steps.map(function(s){ return Object.assign({ who: [], doneBy: '', doneAt: '' }, s, { who: (s.who || []).slice() }); });
+  return [{ id: 's1', name: t.kind || 'Do the task', skill: '', type: 'work', who: (t.assignees || []).slice(), doneBy: t.status === 'Done' ? t.doneBy || '' : '', doneAt: t.status === 'Done' ? t.doneAt || '' : '' }];
+}
 function apply(d){
   S.me = d.me; S.users = d.users; S.entries = d.entries; S.divisions = d.divisions;
   S.holidays = d.holidays || []; S.settings = d.settings || S.settings; S.activity = d.activity || [];

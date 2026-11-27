@@ -1436,3 +1436,142 @@ html .side .side-search kbd{border-color:var(--sd-line);color:var(--sd-muted)}
 .rp-l li span{display:flex;flex-direction:column;min-width:0}.rp-l small{color:var(--muted);font-size:12px}
 @media print{ .rp-panel{box-shadow:none!important;border:0!important} .rp-list{grid-template-columns:1fr 1fr} .rp-p{border-color:#ccc} .tk-tabs,.page-actions{display:none!important} }
 @media (max-width:640px){ .tk-pick-l{grid-template-columns:repeat(2,minmax(0,1fr))} .rp-list{grid-template-columns:1fr} }
+/* task form: who fits the kind of work */
+.tk-fit{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin:-2px 0 8px;font-size:12.5px;color:var(--muted);min-height:20px}
+.tk-fit:empty{display:none}
+.tk-fit svg.i{width:14px;height:14px;color:var(--brand-strong)}
+.tk-fit b{color:var(--ink)}
+.tk-fit .lnk{font-size:12.5px;font-weight:600}
+.tk-p[hidden]{display:none!important}
+.tk-p{will-change:transform}
+
+/* ---------- task steps: assigned, edited, proofread, posted ---------- */
+.tk-prog{display:flex;align-items:center;gap:10px;margin-top:5px}
+.tk-bar{display:inline-flex;gap:3px;flex:none;width:120px}
+.tk-seg{flex:1;display:flex;flex-direction:column;gap:5px;min-width:0}
+.tk-seg i{display:block;height:6px;border-radius:99px;background:var(--line-strong);position:relative;overflow:hidden}
+.tk-seg.on i{background:transparent}
+.tk-seg.on i::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(90deg,var(--brand),color-mix(in srgb,var(--brand) 70%,#8FE3A6));transform-origin:left}
+.tk-seg.next i{background:color-mix(in srgb,var(--brand) 22%,var(--line-strong))}
+.tk-seg.next i::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);transform:translateX(-100%);animation:tkShine 2.4s ease-in-out infinite}
+.tk-seg.grow i::after{animation:tkGrow .7s cubic-bezier(.22,1,.36,1) .15s both}
+.tk-bar.back .tk-seg.next i{background:color-mix(in srgb,var(--red) 30%,var(--line-strong))}
+@keyframes tkGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes tkShine{60%,100%{transform:translateX(100%)}}
+.tk-now{font-size:12px;font-weight:600;color:var(--ink-2)}.tk-now.back{color:var(--red)}
+.tk-bar.big{width:100%;gap:6px}.tk-bar.big .tk-seg i{height:8px}
+.tk-bar.big small{font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.tk-bar.big .tk-seg.on small{color:var(--brand-strong)}.tk-bar.big .tk-seg.next small{color:var(--ink)}
+/* step ring in front of a post */
+.tk-ring{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--brand) calc(var(--p) * 360deg),var(--line-strong) 0);position:relative}
+.tk-ring::before{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--surface)}
+.tk-ring b{position:relative;font-family:var(--f-display);font-size:12.5px;font-weight:800;color:var(--brand-strong);display:grid;place-items:center}
+.tk-ring b svg.i{width:14px;height:14px;stroke-width:3}
+.is-done .tk-ring::before{background:var(--brand)}.is-done .tk-ring b{color:#fff}
+/* next step button on a row */
+.tk-next{all:unset;box-sizing:border-box;flex:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:999px;font-size:12.5px;font-weight:700;border:1px solid transparent;transition:transform .25s cubic-bezier(.34,1.56,.64,1),background-color .2s,box-shadow .2s}
+.tk-next svg.i{width:14px;height:14px}
+.tk-next.s0{background:color-mix(in srgb,var(--gold) 16%,var(--surface));color:color-mix(in srgb,var(--gold) 75%,var(--ink));border-color:color-mix(in srgb,var(--gold) 40%,transparent)}
+.tk-next.s1{background:var(--violet-soft);color:var(--violet);border-color:color-mix(in srgb,var(--violet) 35%,transparent)}
+.tk-next.s2{background:var(--brand);color:#fff;box-shadow:0 8px 18px -10px var(--brand)}
+.tk-next:hover{transform:translateY(-1px)}.tk-next:active{transform:scale(.95)}.tk-next:focus-visible{outline:3px solid var(--brand-glow);outline-offset:2px}
+@media (max-width:640px){ .tk-next span{display:none} .tk-next{padding:0;width:40px;justify-content:center} .tk-bar{width:96px} }
+/* where the posts are */
+.tk-pipe{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.tk-pipe-s{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--surface) 70%,transparent);transition:border-color .2s,background-color .2s,transform .25s cubic-bezier(.22,1,.36,1)}
+.tk-pipe-s:hover{transform:translateY(-2px);border-color:var(--line-strong)}
+.tk-pipe-s[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)}
+.tk-pipe-s:focus-visible{outline:3px solid var(--brand-glow)}
+.tk-pipe-n{font-family:var(--f-display);font-size:24px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.tk-pipe-l{font-size:12.5px;font-weight:600;color:var(--muted)}
+.tk-pipe-bar{display:flex;gap:2px;margin-top:2px}.tk-pipe-bar i{flex:1;height:4px;border-radius:99px;background:var(--line-strong)}.tk-pipe-bar i.on{background:var(--brand)}
+.tk-pipe-s.s0 .tk-pipe-n{color:var(--gold)}.tk-pipe-s.s1 .tk-pipe-n{color:var(--violet)}.tk-pipe-s.s2 .tk-pipe-n{color:var(--brand-strong)}
+.tk-clear{display:inline-flex;align-items:center;gap:4px;background:var(--brand-soft);border-color:var(--brand);color:var(--brand-strong);font-weight:700}.tk-clear svg.i{width:13px;height:13px}
+@media (max-width:640px){ .tk-pipe{grid-template-columns:repeat(2,minmax(0,1fr))} }
+/* a task in full: timeline */
+.tk-note{white-space:pre-line;margin:8px 0}
+.tk-tl-bar{margin:14px 0 6px}
+.tk-tl{list-style:none;margin:8px 0 0;padding:0;position:relative}
+.tk-step{display:flex;gap:12px;padding:0 0 14px;position:relative}
+.tk-step::before{content:"";position:absolute;left:11px;top:24px;bottom:2px;width:2px;background:var(--line)}
+.tk-step:last-child::before{display:none}
+.tk-step.on::before{background:var(--brand)}
+.tk-dot{flex:none;width:24px;height:24px;border-radius:50%;border:2px solid var(--line-strong);display:grid;place-items:center;background:var(--surface);position:relative;z-index:1;box-sizing:border-box}
+.tk-dot svg.i{width:13px;height:13px;stroke-width:3;color:#fff}
+.tk-step.on .tk-dot{background:var(--brand);border-color:var(--brand)}
+.tk-step.cur .tk-dot{border-color:var(--brand);box-shadow:0 0 0 4px var(--brand-soft)}
+.tk-step b{font-size:14px}
+.tk-sd{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.7}
+.tk-who{display:inline-flex;align-items:center;gap:5px;font-weight:600;color:var(--ink);vertical-align:middle}.tk-who .av{border-radius:50%!important}
+.tk-ed{color:var(--violet)}
+.tk-pnote{margin:2px 0 4px;padding:6px 10px;border-radius:10px;background:var(--surface-2);color:var(--ink-2);font-style:italic}
+.tk-backnote{display:inline-flex;gap:6px;align-items:flex-start;color:var(--red);font-weight:600}.tk-backnote svg.i{width:14px;height:14px;margin-top:3px;flex:none}
+/* proofread dialog and how-it-goes choices */
+.tk-pq{display:flex;flex-direction:column;gap:2px;margin:0 0 14px}
+.tk-pf,.tk-flow{border:0;padding:0;margin:0 0 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;min-width:0}
+.tk-pf legend,.tk-flow legend{font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px;padding:0}
+.tk-po,.tk-fo{position:relative;cursor:pointer}
+.tk-po input,.tk-fo input{position:absolute;opacity:0;pointer-events:none}
+.tk-po>span,.tk-fo>span{display:flex;flex-direction:column;gap:3px;height:100%;box-sizing:border-box;padding:12px;border-radius:14px;border:1px solid var(--line-strong);transition:border-color .15s,background-color .15s,box-shadow .15s}
+.tk-po>span>svg.i,.tk-fo>span>svg.i{width:18px;height:18px;color:var(--brand-strong);margin-bottom:2px}
+.tk-po small,.tk-fo small{font-size:12px;color:var(--muted)}
+.tk-po input:checked+span,.tk-fo input:checked+span{border-color:var(--brand);background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)}
+.tk-po input:focus-visible+span,.tk-fo input:focus-visible+span{outline:3px solid var(--brand-glow)}
+.tk-flow[disabled] .tk-fo{opacity:.55;cursor:not-allowed}
+.tk-flow>p{grid-column:1/-1}
+.tk-mini{display:flex;gap:2px;width:54px;margin:4px 0}.tk-mini i{flex:1;height:5px;border-radius:99px;background:var(--brand)}.tk-mini i:last-child{opacity:.35}
+@media (max-width:480px){ .tk-pf,.tk-flow{grid-template-columns:1fr} }
+.rp-l li.proof svg.i{color:var(--violet)}
+@media (prefers-reduced-motion:reduce){ .tk-seg.grow i::after,.tk-seg.next i::before{animation:none} }
+
+/* ---------- task templates: chains of steps with people per step ---------- */
+.tk-bar{width:clamp(110px,calc(var(--n,4) * 30px),190px)}
+.tk-nf{display:inline-flex;margin-left:6px;vertical-align:middle}.tk-nf>*{margin-left:-5px;box-shadow:0 0 0 2px var(--surface);border-radius:50%!important}.tk-nf>*:first-child{margin-left:0}
+.tk-now b{color:var(--ink)}
+.tk-ring b{font-size:10.5px;letter-spacing:-.02em}
+.tk-next.t-work{background:color-mix(in srgb,var(--gold) 16%,var(--surface));color:color-mix(in srgb,var(--gold) 75%,var(--ink));border-color:color-mix(in srgb,var(--gold) 40%,transparent)}
+.tk-next.t-proof{background:var(--violet-soft);color:var(--violet);border-color:color-mix(in srgb,var(--violet) 35%,transparent)}
+.tk-next.t-post{background:var(--brand);color:#fff;box-shadow:0 8px 18px -10px var(--brand)}
+.tk-row.my-turn{box-shadow:inset 3px 0 0 var(--sun)}
+.tk-sec.turn{color:color-mix(in srgb,var(--gold) 80%,var(--ink))}
+.tk-skill{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px;background:var(--surface-2);color:var(--muted);margin-left:6px;vertical-align:middle}
+.tk-nowtag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:1px 7px;border-radius:99px;background:var(--sun);color:#1B2A20;margin-left:6px;vertical-align:middle}
+.tk-dot{font-size:11px;font-weight:800;color:var(--muted)}
+/* template cards */
+.tk-tpls{border:0;padding:0;margin:0 0 14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;min-width:0}
+.tk-tpls legend{font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px;padding:0}
+.tk-tpl{position:relative;cursor:pointer}
+.tk-tpl input{position:absolute;opacity:0;pointer-events:none}
+.tk-tpl>span{display:flex;flex-direction:column;gap:3px;height:100%;box-sizing:border-box;padding:10px 12px;border-radius:14px;border:1px solid var(--line-strong);transition:border-color .15s,background-color .15s,box-shadow .15s,transform .25s cubic-bezier(.34,1.56,.64,1)}
+.tk-tpl>span>svg.i{width:18px;height:18px;color:var(--brand-strong)}
+.tk-tpl b{font-size:13.5px}
+.tk-chain{font-size:11.5px;color:var(--muted);line-height:1.4}.tk-chain i{font-style:normal;color:var(--brand-strong);font-weight:800}
+.tk-tpl:hover>span{border-color:var(--brand)}
+.tk-tpl input:checked+span{border-color:var(--brand);background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)}
+.tk-tpl input:active+span{transform:scale(.97)}
+.tk-tpl input:focus-visible+span{outline:3px solid var(--brand-glow)}
+.tk-tpls[disabled] .tk-tpl{opacity:.5;cursor:not-allowed}
+@media (max-width:640px){ .tk-tpls{grid-template-columns:repeat(2,minmax(0,1fr))} }
+/* step editor */
+.tk-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;counter-reset:none}
+.tk-st{border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--surface) 70%,transparent);transition:border-color .2s,box-shadow .2s}
+.tk-st.open{border-color:var(--brand);box-shadow:0 10px 30px -22px rgba(10,60,30,.6)}
+.tk-st.done{opacity:.75}
+.tk-st-h{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.tk-sn{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);font-size:12px;font-weight:800;color:var(--ink-2)}
+.tk-st.open .tk-sn{background:var(--brand);color:#fff}.tk-st.done .tk-sn{background:var(--brand);color:#fff}.tk-sn svg.i{width:13px;height:13px;stroke-width:3}
+.tk-st-t{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:2px 0}
+.tk-st-t>b{font-size:14px}
+.tk-chosen{flex-basis:100%;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2);margin-top:3px;min-width:0}
+.tk-chosen>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tk-chosen .av{border-radius:50%!important;margin-left:-5px;box-shadow:0 0 0 2px var(--surface)}.tk-chosen .av:first-child{margin-left:0}
+.tk-st-b{padding:0 12px 12px}
+.tk-steps.ro li{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:14px}
+/* people who are out on a travel order or dispatch: grayed out */
+.tk-pn{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+.tk-away{font-size:10.5px;font-weight:700;color:var(--gold)}.tk-away:empty{display:none}
+.tk-p.is-away{opacity:.5;filter:grayscale(1);border-style:dashed}
+.tk-p.is-away:has(input:checked){opacity:.8}
+.tk-awayn{margin:0 0 6px;font-size:12px}.tk-awayn:empty{display:none}
+.tk-p.is-away{order:1}
+.tk-bar.big small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;display:block;font-size:10.5px}.tk-bar.big .tk-seg{min-width:0}

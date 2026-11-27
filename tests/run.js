@@ -169,24 +169,51 @@ withState(Object.assign({}, base, { me: users[0] }), function(){
   check("admins keep the full menu", G.navItems().every(G.navMain) && G.navItems().length >= 9);
 });
 
-/* ---------- 6. tasks: who may give, change and finish them ---------- */
+/* ---------- 6. tasks: templates, people per step, who may do what ---------- */
 (function(){
-  const E = engine();
-  let r = E.run('lead', 'saveTask', { title: 'Pubmat for the job fair', kind: 'Graphic design', assignees: ['bob'], due: D(1) });
-  check('a division leader can give a task to someone', r.ok, r.error);
-  const id = r.ok && r.data.id;
-  r = E.run('bob', 'saveTask', { title: 'Caption for the clean-up drive', kind: 'Caption', assignees: ['lead'] });
-  const own = r.ok && E.dump().tasks.filter(function(t){ return t.id === r.data.id; })[0];
-  check('staff can only give tasks to themselves', r.ok && own && JSON.stringify(own.assignees) === JSON.stringify(['bob']), own);
-  check('staff cannot change a task someone gave them', !E.run('bob', 'saveTask', { id: id, title: 'Renamed', assignees: ['bob'] }).ok);
+  const E = engine(), find = function(id){ return E.dump().tasks.filter(function(t){ return t.id === id; })[0]; };
+  // a congratulatory pubmat: design (bob), caption (lead), proofreading (anyone but the writer), posting (adm)
+  let r = E.run('lead', 'saveTask', { title: 'Congratulatory pubmat: board exam passers', template: 'pubmat', who: [['bob'], ['lead'], [], ['adm']], due: D(2) });
+  const id = r.ok && r.data.id, t0 = r.ok && find(id);
+  check('a task follows its template, with people per step', r.ok && t0.steps.length === 4 && t0.steps[0].who[0] === 'bob' && t0.steps[1].who[0] === 'lead' && t0.template === 'pubmat', r.error || t0);
+  check('everyone on any step is on the task', r.ok && ['bob', 'lead', 'adm'].every(function(u){ return t0.assignees.indexOf(u) >= 0; }), t0 && t0.assignees);
+  check('a task keeps its due date', r.ok && t0.due === D(2));
+  check('a work step needs someone', !E.run('lead', 'saveTask', { title: 'Pubmat for the job fair', template: 'pubmat', who: [[], [], [], []] }).ok);
+  check('steps go in order: the caption waits for the layout', !E.run('bob', 'taskStep', { id: id, step: 'undo' }).ok && G.taskStepsOf(find(id)).every(function(x){ return !x.doneAt; }));
+  check('a multi-step task cannot be ticked done at once', !E.run('bob', 'setTaskDone', { id: id, done: '1' }).ok);
+  r = E.run('bob', 'taskStep', { id: id, step: 'done' });
+  check('the person on a step finishes it', r.ok && find(id).steps[0].doneBy === 'bob' && find(id).status === 'Open', r.error);
+  check('a step is only for its people', !E.run('bob', 'taskStep', { id: id, step: 'done' }).ok);
+  E.run('lead', 'taskStep', { id: id, step: 'done' });
+  check('the writer cannot proofread their own caption', !E.run('lead', 'taskStep', { id: id, step: 'done' }).ok);
+  check('sending back needs a note', !E.run('bob', 'taskStep', { id: id, step: 'back' }).ok);
+  r = E.run('bob', 'taskStep', { id: id, step: 'back', note: 'Spell out the names' });
+  check('a proofreader sends it back to the caption', r.ok && !find(id).steps[1].doneAt && find(id).steps[0].doneAt && find(id).sentBack.step === 'Caption', find(id).sentBack);
+  E.run('lead', 'taskStep', { id: id, step: 'done' });
+  r = E.run('bob', 'taskStep', { id: id, step: 'done', edits: '1', note: 'Shortened it' });
+  const pf = find(id).steps[2];
+  check('the proofreader and their edits are recorded', r.ok && pf.doneBy === 'bob' && pf.edits === true && pf.note === 'Shortened it', pf);
+  check('posting is for the person on that step', !E.run('bob', 'taskStep', { id: id, step: 'done' }).ok);
+  r = E.run('adm', 'taskStep', { id: id, step: 'done' });
+  check('the last step finishes the task', r.ok && find(id).status === 'Done' && find(id).doneBy === 'adm');
+  check('only the person who did a step can undo it', !E.run('bob', 'taskStep', { id: id, step: 'undo' }).ok && E.run('adm', 'taskStep', { id: id, step: 'undo' }).ok && find(id).status === 'Open');
+  // staff: tasks for themselves only
+  r = E.run('bob', 'saveTask', { title: 'Caption for the clean-up drive', template: 'release', who: [['lead'], [], ['lead']] });
+  const own = r.ok && find(r.data.id);
+  check('staff can only give tasks to themselves', r.ok && JSON.stringify(own.assignees) === JSON.stringify(['bob']), own && own.assignees);
+  check('staff cannot change a task someone gave them', !E.run('bob', 'saveTask', { id: id, title: 'Renamed', template: 'pubmat', who: [['bob'], ['bob'], [], ['bob']] }).ok);
   check('staff cannot remove a task someone gave them', !E.run('bob', 'deleteTask', { id: id }).ok);
-  r = E.run('bob', 'setTaskDone', { id: id, done: '1' });
-  const t = E.dump().tasks.filter(function(x){ return x.id === id; })[0];
-  check('the person on a task can mark it done', r.ok && t.status === 'Done' && t.doneBy === 'bob' && !!t.doneAt, t);
-  r = E.run('lead', 'saveTask', { title: 'Layout for the newsletter', assignees: ['lead'] });
-  check('people not on a task cannot mark it done', !E.run('bob', 'setTaskDone', { id: r.data.id, done: '1' }).ok);
-  check('a task needs a name and someone to do it', !E.run('adm', 'saveTask', { title: 'x', assignees: ['bob'] }).ok && !E.run('adm', 'saveTask', { title: 'Write the caption', assignees: [] }).ok);
   check('staff can remove their own task', E.run('bob', 'deleteTask', { id: own.id }).ok);
+  // a photo task ends with proofreading
+  r = E.run('lead', 'saveTask', { title: 'Photos: job fair', template: 'photo', who: [['bob'], ['lead'], []] });
+  const ph = r.ok && r.data.id; E.run('bob', 'taskStep', { id: ph, step: 'done' }); E.run('lead', 'taskStep', { id: ph, step: 'done' });
+  check('a photo task is finished by its proofreading', r.ok && E.run('bob', 'taskStep', { id: ph, step: 'done' }).ok && find(ph).status === 'Done', find(ph) && find(ph).status);
+  // one-step tasks still use the round check
+  r = E.run('lead', 'saveTask', { title: 'Edit the Bayanihan video clips', template: 'other', who: [['bob']] });
+  check('a one-step task is ticked done', r.ok && E.run('bob', 'setTaskDone', { id: r.data.id, done: '1' }).ok && find(r.data.id).status === 'Done');
+  // older tasks (before steps) still work
+  const E2 = engine({ tasks: [{ id: 'old', title: 'Old task', kind: 'Caption', assignees: ['bob'], status: 'Open', createdBy: 'lead', createdAt: new Date().toISOString() }] });
+  check('tasks from before templates can still be finished', E2.run('bob', 'setTaskDone', { id: 'old', done: '1' }).ok && E2.dump().tasks[0].status === 'Done');
 })();
 
 report();

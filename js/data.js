@@ -604,9 +604,11 @@ var Fire = (function(){
       var ot = store.tasks.docs[x.id], nt = x.data, selfT = function(t){ return !!t && t.createdBy === me && Array.isArray(t.assignees) && t.assignees.length === 1 && t.assignees[0] === me; };
       if (!ot) return !x.del && selfT(nt);                 // a task for yourself
       if (selfT(ot) && selfT(nt)) return true;              // ...which you may change, finish or remove
-      if (!x.del && (ot.assignees || []).indexOf(me) >= 0)   // a task given to you: only mark it done or not done
-        return Object.keys(Object.assign({}, ot, nt)).every(function(k){ return ['status', 'doneBy', 'doneAt', 'updatedBy', 'updatedAt', '_t'].indexOf(k) >= 0 || JSON.stringify(ot[k]) === JSON.stringify(nt[k]); });
-      return false; }
+      var only = function(keys){ return Object.keys(Object.assign({}, ot, nt)).every(function(k){ return keys.indexOf(k) >= 0 || JSON.stringify(ot[k]) === JSON.stringify(nt[k]); }); };
+      if (x.del) return false;
+      // moving a task along: finishing a step, proofreading (anyone but the writer), sending back, undoing a step
+      return only(['steps', 'status', 'doneBy', 'doneAt', 'sentBack', 'flow', 'stage', 'updatedBy', 'updatedAt', '_t']);
+      }
     if (x.c === 'logins') return x.id === me && !x.hard && Object.keys(x.data || {}).every(function(k){ return k === 'photo'; });
     if (x.c === 'users' && x.id === me && !x.del){ var ou0 = store.users.docs[x.id]; if (ou0 && Object.keys(Object.assign({}, ou0, x.data)).every(function(k){ return k === 'photo' || k === '_t' || JSON.stringify(ou0[k]) === JSON.stringify(x.data[k]); })) return true; }
     if (x.c === 'users'){ if (member.role !== 'scheduler' || x.del) return false; var ou = store.users.docs[x.id]; if (!ou) return false;   // leaders: skills only
@@ -867,9 +869,15 @@ var Mock = (function(){
     .map(function(h){ return { date:h[0], name:h[1], kind:h[2] }; });
   var settings = { workdays: 22, carryCap: 0, wellnessDays: 5, tevBudget: 250000 }, lastWrite = Date.now(), tevs = [];
   var LT = { VL:'VL', FL:'VL', SL:'SL' }, tos = [], events = [], inventory = [], leaves = [], credits = [], tasks = [];
-  tasks.push({ id:'k1', title:'Pubmat for the Bantayog Festival schedule', kind:'Graphic design', note:'Square and story sizes.', assignees:['mbautista'], due:addDays(today(), 1), eventId:'', status:'Open', doneBy:'', doneAt:'', createdBy:'admin', createdAt:new Date().toISOString() },
-             { id:'k2', title:'Caption for the Provincial Board session photos', kind:'Caption', note:'', assignees:['jdelacruz'], due:today(), eventId:'', status:'Open', doneBy:'', doneAt:'', createdBy:'admin', createdAt:new Date().toISOString() },
-             { id:'k3', title:'Press release: livelihood caravan', kind:'Writing', note:'', assignees:['areyes'], due:addDays(today(), -1), eventId:'', status:'Done', doneBy:'areyes', doneAt:new Date(Date.now() - 864e5).toISOString(), createdBy:'rmendoza', createdAt:new Date(Date.now() - 2 * 864e5).toISOString() });
+  (function(){ var at = function(h){ return new Date(Date.now() - h * 36e5).toISOString(); }, mk = function(id, title, tpl, who, done, extra){
+      var T = taskTpl(tpl), st = T.steps.map(function(x, i){ var d = i < done.length ? done[i] : null; return { id: 's' + (i + 1), name: x[0], skill: x[1], type: x[2], who: who[i] || [], doneBy: d ? d[0] : '', doneAt: d ? at(d[1]) : '', edits: !!(d && d[2]), note: d && d[3] || '' }; });
+      var all = []; st.forEach(function(x){ x.who.forEach(function(u){ if (all.indexOf(u) < 0) all.push(u); }); });
+      var fin = st.every(function(x){ return x.doneAt; });
+      tasks.push(Object.assign({ id: id, title: title, template: T.id, kind: T.name, note: '', steps: st, assignees: all, due: today(), eventId: '', status: fin ? 'Done' : 'Open', doneBy: fin ? st[st.length - 1].doneBy : '', doneAt: fin ? st[st.length - 1].doneAt : '', sentBack: null, createdBy: 'admin', createdAt: at(30) }, extra || {})); };
+    mk('k1', 'Congratulatory pubmat: board exam passers', 'pubmat', [['mbautista'], ['jdelacruz'], ['areyes'], ['admin']], [['mbautista', 5], ['jdelacruz', 2]], { due: addDays(today(), 1) });
+    mk('k2', 'Photos: Bantayog Festival parade', 'photo', [['mbautista'], ['jdelacruz'], []], [], {});
+    mk('k3', 'Press release: livelihood caravan', 'release', [['mbautista'], ['areyes'], ['jdelacruz'], ['rmendoza']], [['mbautista', 32], ['areyes', 30], ['jdelacruz', 26, true, 'Fixed the names of the speakers'], ['rmendoza', 24]], { due: addDays(today(), -1) });
+  })();
   function to(fromOff, toOff, event, dest, names, status, tev, by){ var f = addDays(today(), fromOff); tos.push({ id:'t' + (tos.length + 1), toNo: status === 'Prepared' ? 'PIO-2026-' + (100 + tos.length) : '', dateFrom:f, dateTo:addDays(today(), toOff), event:event, destination:dest, names:names.map(function(n){ return n.toUpperCase(); }), usernames:[], status:status, tev:tev, createdBy:by, createdAt:new Date(Date.now() - 3*864e5).toISOString(), updatedBy:'', updatedAt:'' }); }
   to(0, 0, 'Provincial Board regular session coverage', 'Sangguniang Panlalawigan Hall, Daet', ['Juan Dela Cruz','Mark Bautista'], 'Prepared', 'No', 'jdelacruz');
   to(3, 4, 'Livelihood caravan', 'Labo, Camarines Norte', ['Ana Reyes','Juan Dela Cruz','Pedro Ramos'], 'Filed', '', 'areyes');
@@ -1010,28 +1018,76 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
       log(me, 'Requested a day off', me.username, p.date + ' · ' + dd + ' day(s)' + (early ? ' · uses this month’s offsets' : '')); return ok(me); }
     if (a === 'deleteEntry'){ var i = entries.findIndex(function(e){ return e.id === p.id; }); if (i < 0) return fail('Entry not found.'); var e = entries[i]; if (!adm && !(e.username === me.username && e.status === 'Pending')) return fail('You can only remove your own pending entries.'); entries.splice(i,1); log(me, 'Removed an entry', e.username, e.date + ' · ' + e.days + ' day(s)'); return ok(me); }
     if (a === 'changePin'){ if (p.oldPin !== me.pin) return fail('Current PIN is wrong.'); if (!/^\d{4}$/.test(p.newPin)) return fail('PIN must be exactly 4 digits.'); me.pin = p.newPin; log(me, 'Changed own PIN', me.username); return ok(me); }
-    /* tasks: admins and division leaders give tasks to anyone; everyone may give themselves tasks; the people on a task mark it done */
-    if (a === 'saveTask' || a === 'setTaskDone' || a === 'deleteTask'){
+    /* tasks: admins and division leaders give tasks to anyone; everyone may give themselves a task.
+       A task follows a template: a chain of steps, each with its own people (layout, caption, proofreading, posting...).
+       Steps are done in order; who did each one (and any proofreading edits) is recorded. */
+    if (a === 'saveTask' || a === 'setTaskDone' || a === 'deleteTask' || a === 'taskStep'){
       var lead = adm || me.role === 'scheduler', selfOf = function(t){ return t.createdBy === me.username && t.assignees.length === 1 && t.assignees[0] === me.username; };
+      var uniq = function(list){ return list.map(function(u){ return String(u).trim(); }).filter(function(u, i, arr){ return u && arr.indexOf(u) === i; }); };
       if (a === 'saveTask'){
         var tkT = String(p.title || '').trim(); if (tkT.length < 3) return fail('Write what needs to be done.');
         var tkX = p.id ? tasks.filter(function(x){ return x.id === p.id; })[0] : null; if (p.id && !tkX) return fail('That task was not found.');
         if (tkX && !lead && !selfOf(tkX)) return fail('Only the person who gave this task, a division leader or an admin can change it.');
-        var tkW = (Array.isArray(p.assignees) ? p.assignees : String(p.assignees || '').split(',')).map(function(u){ return String(u).trim(); }).filter(function(u, i, arr){ return u && arr.indexOf(u) === i; });
-        if (!lead) tkW = [me.username];
-        if (!tkW.length) return fail('Pick who will do it.');
-        if (tkW.some(function(u){ var x = find(u); return !x || !x.active; })) return fail('Pick people from the list.');
-        var tkF = { title: tkT.slice(0, 140), kind: TASK_KINDS.indexOf(p.kind) >= 0 ? p.kind : 'Other', note: String(p.note || '').trim().slice(0, 600), assignees: tkW,
-          due: /^d{4}-dd-dd$/.test(p.due || '') ? p.due : '', eventId: String(p.eventId || ''), updatedBy: me.username, updatedAt: now };
-        if (tkX){ Object.assign(tkX, tkF); log(me, 'Edited a task', tkW.join(', '), tkF.title); return ok(me, { id: tkX.id }); }
-        var tkN = Object.assign({ id: 'k' + nid(), status: 'Open', doneBy: '', doneAt: '', createdBy: me.username, createdAt: now }, tkF); tasks.push(tkN);
-        log(me, tkW.length === 1 && tkW[0] === me.username ? 'Added a task for themselves' : 'Gave a task', tkW.join(', '), tkF.title); return ok(me, { id: tkN.id });
+        var tpl = taskTpl(p.template || (tkX && tkX.template) || 'other');
+        var who = Array.isArray(p.who) ? p.who : [];
+        var started = tkX && taskStepsOf(tkX).some(function(s){ return s.doneAt; });
+        var base = started && tkX.template === tpl.id ? taskStepsOf(tkX) : tpl.steps.map(function(s, i){ return { id: 's' + (i + 1), name: s[0], skill: s[1], type: s[2], who: [], doneBy: '', doneAt: '' }; });
+        if (started && tkX.template !== tpl.id) return fail('Work has started, so the type of output can’t change now.');
+        var steps = base.map(function(s, i){
+          var w = s.doneAt ? s.who : uniq(Array.isArray(who[i]) ? who[i] : String(who[i] || '').split(','));
+          if (!lead && !s.doneAt) w = s.type === 'proof' ? [] : [me.username];     // staff: a task for themselves (someone else proofreads)
+          return Object.assign({}, s, { who: w });
+        });
+        var bad = steps.filter(function(s){ return s.type === 'work' && !s.who.length; })[0]; if (bad) return fail('Pick who does “' + bad.name + '”.');
+        var all = uniq([].concat.apply([], steps.map(function(s){ return s.who; })));
+        if (all.some(function(u){ var x = find(u); return !x || !x.active; })) return fail('Pick people from the list.');
+        var tkF = { title: tkT.slice(0, 140), template: tpl.id, kind: tpl.name, note: String(p.note || '').trim().slice(0, 600), steps: steps, assignees: all,
+          due: /^\d{4}-\d\d-\d\d$/.test(p.due || '') ? p.due : '', eventId: String(p.eventId || ''), updatedBy: me.username, updatedAt: now };
+        if (tkX){ delete tkX.flow; delete tkX.stage; Object.assign(tkX, tkF); log(me, 'Edited a task', all.join(', '), tkF.title); return ok(me, { id: tkX.id }); }
+        var tkN = Object.assign({ id: 'k' + nid(), status: 'Open', doneBy: '', doneAt: '', sentBack: null, createdBy: me.username, createdAt: now }, tkF); tasks.push(tkN);
+        log(me, all.length === 1 && all[0] === me.username ? 'Added a task for themselves' : 'Gave a task', all.join(', '), tkF.title); return ok(me, { id: tkN.id });
       }
       var tkO = tasks.filter(function(x){ return x.id === p.id; })[0]; if (!tkO) return fail('That task was not found.');
-      if (a === 'setTaskDone'){
-        if (!lead && tkO.assignees.indexOf(me.username) < 0) return fail('Only the people on this task can mark it done.');
-        var tkD = yes(p.done); tkO.status = tkD ? 'Done' : 'Open'; tkO.doneBy = tkD ? me.username : ''; tkO.doneAt = tkD ? now : ''; tkO.updatedBy = me.username; tkO.updatedAt = now;
-        log(me, tkD ? 'Finished a task' : 'Reopened a task', tkO.assignees.join(', '), tkO.title); return ok(me);
+      var st = taskStepsOf(tkO), cur = st.filter(function(s){ return !s.doneAt; })[0], ci = cur ? st.indexOf(cur) : st.length;
+      var finish = function(){ tkO.steps = st; var last = !st.some(function(s){ return !s.doneAt; }); tkO.status = last ? 'Done' : 'Open'; tkO.doneBy = last ? me.username : ''; tkO.doneAt = last ? now : ''; tkO.updatedBy = me.username; tkO.updatedAt = now; delete tkO.flow; delete tkO.stage; };
+      var mayDo = function(s){ if (lead) return true; if (s.who.length) return s.who.indexOf(me.username) >= 0; return s.type === 'proof' || tkO.assignees.indexOf(me.username) >= 0; };
+      if (a === 'setTaskDone'){   // one-step tasks: the round check
+        if (st.length !== 1) return fail('This task has steps. Finish them one at a time.');
+        if (!mayDo(st[0])) return fail('Only the people on this task can mark it done.');
+        var dn = yes(p.done); st[0] = Object.assign({}, st[0], { doneBy: dn ? me.username : '', doneAt: dn ? now : '' }); finish();
+        log(me, dn ? 'Finished a task' : 'Reopened a task', tkO.assignees.join(', '), tkO.title); return ok(me);
+      }
+      if (a === 'taskStep'){
+        var note = String(p.note || '').trim().slice(0, 400);
+        if (p.step === 'done'){
+          if (!cur) return fail('Every step of this task is done.');
+          if (!mayDo(cur)) return fail('This step is for ' + cur.who.map(function(u){ var x = find(u); return x ? x.name.split(' ')[0] : u; }).join(', ') + '.');
+          if (cur.type === 'proof'){
+            // proofreading is done by someone other than the person who wrote what is being read
+            var prevW = st.slice(0, ci).filter(function(s){ return s.type === 'work'; }).pop();
+            if (prevW && prevW.doneBy === me.username) return fail('Someone other than the writer should proofread it.');
+            st[ci] = Object.assign({}, cur, { doneBy: me.username, doneAt: now, edits: yes(p.edits), note: note });
+          } else st[ci] = Object.assign({}, cur, { doneBy: me.username, doneAt: now, note: note });
+          tkO.sentBack = null; finish();
+          log(me, cur.type === 'proof' ? (yes(p.edits) ? 'Proofread a task and made edits' : 'Proofread a task') : cur.type === 'post' ? 'Posted a task' : 'Finished a task step', tkO.assignees.join(', '), tkO.title + ' · ' + cur.name);
+          return ok(me);
+        }
+        if (p.step === 'back'){
+          if (!cur || cur.type !== 'proof') return fail('Only a task in proofreading can be sent back.');
+          if (!mayDo(cur)) return fail('Only the proofreaders can send it back.');
+          if (!note) return fail('Write what needs to change.');
+          var wi = -1; for (var k = ci - 1; k >= 0; k--){ if (st[k].type === 'work'){ wi = k; break; } } if (wi < 0) return fail('There is no earlier step to send it back to.');
+          for (var j = wi; j < st.length; j++) st[j] = Object.assign({}, st[j], { doneBy: '', doneAt: '', edits: false, note: '' });
+          tkO.sentBack = { by: me.username, at: now, note: note, step: st[wi].name }; finish();
+          log(me, 'Sent a task back for changes', tkO.assignees.join(', '), tkO.title + ' · ' + st[wi].name); return ok(me);
+        }
+        if (p.step === 'undo'){
+          var li = -1; st.forEach(function(s, i){ if (s.doneAt) li = i; }); if (li < 0) return fail('No step is done yet.');
+          if (!lead && st[li].doneBy !== me.username) return fail('Only the person who finished that step can undo it.');
+          st[li] = Object.assign({}, st[li], { doneBy: '', doneAt: '', edits: false, note: '' }); finish();
+          log(me, 'Undid a task step', tkO.assignees.join(', '), tkO.title + ' · ' + st[li].name); return ok(me);
+        }
+        return fail('Unknown step.');
       }
       if (!lead && !selfOf(tkO)) return fail('Only the person who gave this task, a division leader or an admin can remove it.');
       tasks.splice(tasks.indexOf(tkO), 1); log(me, 'Removed a task', tkO.assignees.join(', '), tkO.title); return ok(me);

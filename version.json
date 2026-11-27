@@ -1,9 +1,11 @@
 {
-  "ver": "v90",
+  "ver": "v94",
   "notes": [
-    "New: Tasks. Admins and division leaders give tasks like pubmats, captions and layouts; anyone can add tasks for themselves",
-    "Tap the circle to mark a task done; your open tasks show on Home",
-    "New: daily summary and monthly report of finished tasks and dispatches, ready to print",
-    "Offsets moved under More for staff; Tasks takes its place"
+    "Tasks by type of output: Pubmat, Press release, Photo, Video and Other, each with its own steps (design, caption, proofreading, posting)",
+    "Give each step to its own people, filtered by skill; anyone on a travel order or dispatch on the due date is grayed out",
+    "A progress bar shows every step; tasks waiting on you come first",
+    "Proofreading records who read it and any edits; it can be sent back with a note",
+    "Linking an event shows only today's and the next two weeks' events",
+    "Fixed: due dates on tasks now save"
   ]
 }

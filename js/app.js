@@ -4,7 +4,7 @@
    newest version and a few lines on what changed. When it differs from this page's APP_VER, a card offers
    a refresh. Checked when the app comes back to the front and every 10 minutes. Keep APP_VER, version.json
    and the cache name in sw.js the same when publishing. */
-var APP_VER = 'v90';
+var APP_VER = 'v94';
 (function(){
   var shown = null, last = 0;
   function check(force){
