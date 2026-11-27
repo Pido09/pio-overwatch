@@ -424,9 +424,9 @@ var Fire = (function(){
   var CFG = window.PIO_FIREBASE || {}, F = null, app = null, auth = null, db = null, booting = null;
   var me = null, member = null, unsub = [], store = null, timer = null, syncing = null, DEF = null;
   var DOMAIN = 'pio-overwatch.local';
-  var COLS = { users: 'username', entries: 'id', travelOrders: 'id', events: 'id', inventory: 'id', leaves: 'id', tevs: 'id', divisions: 'id', holidays: 'date', credits: 'username', settings: 'id', board: 'id' };
+  var COLS = { users: 'username', entries: 'id', travelOrders: 'id', events: 'id', inventory: 'id', tasks: 'id', leaves: 'id', tevs: 'id', divisions: 'id', holidays: 'date', credits: 'username', settings: 'id', board: 'id' };
   var PRIVATE = { entries: 1, leaves: 1, credits: 1, tevs: 1 };
-  var ENGINE = { users: 'users', entries: 'entries', travelOrders: 'tos', events: 'events', inventory: 'inventory', leaves: 'leaves', tevs: 'tevs', divisions: 'divisions', holidays: 'holidays', credits: 'credits' };
+  var ENGINE = { users: 'users', entries: 'entries', travelOrders: 'tos', events: 'events', inventory: 'inventory', tasks: 'tasks', leaves: 'leaves', tevs: 'tevs', divisions: 'divisions', holidays: 'holidays', credits: 'credits' };
   var PH_CAL = 'en.philippines#holiday@group.v.calendar.google.com';
 
   function email(u, k){ return u + (k ? '.' + k : '') + '@' + DOMAIN; }
@@ -471,7 +471,7 @@ var Fire = (function(){
   function arrays(){
     function vals(c){ return Object.keys(store[c].docs).map(function(id){ return clone(store[c].docs[id]); }); }
     var settings = store.settings.docs.app ? clone(store.settings.docs.app) : clone(DEF.settings); delete settings.id;
-    return { users: vals('users'), entries: vals('entries'), tos: vals('travelOrders'), events: vals('events'), inventory: vals('inventory'), leaves: vals('leaves'), tevs: vals('tevs'), divisions: vals('divisions').sort(function(a, b){ return (a.order || 0) - (b.order || 0); }),
+    return { users: vals('users'), entries: vals('entries'), tos: vals('travelOrders'), events: vals('events'), inventory: vals('inventory'), tasks: vals('tasks'), leaves: vals('leaves'), tevs: vals('tevs'), divisions: vals('divisions').sort(function(a, b){ return (a.order || 0) - (b.order || 0); }),
       holidays: vals('holidays').sort(function(a, b){ return a.date < b.date ? -1 : 1; }), credits: vals('credits'), settings: settings,
       activity: Object.keys(store.activity.docs).map(function(id){ return store.activity.docs[id]; }).sort(function(a, b){ return a.at < b.at ? 1 : -1; }), board: vals('board') };
   }
@@ -545,7 +545,7 @@ var Fire = (function(){
       list.forEach(function(x){
         var id = String(x[keyName]); seen[id] = 1;
         var data = clone(x); delete data.pin; delete data._saving;
-        if (c === 'travelOrders' || c === 'events' || c === 'inventory' || c === 'entries' || c === 'leaves' || c === 'tevs' || c === 'divisions') data.id = id;
+        if (c === 'travelOrders' || c === 'events' || c === 'inventory' || c === 'tasks' || c === 'entries' || c === 'leaves' || c === 'tevs' || c === 'divisions') data.id = id;
         var old = before[c].docs[id];
         if (!old || JSON.stringify(old) !== JSON.stringify(data)) w.push({ c: c, id: id, data: data });
       });
@@ -600,6 +600,13 @@ var Fire = (function(){
       if (oe && !x.del) return Object.keys(Object.assign({}, oe, x.data)).every(function(k){ return ['gear', 'gearHolder', 'gearBy', 'gearAt', '_t'].indexOf(k) >= 0 || JSON.stringify(oe[k]) === JSON.stringify(x.data[k]); });
       return !oe && !x.del && x.data.status === 'Pending' && x.data.createdBy === me; }   // staff: new unconfirmed event from a travel order
     if (x.c === 'inventory') return true;
+    if (x.c === 'tasks'){ if (member.role === 'scheduler') return true;   // leaders give tasks to anyone
+      var ot = store.tasks.docs[x.id], nt = x.data, selfT = function(t){ return !!t && t.createdBy === me && Array.isArray(t.assignees) && t.assignees.length === 1 && t.assignees[0] === me; };
+      if (!ot) return !x.del && selfT(nt);                 // a task for yourself
+      if (selfT(ot) && selfT(nt)) return true;              // ...which you may change, finish or remove
+      if (!x.del && (ot.assignees || []).indexOf(me) >= 0)   // a task given to you: only mark it done or not done
+        return Object.keys(Object.assign({}, ot, nt)).every(function(k){ return ['status', 'doneBy', 'doneAt', 'updatedBy', 'updatedAt', '_t'].indexOf(k) >= 0 || JSON.stringify(ot[k]) === JSON.stringify(nt[k]); });
+      return false; }
     if (x.c === 'logins') return x.id === me && !x.hard && Object.keys(x.data || {}).every(function(k){ return k === 'photo'; });
     if (x.c === 'users' && x.id === me && !x.del){ var ou0 = store.users.docs[x.id]; if (ou0 && Object.keys(Object.assign({}, ou0, x.data)).every(function(k){ return k === 'photo' || k === '_t' || JSON.stringify(ou0[k]) === JSON.stringify(x.data[k]); })) return true; }
     if (x.c === 'users'){ if (member.role !== 'scheduler' || x.del) return false; var ou = store.users.docs[x.id]; if (!ou) return false;   // leaders: skills only
@@ -859,7 +866,10 @@ var Mock = (function(){
   var holidays = [['2026-01-01',"New Year's Day",'Regular'],['2026-02-17','Chinese New Year','Special'],['2026-04-02','Maundy Thursday','Regular'],['2026-04-03','Good Friday','Regular'],['2026-04-04','Black Saturday','Special'],['2026-04-09','Araw ng Kagitingan','Regular'],['2026-05-01','Labor Day','Regular'],['2026-06-12','Independence Day','Regular'],['2026-08-21','Ninoy Aquino Day','Special'],['2026-08-31','National Heroes Day','Regular'],['2026-09-28','Wenceslao Vinzons Day (Camarines Norte)','Local'],['2026-11-01',"All Saints' Day",'Special'],['2026-11-02',"All Souls' Day",'Special'],['2026-11-30','Bonifacio Day','Regular'],['2026-12-08','Immaculate Conception','Special'],['2026-12-24','Christmas Eve','Special'],['2026-12-25','Christmas Day','Regular'],['2026-12-30','Rizal Day','Regular'],['2026-12-31','Last Day of the Year','Special']]
     .map(function(h){ return { date:h[0], name:h[1], kind:h[2] }; });
   var settings = { workdays: 22, carryCap: 0, wellnessDays: 5, tevBudget: 250000 }, lastWrite = Date.now(), tevs = [];
-  var LT = { VL:'VL', FL:'VL', SL:'SL' }, tos = [], events = [], inventory = [], leaves = [], credits = [];
+  var LT = { VL:'VL', FL:'VL', SL:'SL' }, tos = [], events = [], inventory = [], leaves = [], credits = [], tasks = [];
+  tasks.push({ id:'k1', title:'Pubmat for the Bantayog Festival schedule', kind:'Graphic design', note:'Square and story sizes.', assignees:['mbautista'], due:addDays(today(), 1), eventId:'', status:'Open', doneBy:'', doneAt:'', createdBy:'admin', createdAt:new Date().toISOString() },
+             { id:'k2', title:'Caption for the Provincial Board session photos', kind:'Caption', note:'', assignees:['jdelacruz'], due:today(), eventId:'', status:'Open', doneBy:'', doneAt:'', createdBy:'admin', createdAt:new Date().toISOString() },
+             { id:'k3', title:'Press release: livelihood caravan', kind:'Writing', note:'', assignees:['areyes'], due:addDays(today(), -1), eventId:'', status:'Done', doneBy:'areyes', doneAt:new Date(Date.now() - 864e5).toISOString(), createdBy:'rmendoza', createdAt:new Date(Date.now() - 2 * 864e5).toISOString() });
   function to(fromOff, toOff, event, dest, names, status, tev, by){ var f = addDays(today(), fromOff); tos.push({ id:'t' + (tos.length + 1), toNo: status === 'Prepared' ? 'PIO-2026-' + (100 + tos.length) : '', dateFrom:f, dateTo:addDays(today(), toOff), event:event, destination:dest, names:names.map(function(n){ return n.toUpperCase(); }), usernames:[], status:status, tev:tev, createdBy:by, createdAt:new Date(Date.now() - 3*864e5).toISOString(), updatedBy:'', updatedAt:'' }); }
   to(0, 0, 'Provincial Board regular session coverage', 'Sangguniang Panlalawigan Hall, Daet', ['Juan Dela Cruz','Mark Bautista'], 'Prepared', 'No', 'jdelacruz');
   to(3, 4, 'Livelihood caravan', 'Labo, Camarines Norte', ['Ana Reyes','Juan Dela Cruz','Pedro Ramos'], 'Filed', '', 'areyes');
@@ -944,7 +954,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
     var board = leaves.filter(function(l){ return !/^ADJ/.test(l.type); }).map(function(l){ return { username:l.username, from:l.dateFrom, to:l.dateTo, kind:'leave', label: adm || l.username === me.username ? l.type : '' }; });
     if (!adm) entries.forEach(function(e){ if (e.type === 'USE' && e.status === 'Confirmed' && e.username !== me.username) board.push({ username:e.username, from:e.date, to:e.date, kind:'off', label:'' }); });
     return { me:pub(me), users: users.map(pub), divisions:copy(divisions), holidays:copy(holidays), settings:copy(settings), activity: adm ? copy(activity) : [], entries: copy(entries.filter(function(e){ return adm || e.username === me.username; })),
-      lastWrite: lastWrite, travelOrders: copy(tos), events: copy(events), inventory: (canInv(me) ? copy(inventory) : []), tevs: copy(tevs.filter(function(v){ return adm || v.username === me.username; })), leaves: copy(leaves.filter(function(l){ return adm || l.username === me.username; })), credits: copy(credits.filter(function(c){ return adm || c.username === me.username; })), board: board }; }
+      lastWrite: lastWrite, travelOrders: copy(tos), events: copy(events), inventory: (canInv(me) ? copy(inventory) : []), tasks: copy(tasks), tevs: copy(tevs.filter(function(v){ return adm || v.username === me.username; })), leaves: copy(leaves.filter(function(l){ return adm || l.username === me.username; })), credits: copy(credits.filter(function(c){ return adm || c.username === me.username; })), board: board }; }
   /* Shared with the Firebase layer: the same rules run in the browser, and the changes are written to Firestore. */
   var OP = '', K = 0, extBoard = null;
   function nid(){ return OP ? OP.replace(/[^A-Za-z0-9_-]/g, '') + '-' + (++K) : Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + (++K); }
@@ -968,8 +978,8 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
   }
   return { bump: function(){ lastWrite = Date.now(); },
     engine: {
-      load: function(o){ users = o.users; entries = o.entries; divisions = o.divisions; holidays = o.holidays; settings = o.settings; activity = o.activity; tos = o.tos; events = o.events || []; inventory = o.inventory || []; leaves = o.leaves; credits = o.credits; tevs = o.tevs; extBoard = o.board || null; sessions = {}; },
-      dump: function(){ return { users: users, entries: entries, divisions: divisions, holidays: holidays, settings: settings, activity: activity, tos: tos, events: events, inventory: inventory, leaves: leaves, credits: credits, tevs: tevs }; },
+      load: function(o){ users = o.users; entries = o.entries; divisions = o.divisions; holidays = o.holidays; settings = o.settings; activity = o.activity; tos = o.tos; events = o.events || []; inventory = o.inventory || []; tasks = o.tasks || []; leaves = o.leaves; credits = o.credits; tevs = o.tevs; extBoard = o.board || null; sessions = {}; },
+      dump: function(){ return { users: users, entries: entries, divisions: divisions, holidays: holidays, settings: settings, activity: activity, tos: tos, events: events, inventory: inventory, tasks: tasks, leaves: leaves, credits: credits, tevs: tevs }; },
       board: boardOf,
       run: function(username, a, p){ sessions.fb = username; return Mock.api(a, p, 'fb'); },
       data: function(username){ var me = find(username); return me ? data(me) : null; }
@@ -1000,6 +1010,32 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
       log(me, 'Requested a day off', me.username, p.date + ' · ' + dd + ' day(s)' + (early ? ' · uses this month’s offsets' : '')); return ok(me); }
     if (a === 'deleteEntry'){ var i = entries.findIndex(function(e){ return e.id === p.id; }); if (i < 0) return fail('Entry not found.'); var e = entries[i]; if (!adm && !(e.username === me.username && e.status === 'Pending')) return fail('You can only remove your own pending entries.'); entries.splice(i,1); log(me, 'Removed an entry', e.username, e.date + ' · ' + e.days + ' day(s)'); return ok(me); }
     if (a === 'changePin'){ if (p.oldPin !== me.pin) return fail('Current PIN is wrong.'); if (!/^\d{4}$/.test(p.newPin)) return fail('PIN must be exactly 4 digits.'); me.pin = p.newPin; log(me, 'Changed own PIN', me.username); return ok(me); }
+    /* tasks: admins and division leaders give tasks to anyone; everyone may give themselves tasks; the people on a task mark it done */
+    if (a === 'saveTask' || a === 'setTaskDone' || a === 'deleteTask'){
+      var lead = adm || me.role === 'scheduler', selfOf = function(t){ return t.createdBy === me.username && t.assignees.length === 1 && t.assignees[0] === me.username; };
+      if (a === 'saveTask'){
+        var tkT = String(p.title || '').trim(); if (tkT.length < 3) return fail('Write what needs to be done.');
+        var tkX = p.id ? tasks.filter(function(x){ return x.id === p.id; })[0] : null; if (p.id && !tkX) return fail('That task was not found.');
+        if (tkX && !lead && !selfOf(tkX)) return fail('Only the person who gave this task, a division leader or an admin can change it.');
+        var tkW = (Array.isArray(p.assignees) ? p.assignees : String(p.assignees || '').split(',')).map(function(u){ return String(u).trim(); }).filter(function(u, i, arr){ return u && arr.indexOf(u) === i; });
+        if (!lead) tkW = [me.username];
+        if (!tkW.length) return fail('Pick who will do it.');
+        if (tkW.some(function(u){ var x = find(u); return !x || !x.active; })) return fail('Pick people from the list.');
+        var tkF = { title: tkT.slice(0, 140), kind: TASK_KINDS.indexOf(p.kind) >= 0 ? p.kind : 'Other', note: String(p.note || '').trim().slice(0, 600), assignees: tkW,
+          due: /^d{4}-dd-dd$/.test(p.due || '') ? p.due : '', eventId: String(p.eventId || ''), updatedBy: me.username, updatedAt: now };
+        if (tkX){ Object.assign(tkX, tkF); log(me, 'Edited a task', tkW.join(', '), tkF.title); return ok(me, { id: tkX.id }); }
+        var tkN = Object.assign({ id: 'k' + nid(), status: 'Open', doneBy: '', doneAt: '', createdBy: me.username, createdAt: now }, tkF); tasks.push(tkN);
+        log(me, tkW.length === 1 && tkW[0] === me.username ? 'Added a task for themselves' : 'Gave a task', tkW.join(', '), tkF.title); return ok(me, { id: tkN.id });
+      }
+      var tkO = tasks.filter(function(x){ return x.id === p.id; })[0]; if (!tkO) return fail('That task was not found.');
+      if (a === 'setTaskDone'){
+        if (!lead && tkO.assignees.indexOf(me.username) < 0) return fail('Only the people on this task can mark it done.');
+        var tkD = yes(p.done); tkO.status = tkD ? 'Done' : 'Open'; tkO.doneBy = tkD ? me.username : ''; tkO.doneAt = tkD ? now : ''; tkO.updatedBy = me.username; tkO.updatedAt = now;
+        log(me, tkD ? 'Finished a task' : 'Reopened a task', tkO.assignees.join(', '), tkO.title); return ok(me);
+      }
+      if (!lead && !selfOf(tkO)) return fail('Only the person who gave this task, a division leader or an admin can remove it.');
+      tasks.splice(tasks.indexOf(tkO), 1); log(me, 'Removed a task', tkO.assignees.join(', '), tkO.title); return ok(me);
+    }
     if (a === 'saveItem' || a === 'checkoutItem' || a === 'checkinItem' || a === 'setItemStatus' || a === 'deleteItem'){
       if (!canInv(me)) return fail('Inventory is for the Production team and admins.');
       if (a === 'saveItem'){

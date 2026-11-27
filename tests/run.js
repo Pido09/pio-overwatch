@@ -8,7 +8,7 @@ let pass = 0, fail = 0; const fails = [];
 function check(name, ok, detail){ if (ok){ pass++; } else { fail++; fails.push(name + (detail !== undefined ? '  →  ' + JSON.stringify(detail) : '')); } }
 
 /* ---------- 1. files and versions ---------- */
-const order = ['core.js', 'views.js', 'events.js', 'documents.js', 'data.js', 'app.js'];
+const order = ['core.js', 'views.js', 'events.js', 'documents.js', 'data.js', 'tasks.js', 'app.js'];
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const srcs = order.map(function(f){ return fs.readFileSync(path.join(root, 'js', f), 'utf8'); });
 srcs.forEach(function(src, i){ try { new Function(src); check('parses: js/' + order[i], true); } catch (e) { check('parses: js/' + order[i], false, e.message); } });
@@ -162,12 +162,32 @@ withState(Object.assign({}, base), function(){
 /* ---------- 5. menus per role ---------- */
 withState(Object.assign({}, base, { me: { username: "bob", name: "Bob Cruz", role: "employee", empType: "JO" } }), function(){
   const nav = G.navItems(), main = nav.filter(G.navMain).map(function(n){ return n[0]; });
-  check("staff see four main places", JSON.stringify(main) === JSON.stringify(["dashboard", "calendar", "travel", "log"]), main);
-  check("folded pages stay reachable under More", ["tev", "monthly", "records"].every(function(v){ return nav.some(function(n){ return n[0] === v && !G.navMain(n); }); }));
+  check("staff see four main places", JSON.stringify(main) === JSON.stringify(["dashboard", "calendar", "tasks", "travel"]), main);
+  check("folded pages stay reachable under More", ["log", "tev", "monthly", "records"].every(function(v){ return nav.some(function(n){ return n[0] === v && !G.navMain(n); }); }));
 });
 withState(Object.assign({}, base, { me: users[0] }), function(){
   check("admins keep the full menu", G.navItems().every(G.navMain) && G.navItems().length >= 9);
 });
+
+/* ---------- 6. tasks: who may give, change and finish them ---------- */
+(function(){
+  const E = engine();
+  let r = E.run('lead', 'saveTask', { title: 'Pubmat for the job fair', kind: 'Graphic design', assignees: ['bob'], due: D(1) });
+  check('a division leader can give a task to someone', r.ok, r.error);
+  const id = r.ok && r.data.id;
+  r = E.run('bob', 'saveTask', { title: 'Caption for the clean-up drive', kind: 'Caption', assignees: ['lead'] });
+  const own = r.ok && E.dump().tasks.filter(function(t){ return t.id === r.data.id; })[0];
+  check('staff can only give tasks to themselves', r.ok && own && JSON.stringify(own.assignees) === JSON.stringify(['bob']), own);
+  check('staff cannot change a task someone gave them', !E.run('bob', 'saveTask', { id: id, title: 'Renamed', assignees: ['bob'] }).ok);
+  check('staff cannot remove a task someone gave them', !E.run('bob', 'deleteTask', { id: id }).ok);
+  r = E.run('bob', 'setTaskDone', { id: id, done: '1' });
+  const t = E.dump().tasks.filter(function(x){ return x.id === id; })[0];
+  check('the person on a task can mark it done', r.ok && t.status === 'Done' && t.doneBy === 'bob' && !!t.doneAt, t);
+  r = E.run('lead', 'saveTask', { title: 'Layout for the newsletter', assignees: ['lead'] });
+  check('people not on a task cannot mark it done', !E.run('bob', 'setTaskDone', { id: r.data.id, done: '1' }).ok);
+  check('a task needs a name and someone to do it', !E.run('adm', 'saveTask', { title: 'x', assignees: ['bob'] }).ok && !E.run('adm', 'saveTask', { title: 'Write the caption', assignees: [] }).ok);
+  check('staff can remove their own task', E.run('bob', 'deleteTask', { id: own.id }).ok);
+})();
 
 report();
 function report(){

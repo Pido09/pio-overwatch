@@ -1,8 +1,8 @@
 // PIO Offset Tracker service worker.
 // Always asks GitHub for the newest files first (skipping the browser cache), so updates show up
 // on the next refresh. The saved copy is used only when offline. Data calls to Apps Script are never cached.
-var CACHE = 'pio-offsets-v89';
-var SHELL = ['./', 'index.html', 'app.css', 'js/core.js', 'js/views.js', 'js/events.js', 'js/documents.js', 'js/data.js', 'js/app.js', 'config.js', 'pio-logo.webp', 'pio-digital.webp', 'capitol.webp', 'icon-192.png', 'manifest.webmanifest'];
+var CACHE = 'pio-offsets-v90';
+var SHELL = ['./', 'index.html', 'app.css', 'js/core.js', 'js/views.js', 'js/events.js', 'js/documents.js', 'js/data.js', 'js/tasks.js', 'js/app.js', 'config.js', 'pio-logo.webp', 'pio-digital.webp', 'capitol.webp', 'icon-192.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) {

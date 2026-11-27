@@ -1,11 +1,9 @@
 {
-  "ver": "v89",
+  "ver": "v90",
   "notes": [
-    "Cleaner menu: the sidebar is now frosted glass, light or dark with your theme",
-    "Staff page: one list with everyone's picture, account and this month's field, office and off days",
-    "Approvals left the menu; open pending requests from the To review tile or Search",
-    "The greeting now sums up today: how many events, and how many still need people",
-    "Dark mode has a slow green and teal glow; the green header gently shimmers",
-    "No more flash of the dashboard behind the welcome screen"
+    "New: Tasks. Admins and division leaders give tasks like pubmats, captions and layouts; anyone can add tasks for themselves",
+    "Tap the circle to mark a task done; your open tasks show on Home",
+    "New: daily summary and monthly report of finished tasks and dispatches, ready to print",
+    "Offsets moved under More for staff; Tasks takes its place"
   ]
 }

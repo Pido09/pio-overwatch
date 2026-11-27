@@ -3,7 +3,7 @@ var LOGO = 'pio-logo.webp';
 var API = (window.PIO_API_URL || '').trim();
 var FIRE = !!(window.PIO_FIREBASE && window.PIO_FIREBASE.apiKey && window.PIO_FIREBASE.projectId);
 var LIVE = FIRE || /^https:\/\/script\.google\.com\//.test(API);
-var S = { token: null, me: null, users: [], entries: [], divisions: [], holidays: [], activity: [], travelOrders: [], events: [], inventory: [], leaves: [], credits: [], board: [], availDate: null, toFilter: 'upcoming', toMine: false,
+var S = { token: null, me: null, users: [], entries: [], divisions: [], holidays: [], activity: [], travelOrders: [], events: [], inventory: [], tasks: [], leaves: [], credits: [], board: [], availDate: null, toFilter: 'upcoming', toMine: false,
           settings: { workdays: 22, carryCap: 0 }, view: 'dashboard', cal: null, mon: null, calUser: 'all', selDay: null,
           dashDiv: 'all', rf: { user: 'all', div: 'all', type: 'all', status: 'all' }, recTab: 'entries', holYear: null,
           needsSetup: false, prefill: null, loadedAt: 0 };
@@ -160,10 +160,11 @@ function divChip(id){ var d = divOf(id); return d ? '<span class="dchip" style="
 function toast(msg){ var t = document.getElementById('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(function(){ t.hidden = true; }, 3000); }
 
 /* ---------- server ---------- */
+var TASK_KINDS = ['Graphic design', 'Caption', 'Writing', 'Photo', 'Video', 'Layout', 'Social media post', 'Other'];
 function apply(d){
   S.me = d.me; S.users = d.users; S.entries = d.entries; S.divisions = d.divisions;
   S.holidays = d.holidays || []; S.settings = d.settings || S.settings; S.activity = d.activity || [];
-  S.travelOrders = d.travelOrders || []; S.events = d.events || []; S.inventory = d.inventory || []; S.tevs = d.tevs || []; S.leaves = d.leaves || []; S.credits = d.credits || []; S.board = d.board || [];
+  S.travelOrders = d.travelOrders || []; S.events = d.events || []; S.inventory = d.inventory || []; S.tasks = d.tasks || []; S.tevs = d.tevs || []; S.leaves = d.leaves || []; S.credits = d.credits || []; S.board = d.board || [];
   S.loadedAt = Date.now(); S.lastWrite = d.lastWrite || 0;
   if (remembered()) lSet('pio_cache', JSON.stringify(d));
 }

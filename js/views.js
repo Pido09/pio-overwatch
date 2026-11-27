@@ -4,16 +4,16 @@
 function navItems(){
   // The first five are the phone tab bar. Regular and casual staff get leaves up front; JO and COS get offsets.
   var tev = ['tev','peso','TEVs','Field work'];
-  if (isAdmin()) return [['dashboard','grid','Dashboard','Overview'],['travel','route','Travel orders','Field work'],
+  if (isAdmin()) return [['dashboard','grid','Dashboard','Overview'],['travel','route','Travel orders','Field work'],['tasks','tick','Tasks','Overview'],
        ['calendar','cal','Calendar','Overview'],tev,['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets'],['leaves','plane','Leaves','Leaves'],['staff','users','Staff','Admin'],['settings','cog','Settings','Admin']];
   // staff and division leaders: four main places, everything else folded under More
-  var main = [['dashboard','grid','Home','Main'],['calendar','cal','Calendar','Main'],['travel','route','My travel orders','Main'],['log','plus','Offsets','Main']];
+  var main = [['dashboard','grid','Home','Main'],['calendar','cal','Calendar','Main'],['tasks','tick','Tasks','Main'],['travel','route','My travel orders','Main']];
   if (hasLeaves()) main.push(['leaves','plane','My leaves','Main']);
-  var more = [['tev','peso','TEVs','More'],['monthly','month','Monthly','More'],['records','list','Records','More']];
+  var more = [['log','plus','Offsets','More'],['tev','peso','TEVs','More'],['monthly','month','Monthly','More'],['records','list','Records','More']];
   if (!hasLeaves() && wlOnly()) more.push(['leaves','plane','Wellness leave','More']);
   return main.concat(more);
 }
-var SHORT = { dashboard: 'Home', travel: 'Travel', availability: 'Who’s in', log: 'Offsets', leaves: 'Leaves', approvals: 'Review' };
+var SHORT = { tasks: 'Tasks', dashboard: 'Home', travel: 'Travel', availability: 'Who’s in', log: 'Offsets', leaves: 'Leaves', approvals: 'Review' };
 /* staff menus: the main places (and Inventory for Production) stay up front; the rest is under More */
 function navMain(n){ return isAdmin() || n[3] === 'Main' || n[3] === 'Production'; }
 function sideNav(nav, navBtn){
@@ -55,8 +55,8 @@ function render(){
   var nav = navItems(), pc = isAdmin() ? pending().filter(canReview).length : 0;
   function navBtn(n){ return '<button data-go="' + n[0] + '" data-tip="' + esc(n[2]) + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ic(n[1]) + '<span>' + n[2] + '</span>' + navBadge(n[0], pc) + '</button>'; }
   var tabs = isAdmin() ? nav.slice(0, 5) : nav.filter(navMain).slice(0, 4);
-  var tabMore = !isAdmin() && nav.some(function(n){ return !navMain(n); });
-  var views = { dashboard: viewDashboard, log: viewLog, approvals: viewApprovals, calendar: viewCalendar, events: viewCalendar, inventory: viewInventory, monthly: viewMonthly, records: viewRecords, staff: viewStaff, settings: viewSettings, availability: viewCalendar, travel: viewTravel, leaves: viewLeaves, tev: viewTEV };
+  var tabMore = !isAdmin() && nav.length > tabs.length;
+  var views = { tasks: viewTasks, dashboard: viewDashboard, log: viewLog, approvals: viewApprovals, calendar: viewCalendar, events: viewCalendar, inventory: viewInventory, monthly: viewMonthly, records: viewRecords, staff: viewStaff, settings: viewSettings, availability: viewCalendar, travel: viewTravel, leaves: viewLeaves, tev: viewTEV };
   if (!views[S.view] || ((['staff','approvals','settings'].indexOf(S.view) >= 0 && !isAdmin()) || (S.view === 'inventory' && !inProd()))) S.view = 'dashboard';
   var v = views[S.view]();
   var myDiv = divOf(S.me.division), y = window.scrollY, same = S.view === S.lastView && !!app.querySelector('.shell'), kept = same ? keepForm(app) : null;
@@ -76,7 +76,7 @@ function render(){
           '<div class="wrap">' + v.body + '</div>' +
         '</main>' +
       '</div>' +
-      '<nav class="tabbar" aria-label="Quick links">' + tabs.map(function(n){ return navBtn([n[0], n[1], SHORT[n[0]] || n[2]]); }).join('') + (tabMore ? '<button type="button" data-act="moreNav"' + (nav.some(function(n){ return !navMain(n) && n[0] === S.view; }) ? ' aria-current="page"' : '') + '>' + ic('menu') + '<span>More</span></button>' : '') + '</nav>' +
+      '<nav class="tabbar" aria-label="Quick links">' + tabs.map(function(n){ return navBtn([n[0], n[1], SHORT[n[0]] || n[2]]); }).join('') + (tabMore ? '<button type="button" data-act="moreNav"' + (!tabs.some(function(n){ return n[0] === S.view; }) ? ' aria-current="page"' : '') + '>' + ic('menu') + '<span>More</span></button>' : '') + '</nav>' +
     '</div>';
   if (same){
     // same page: change only what changed, so background updates do not flash or jump
@@ -320,16 +320,18 @@ WIDGETS.admin = WIDGETS.admin.filter(function(w){ return w[0] !== 'mine'; });
 function ensureComing(){ Object.keys(WIDGETS).forEach(function(k){ var L = WIDGETS[k], at = 0, has = false; for (var i = 0; i < L.length; i++){ if (L[i][0] === 'coming') has = true; if (L[i][0] === 'kpis' || L[i][0] === 'leave' || L[i][0] === 'hero') at = i + 1; } if (!has) L.splice(at, 0, ['coming', 'Coming up', 12]);
     // "This week" (coverage + who is out per day) sits right after the summary, before Coming up
     if (!L.some(function(w){ return w[0] === 'week'; })) L.splice(at, 0, ['week', 'This week', 12]);
-    if (!L.some(function(w){ return w[0] === 'mytrips'; })) L.unshift(['mytrips', 'Your dispatches', 12]); }); }
+    if (!L.some(function(w){ return w[0] === 'mytrips'; })) L.unshift(['mytrips', 'Your dispatches', 12]);
+    if (!L.some(function(w){ return w[0] === 'mytasks'; })) L.splice(1, 0, ['mytasks', 'Your tasks', 12]); }); }
 function widgetPrefs(){ ensureComing();
   var role = wRole(), all = WIDGETS[role].map(function(w){ return w[0]; }), saved = null;
   try { saved = JSON.parse(lGet('pio_w_' + role) || 'null'); } catch(e){}
   // Phones start with a shorter dashboard; everything can be turned back on in Customize.
   // Admins start with what needs action (reviews, who's out, what's coming), then the reference panels.
-  if ((!saved || !saved.order) && role === 'admin'){ var first = ['mytrips','kpis','queue','week','out','coming','tos','daysoff','tevsum','balances'];
+  if ((!saved || !saved.order) && role === 'admin'){ var first = ['mytrips','mytasks','kpis','queue','week','out','coming','tos','daysoff','tevsum','balances'];
     all = all.slice().sort(function(a, b){ var i = first.indexOf(a), j = first.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); }); }
   if (!saved || !saved.order) return { order: all, hidden: window.innerWidth < 700 ? (role === 'admin' ? ['balances','trend','divisions','daysoff','holidays','activity'] : role === 'regular' ? ['trend','recent','hero','holidays'] : ['trend','holidays','recent']) : [] };
   if (all.indexOf('mytrips') >= 0 && saved.order.indexOf('mytrips') < 0) saved.order.unshift('mytrips');
+  if (all.indexOf('mytasks') >= 0 && saved.order.indexOf('mytasks') < 0) saved.order.splice(saved.order.indexOf('mytrips') + 1, 0, 'mytasks');
   all.forEach(function(id){ if (saved.order.indexOf(id) < 0) saved.order.push(id); });
   saved.order = saved.order.filter(function(id){ return all.indexOf(id) >= 0; });
   return saved;
@@ -400,7 +402,7 @@ function quip(){
 function viewDashboard(){
   var adm = isAdmin(), P = widgetPrefs(), html = '';
   var staff = S.users.filter(function(u){ return u.active && (!adm || S.dashDiv === 'all' || u.division === S.dashDiv); });
-  var W = adm ? adminWidgets(staff) : empWidgets(); W.coming = comingWidget; W.week = weekWidget; W.mytrips = myTripsWidget;
+  var W = adm ? adminWidgets(staff) : empWidgets(); W.coming = comingWidget; W.week = weekWidget; W.mytrips = myTripsWidget; W.mytasks = myTasksWidget;
   // Pack widgets into full rows of 12 so side-by-side boxes always line up:
   // a box that would leave a gap at the end of its row is widened to fill it.
   // Folded panels are half width, so they pair up into tidy rows.

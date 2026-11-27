@@ -84,6 +84,19 @@ service cloud.firestore {
       allow read: if isMember();
       allow write: if stamped() && isMember();
     }
+    match /tasks/{id} {
+      allow read: if isMember();
+      // admins and division leaders give tasks to anyone
+      allow write: if stamped() && (isAdmin() || isLeader());
+      // anyone may give themselves a task, then change, finish or remove it
+      allow create: if stamped() && isMember() && request.resource.data.createdBy == myName() && request.resource.data.assignees == [myName()];
+      allow update: if stamped() && isMember() && (
+        (resource.data.createdBy == myName() && resource.data.assignees == [myName()]
+          && request.resource.data.createdBy == myName() && request.resource.data.assignees == [myName()])
+        // a task given to you: only mark it done or not done
+        || (myName() in resource.data.assignees
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'doneBy', 'doneAt', 'updatedBy', 'updatedAt', '_t'])));
+    }
     match /entries/{id} {
       allow read: if isAdmin() || (isMember() && resource.data.username == myName());
       allow create: if stamped() && (isAdmin() || (isMember()

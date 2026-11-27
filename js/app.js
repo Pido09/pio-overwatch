@@ -4,7 +4,7 @@
    newest version and a few lines on what changed. When it differs from this page's APP_VER, a card offers
    a refresh. Checked when the app comes back to the front and every 10 minutes. Keep APP_VER, version.json
    and the cache name in sw.js the same when publishing. */
-var APP_VER = 'v89';
+var APP_VER = 'v90';
 (function(){
   var shown = null, last = 0;
   function check(force){
@@ -145,7 +145,7 @@ function searchModal(){
   searchRun('');
 }
 /* pages search can open, with the words people might use for them */
-var PAGE_WORDS = { dashboard: 'home start overview', calendar: 'events schedule dispatch day', travel: 'travel orders to trips print', log: 'offset offsets log earn overtime', leaves: 'leave vacation sick wellness', tev: 'tev reimbursement claim cheque', monthly: 'monthly report summary', records: 'records history list entries', approvals: 'review approve pending requests', staff: 'staff people accounts pin days field office', settings: 'settings holidays backup rules', inventory: 'equipment camera gear inventory' };
+var PAGE_WORDS = { tasks: 'tasks to do work assignment graphic design pubmat caption writing layout report accomplishment summary', dashboard: 'home start overview', calendar: 'events schedule dispatch day', travel: 'travel orders to trips print', log: 'offset offsets log earn overtime', leaves: 'leave vacation sick wellness', tev: 'tev reimbursement claim cheque', monthly: 'monthly report summary', records: 'records history list entries', approvals: 'review approve pending requests', staff: 'staff people accounts pin days field office', settings: 'settings holidays backup rules', inventory: 'equipment camera gear inventory' };
 function searchPages(){ var seen = {}; return navItems().concat(isAdmin() ? [['log', 'plus', 'Log offset'], ['approvals', 'check', 'Approvals']] : []).filter(function(n){ if (seen[n[0]]) return false; seen[n[0]] = 1; return true; }); }
 function sNorm(s){ return String(s || '').toLowerCase(); }
 function searchRun(q){
