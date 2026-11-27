@@ -94,7 +94,7 @@ service cloud.firestore {
         (resource.data.createdBy == myName() && resource.data.assignees == [myName()]
           && request.resource.data.createdBy == myName() && request.resource.data.assignees == [myName()])
         // anyone may move a task along: finish a step, proofread (the app keeps writers from proofreading their own work), send back or undo; who did it is recorded
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['steps', 'status', 'doneBy', 'doneAt', 'sentBack', 'flow', 'stage', 'updatedBy', 'updatedAt', '_t']));
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['steps', 'status', 'doneBy', 'doneAt', 'sentBack', 'caption', 'flow', 'stage', 'updatedBy', 'updatedAt', '_t']));
     }
     match /entries/{id} {
       allow read: if isAdmin() || (isMember() && resource.data.username == myName());

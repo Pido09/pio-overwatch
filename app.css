@@ -1575,3 +1575,18 @@ html .side .side-search kbd{border-color:var(--sd-line);color:var(--sd-muted)}
 .tk-awayn{margin:0 0 6px;font-size:12px}.tk-awayn:empty{display:none}
 .tk-p.is-away{order:1}
 .tk-bar.big small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;display:block;font-size:10.5px}.tk-bar.big .tk-seg{min-width:0}
+
+/* ---------- the caption: written, proofread, then copied for posting ---------- */
+.tk-cap{margin:12px 0;border:1px solid var(--line-strong);border-radius:14px;background:var(--surface-2);overflow:hidden}
+.tk-cap-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 8px 8px 12px;border-bottom:1px solid var(--line)}
+.tk-cap-h>b{display:inline-flex;align-items:center;gap:6px;font-size:13px}.tk-cap-h>b svg.i{width:15px;height:15px;color:var(--brand-strong)}
+.tk-cap-h .hint{font-size:12px;flex:1;min-width:0}
+.tk-copy{margin-left:auto;gap:6px}.tk-copy svg.i{width:15px;height:15px}
+.tk-copy.ok{background:var(--brand);border-color:var(--brand);color:#fff}
+.tk-cap-t{padding:12px 14px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.55;max-height:260px;overflow:auto;user-select:text}
+.tk-capin{font-size:14.5px;line-height:1.55;resize:vertical;min-height:140px}
+.tk-capchg{color:var(--violet);font-weight:600;margin:4px 0 0}.tk-capchg:empty{display:none}
+/* posting: the designer (who has the file) on top */
+.tk-st[data-post] .tk-p.is-first{border-color:var(--sun);box-shadow:inset 0 0 0 1px var(--sun)}
+.tk-st[data-post] .tk-p.is-first .tk-pn::after{content:"Has the file";font-size:10.5px;font-weight:700;color:color-mix(in srgb,var(--gold) 80%,var(--ink))}
+.tk-st[data-post] .tk-p.is-first:has(.tk-away:not(:empty)) .tk-pn::after{content:""}

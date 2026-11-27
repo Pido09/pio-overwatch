@@ -144,6 +144,7 @@ var ICONS = {
 var DIV_ICONS = ['camera','monument','folder','megaphone','pen','radio','users','star'];
 var SWATCHES = ['#0B2C6E','#1D4ED8','#C8202A','#16803A','#F2B233','#6D28D9','#0F766E','#FFFFFF'];
 var CAT_ICON = { 'Holiday':'flag', 'Weekend':'sun', 'After 5 PM':'moon', 'Travel order':'route' };
+ICONS.copy = '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/>';
 function ic(n){ return '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || ICONS.star) + '</svg>'; }
 
 /* Staff lists are grouped by division, in the order the divisions are listed. */
@@ -169,6 +170,10 @@ var TASK_TPL = [
   { id: 'video', name: 'Video', icon: 'camera', steps: [['Editing', 'Videographer', 'work'], ['Caption', 'Writer', 'work'], ['Proofreading', 'Writer', 'proof'], ['Posting', '', 'post']] },
   { id: 'other', name: 'Other task', icon: 'tick', steps: [['Do the task', '', 'work']] }
 ];
+/* only these divisions post to the office's pages */
+var POST_DIV_RX = /bantayog|social media|special project/i;
+function divCanPost(divId, divs){ var d = (divs || (typeof S !== 'undefined' && S.divisions) || []).filter(function(x){ return x.id === divId; })[0]; return !!(d && POST_DIV_RX.test(d.name + ' ' + (d.short || ''))); }
+function isCaptionStep(s){ return s.type === 'work' && /caption/i.test(s.name || ''); }
 function taskTpl(id){ return TASK_TPL.filter(function(t){ return t.id === id; })[0] || TASK_TPL[TASK_TPL.length - 1]; }
 /* a task's steps; older tasks without steps are one step done by everyone on it */
 function taskStepsOf(t){

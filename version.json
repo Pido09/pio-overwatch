@@ -1,11 +1,8 @@
 {
-  "ver": "v94",
+  "ver": "v95",
   "notes": [
-    "Tasks by type of output: Pubmat, Press release, Photo, Video and Other, each with its own steps (design, caption, proofreading, posting)",
-    "Give each step to its own people, filtered by skill; anyone on a travel order or dispatch on the due date is grayed out",
-    "A progress bar shows every step; tasks waiting on you come first",
-    "Proofreading records who read it and any edits; it can be sent back with a note",
-    "Linking an event shows only today's and the next two weeks' events",
-    "Fixed: due dates on tasks now save"
+    "The caption is written right in the task; the proofreader reads and fixes it there",
+    "Whoever posts sees the proofread caption with a Copy button, ready for Facebook",
+    "Only Bantayog, Social Media and Special Projects staff can post; the designer is put first since they have the file"
   ]
 }

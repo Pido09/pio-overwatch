@@ -607,7 +607,7 @@ var Fire = (function(){
       var only = function(keys){ return Object.keys(Object.assign({}, ot, nt)).every(function(k){ return keys.indexOf(k) >= 0 || JSON.stringify(ot[k]) === JSON.stringify(nt[k]); }); };
       if (x.del) return false;
       // moving a task along: finishing a step, proofreading (anyone but the writer), sending back, undoing a step
-      return only(['steps', 'status', 'doneBy', 'doneAt', 'sentBack', 'flow', 'stage', 'updatedBy', 'updatedAt', '_t']);
+      return only(['steps', 'status', 'doneBy', 'doneAt', 'sentBack', 'caption', 'flow', 'stage', 'updatedBy', 'updatedAt', '_t']);
       }
     if (x.c === 'logins') return x.id === me && !x.hard && Object.keys(x.data || {}).every(function(k){ return k === 'photo'; });
     if (x.c === 'users' && x.id === me && !x.del){ var ou0 = store.users.docs[x.id]; if (ou0 && Object.keys(Object.assign({}, ou0, x.data)).every(function(k){ return k === 'photo' || k === '_t' || JSON.stringify(ou0[k]) === JSON.stringify(x.data[k]); })) return true; }
@@ -876,7 +876,7 @@ var Mock = (function(){
       tasks.push(Object.assign({ id: id, title: title, template: T.id, kind: T.name, note: '', steps: st, assignees: all, due: today(), eventId: '', status: fin ? 'Done' : 'Open', doneBy: fin ? st[st.length - 1].doneBy : '', doneAt: fin ? st[st.length - 1].doneAt : '', sentBack: null, createdBy: 'admin', createdAt: at(30) }, extra || {})); };
     mk('k1', 'Congratulatory pubmat: board exam passers', 'pubmat', [['mbautista'], ['jdelacruz'], ['areyes'], ['admin']], [['mbautista', 5], ['jdelacruz', 2]], { due: addDays(today(), 1) });
     mk('k2', 'Photos: Bantayog Festival parade', 'photo', [['mbautista'], ['jdelacruz'], []], [], {});
-    mk('k3', 'Press release: livelihood caravan', 'release', [['mbautista'], ['areyes'], ['jdelacruz'], ['rmendoza']], [['mbautista', 32], ['areyes', 30], ['jdelacruz', 26, true, 'Fixed the names of the speakers'], ['rmendoza', 24]], { due: addDays(today(), -1) });
+    mk('k3', 'Press release: livelihood caravan', 'release', [['mbautista'], ['areyes'], ['jdelacruz'], ['rmendoza']], [['mbautista', 32], ['areyes', 30], ['jdelacruz', 26, true, 'Fixed the names of the speakers'], ['rmendoza', 24]], { due: addDays(today(), -1), caption: 'The Provincial Government brought its Livelihood Caravan to Labo today, with starter kits for 120 families.' });
   })();
   function to(fromOff, toOff, event, dest, names, status, tev, by){ var f = addDays(today(), fromOff); tos.push({ id:'t' + (tos.length + 1), toNo: status === 'Prepared' ? 'PIO-2026-' + (100 + tos.length) : '', dateFrom:f, dateTo:addDays(today(), toOff), event:event, destination:dest, names:names.map(function(n){ return n.toUpperCase(); }), usernames:[], status:status, tev:tev, createdBy:by, createdAt:new Date(Date.now() - 3*864e5).toISOString(), updatedBy:'', updatedAt:'' }); }
   to(0, 0, 'Provincial Board regular session coverage', 'Sangguniang Panlalawigan Hall, Daet', ['Juan Dela Cruz','Mark Bautista'], 'Prepared', 'No', 'jdelacruz');
@@ -1023,6 +1023,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
        Steps are done in order; who did each one (and any proofreading edits) is recorded. */
     if (a === 'saveTask' || a === 'setTaskDone' || a === 'deleteTask' || a === 'taskStep'){
       var lead = adm || me.role === 'scheduler', selfOf = function(t){ return t.createdBy === me.username && t.assignees.length === 1 && t.assignees[0] === me.username; };
+      var canPostU = function(u){ var x = find(u); return !!x && divCanPost(x.division, divisions); };
       var uniq = function(list){ return list.map(function(u){ return String(u).trim(); }).filter(function(u, i, arr){ return u && arr.indexOf(u) === i; }); };
       if (a === 'saveTask'){
         var tkT = String(p.title || '').trim(); if (tkT.length < 3) return fail('Write what needs to be done.');
@@ -1035,9 +1036,12 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
         if (started && tkX.template !== tpl.id) return fail('Work has started, so the type of output can’t change now.');
         var steps = base.map(function(s, i){
           var w = s.doneAt ? s.who : uniq(Array.isArray(who[i]) ? who[i] : String(who[i] || '').split(','));
-          if (!lead && !s.doneAt) w = s.type === 'proof' ? [] : [me.username];     // staff: a task for themselves (someone else proofreads)
+          if (!lead && !s.doneAt) w = s.type === 'proof' ? [] : s.type === 'post' ? (canPostU(me.username) ? [me.username] : []) : [me.username];     // staff: a task for themselves (someone else proofreads)
           return Object.assign({}, s, { who: w });
         });
+        // posting: only Bantayog, Social Media and Special Projects staff; left empty, it goes to whoever did the first step (the designer has the file)
+        steps.forEach(function(s){ if (s.type === 'post' && !s.doneAt && !s.who.length && steps[0].type === 'work') s.who = steps[0].who.filter(canPostU); });
+        if (steps.some(function(s){ return s.type === 'post' && !s.doneAt && s.who.some(function(u){ return !canPostU(u); }); })) return fail('Only Bantayog, Social Media and Special Projects staff can post.');
         var bad = steps.filter(function(s){ return s.type === 'work' && !s.who.length; })[0]; if (bad) return fail('Pick who does “' + bad.name + '”.');
         var all = uniq([].concat.apply([], steps.map(function(s){ return s.who; })));
         if (all.some(function(u){ var x = find(u); return !x || !x.active; })) return fail('Pick people from the list.');
@@ -1050,7 +1054,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
       var tkO = tasks.filter(function(x){ return x.id === p.id; })[0]; if (!tkO) return fail('That task was not found.');
       var st = taskStepsOf(tkO), cur = st.filter(function(s){ return !s.doneAt; })[0], ci = cur ? st.indexOf(cur) : st.length;
       var finish = function(){ tkO.steps = st; var last = !st.some(function(s){ return !s.doneAt; }); tkO.status = last ? 'Done' : 'Open'; tkO.doneBy = last ? me.username : ''; tkO.doneAt = last ? now : ''; tkO.updatedBy = me.username; tkO.updatedAt = now; delete tkO.flow; delete tkO.stage; };
-      var mayDo = function(s){ if (lead) return true; if (s.who.length) return s.who.indexOf(me.username) >= 0; return s.type === 'proof' || tkO.assignees.indexOf(me.username) >= 0; };
+      var mayDo = function(s){ if (s.type === 'post' && !canPostU(me.username)) return false; if (lead) return true; if (s.who.length) return s.who.indexOf(me.username) >= 0; return s.type === 'proof' || s.type === 'post' || tkO.assignees.indexOf(me.username) >= 0; };
       if (a === 'setTaskDone'){   // one-step tasks: the round check
         if (st.length !== 1) return fail('This task has steps. Finish them one at a time.');
         if (!mayDo(st[0])) return fail('Only the people on this task can mark it done.');
@@ -1061,12 +1065,21 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
         var note = String(p.note || '').trim().slice(0, 400);
         if (p.step === 'done'){
           if (!cur) return fail('Every step of this task is done.');
+          if (cur.type === 'post' && !canPostU(me.username)) return fail('Only Bantayog, Social Media and Special Projects staff can post.');
           if (!mayDo(cur)) return fail('This step is for ' + cur.who.map(function(u){ var x = find(u); return x ? x.name.split(' ')[0] : u; }).join(', ') + '.');
           if (cur.type === 'proof'){
             // proofreading is done by someone other than the person who wrote what is being read
             var prevW = st.slice(0, ci).filter(function(s){ return s.type === 'work'; }).pop();
             if (prevW && prevW.doneBy === me.username) return fail('Someone other than the writer should proofread it.');
-            st[ci] = Object.assign({}, cur, { doneBy: me.username, doneAt: now, edits: yes(p.edits), note: note });
+            // the proofreader may fix the caption right here; a changed caption counts as edits
+            var pText = p.text == null ? null : String(p.text).trim().slice(0, 5000), changed = pText != null && pText !== (tkO.caption || '');
+            if (pText != null && tkO.caption != null && !pText) return fail('The caption can’t be empty.');
+            if (changed) tkO.caption = pText;
+            st[ci] = Object.assign({}, cur, { doneBy: me.username, doneAt: now, edits: yes(p.edits) || changed, note: note }, tkO.caption ? { text: tkO.caption } : {});
+          } else if (isCaptionStep(cur)){
+            // the caption itself is kept on the task, so the proofreader can read it and whoever posts can copy it
+            var cText = String(p.text || '').trim().slice(0, 5000); if (!cText) return fail('Write or paste the caption.');
+            tkO.caption = cText; st[ci] = Object.assign({}, cur, { doneBy: me.username, doneAt: now, note: note, text: cText });
           } else st[ci] = Object.assign({}, cur, { doneBy: me.username, doneAt: now, note: note });
           tkO.sentBack = null; finish();
           log(me, cur.type === 'proof' ? (yes(p.edits) ? 'Proofread a task and made edits' : 'Proofread a task') : cur.type === 'post' ? 'Posted a task' : 'Finished a task step', tkO.assignees.join(', '), tkO.title + ' · ' + cur.name);
