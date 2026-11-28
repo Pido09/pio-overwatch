@@ -1,8 +1,8 @@
 {
-  "ver": "v102",
+  "ver": "v103",
   "notes": [
-    "A calmer side menu: main pages in one list, Offsets and Admin fold away smoothly",
-    "Your photo, theme, Change PIN, Refresh and Sign out are now in a menu under your name",
-    "On computers the green header is its own rounded card beside the menu"
+    "New: Bantayog Publication. The editorial board adds Facebook articles and scores them 1 to 5",
+    "The app averages the scores; the Bantayog leader picks what goes in and locks the final lineup, ready to print",
+    "Admins choose the editorial board from the Publication page"
   ]
 }

@@ -8,7 +8,7 @@ let pass = 0, fail = 0; const fails = [];
 function check(name, ok, detail){ if (ok){ pass++; } else { fail++; fails.push(name + (detail !== undefined ? '  →  ' + JSON.stringify(detail) : '')); } }
 
 /* ---------- 1. files and versions ---------- */
-const order = ['core.js', 'views.js', 'events.js', 'documents.js', 'data.js', 'tasks.js', 'push.js', 'app.js'];
+const order = ['core.js', 'views.js', 'events.js', 'documents.js', 'data.js', 'tasks.js', 'pub.js', 'push.js', 'app.js'];
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const srcs = order.map(function(f){ return fs.readFileSync(path.join(root, 'js', f), 'utf8'); });
 srcs.forEach(function(src, i){ try { new Function(src); check('parses: js/' + order[i], true); } catch (e) { check('parses: js/' + order[i], false, e.message); } });
@@ -247,6 +247,40 @@ withState(Object.assign({}, base, { me: users[0] }), function(){
   let r = {}; try { r = JSON.parse(require('child_process').execFileSync(process.execPath, [require('path').join(root, 'tests', 'webpush.mjs')], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim().split('\n').pop()); } catch (e) { r = { error: String(e) }; }
   check('phone alert encryption matches the web push standard (RFC 8291)', r.rfc === true, r);
   check('phone alert signature verifies (VAPID)', r.vapid === true, r);
+})();
+
+/* ---------- 9. Bantayog Publication: board scores 1–5, the Bantayog leader locks the lineup ---------- */
+(function(){
+  const E = engine({ divisions: [{ id: 'b', name: 'Bantayog Division', short: 'Bantayog' }, { id: 'o', name: 'Admin and Support Division', short: 'Admin' }],
+    users: [{ username: 'adm', name: 'Admin One', role: 'admin', active: true, division: 'o' },
+            { username: 'lead', name: 'Lead Two', role: 'scheduler', active: true, division: 'b' },
+            { username: 'olead', name: 'Other Lead', role: 'scheduler', active: true, division: 'o' },
+            { username: 'ana', name: 'Ana Writer', role: 'employee', active: true, division: 'b' },
+            { username: 'bob', name: 'Bob Cruz', role: 'employee', active: true, division: 'o' }] });
+  const D0 = function(n){ return D(n); }, pub = function(){ return E.dump().pubs[0]; }, items = function(){ return E.dump().pubItems; }, votes = function(){ return E.dump().pubVotes; };
+  check('only an admin picks the editorial board', !E.run('lead', 'setBoard', { usernames: ['ana'] }).ok && E.run('adm', 'setBoard', { usernames: ['ana', 'bob'] }).ok && E.dump().users.filter(function(u){ return u.board; }).length === 2);
+  check('only the Bantayog leader or an admin starts an issue', !E.run('olead', 'savePub', { title: 'Bantayog, Dec', from: D0(0), to: D0(20) }).ok && E.run('lead', 'savePub', { title: 'Bantayog, Dec', from: D0(0), to: D0(20) }).ok);
+  const pid = pub().id;
+  let r = E.run('ana', 'savePubItem', { issueId: pid, title: 'Caravan reaches Labo', link: 'https://facebook.com/post/1', postedOn: D0(1) });
+  check('board members add articles', r.ok, r.error);
+  const a1 = r.data.id;
+  check('people not on the board cannot add articles', !E.run('olead', 'savePubItem', { issueId: pid, title: 'Something else' }).ok);
+  check('the same post is not added twice', !E.run('bob', 'savePubItem', { issueId: pid, title: 'Caravan again', link: 'https://facebook.com/post/1' }).ok);
+  check('links must be web links', !E.run('bob', 'savePubItem', { issueId: pid, title: 'Bad link', link: 'facebook post' }).ok);
+  const a2 = E.run('bob', 'savePubItem', { issueId: pid, title: 'Budget approved' }).data.id;
+  check('scoring waits for voting to open', !E.run('ana', 'scorePub', { itemId: a1, score: 4 }).ok);
+  E.run('lead', 'pubStage', { id: pid, stage: 'vote' });
+  check('scores go from 1 to 5', !E.run('ana', 'scorePub', { itemId: a1, score: 6 }).ok && !E.run('ana', 'scorePub', { itemId: a1, score: 2.5 }).ok);
+  check('only board members score', !E.run('lead', 'scorePub', { itemId: a1, score: 5 }).ok);
+  E.run('ana', 'scorePub', { itemId: a1, score: 5 }); E.run('bob', 'scorePub', { itemId: a1, score: 4 }); E.run('ana', 'scorePub', { itemId: a1, score: 3 });
+  const v1 = votes().filter(function(v){ return v.itemId === a1; });
+  check('each board member has one score per article (re-scoring replaces it)', v1.length === 2 && v1.some(function(v){ return v.username === 'ana' && v.score === 3; }), v1);
+  check('the average is worked out from the scores', G.pubAvg && G.pubAvg(v1) === 3.5, G.pubAvg && G.pubAvg(v1));
+  check('locking needs at least one article included', !E.run('lead', 'pubStage', { id: pid, stage: 'final' }).ok);
+  check('only the Bantayog leader or an admin decides the lineup', !E.run('ana', 'pubPick', { id: a1, pick: 'in' }).ok && E.run('lead', 'pubPick', { id: a1, pick: 'in' }).ok && E.run('lead', 'pubPick', { id: a2, pick: 'out' }).ok);
+  r = E.run('lead', 'pubStage', { id: pid, stage: 'final' });
+  check('the leader locks the final lineup', r.ok && pub().stage === 'final' && pub().finalBy === 'lead', r.error);
+  check('a locked lineup takes no more scores or articles', !E.run('bob', 'scorePub', { itemId: a2, score: 5 }).ok && !E.run('ana', 'savePubItem', { issueId: pid, title: 'Late article' }).ok);
 })();
 
 report();

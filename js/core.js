@@ -3,7 +3,7 @@ var LOGO = 'pio-logo.webp';
 var API = (window.PIO_API_URL || '').trim();
 var FIRE = !!(window.PIO_FIREBASE && window.PIO_FIREBASE.apiKey && window.PIO_FIREBASE.projectId);
 var LIVE = FIRE || /^https:\/\/script\.google\.com\//.test(API);
-var S = { token: null, me: null, users: [], entries: [], divisions: [], holidays: [], activity: [], travelOrders: [], events: [], inventory: [], tasks: [], leaves: [], credits: [], board: [], availDate: null, toFilter: 'upcoming', toMine: false,
+var S = { token: null, me: null, users: [], entries: [], divisions: [], holidays: [], activity: [], travelOrders: [], events: [], inventory: [], tasks: [], pubs: [], pubItems: [], pubVotes: [], leaves: [], credits: [], board: [], availDate: null, toFilter: 'upcoming', toMine: false,
           settings: { workdays: 22, carryCap: 0 }, view: 'dashboard', cal: null, mon: null, calUser: 'all', selDay: null,
           dashDiv: 'all', rf: { user: 'all', div: 'all', type: 'all', status: 'all' }, recTab: 'entries', holYear: null,
           needsSetup: false, prefill: null, loadedAt: 0 };
@@ -144,6 +144,7 @@ var ICONS = {
 var DIV_ICONS = ['camera','monument','folder','megaphone','pen','radio','users','star'];
 var SWATCHES = ['#0B2C6E','#1D4ED8','#C8202A','#16803A','#F2B233','#6D28D9','#0F766E','#FFFFFF'];
 var CAT_ICON = { 'Holiday':'flag', 'Weekend':'sun', 'After 5 PM':'moon', 'Travel order':'route' };
+ICONS.news = '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h10A1.5 1.5 0 0 1 17 5.5V19H6a2 2 0 0 1-2-2z"/><path d="M17 8h2.5A1.5 1.5 0 0 1 21 9.5V17a2 2 0 0 1-2 2h-2"/><path d="M7.5 8h6M7.5 11.5h6M7.5 15h4"/>';
 ICONS.copy = '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/>';
 function ic(n){ return '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || ICONS.star) + '</svg>'; }
 
@@ -183,7 +184,7 @@ function taskStepsOf(t){
 function apply(d){
   S.me = d.me; S.users = d.users; S.entries = d.entries; S.divisions = d.divisions;
   S.holidays = d.holidays || []; S.settings = d.settings || S.settings; S.activity = d.activity || [];
-  S.travelOrders = d.travelOrders || []; S.events = d.events || []; S.inventory = d.inventory || []; S.tasks = d.tasks || []; S.tevs = d.tevs || []; S.leaves = d.leaves || []; S.credits = d.credits || []; S.board = d.board || [];
+  S.travelOrders = d.travelOrders || []; S.events = d.events || []; S.inventory = d.inventory || []; S.tasks = d.tasks || []; S.pubs = d.pubs || []; S.pubItems = d.pubItems || []; S.pubVotes = d.pubVotes || []; S.tevs = d.tevs || []; S.leaves = d.leaves || []; S.credits = d.credits || []; S.board = d.board || [];
   S.loadedAt = Date.now(); S.lastWrite = d.lastWrite || 0;
   if (remembered()) lSet('pio_cache', JSON.stringify(d));
 }

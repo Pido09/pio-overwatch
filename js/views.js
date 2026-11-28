@@ -5,15 +5,16 @@ function navItems(){
   // The first five are the phone tab bar. Regular and casual staff get leaves up front; JO and COS get offsets.
   var tev = ['tev','peso','TEVs','Field work'];
   if (isAdmin()) return [['dashboard','grid','Home','Overview'],['tasks','tick','Tasks','Overview'],['calendar','cal','Calendar','Overview'],
-       ['travel','route','Travel orders','Field work'],tev,['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets'],['leaves','plane','Leaves','Leaves'],['staff','users','Staff','Admin'],['settings','cog','Settings','Admin']];
+       ['travel','route','Travel orders','Field work'],tev,['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets'],['leaves','plane','Leaves','Leaves'],['pub','news','Publication','Leaves'],['staff','users','Staff','Admin'],['settings','cog','Settings','Admin']];
   // staff and division leaders: four main places, everything else folded under More
   var main = [['dashboard','grid','Home','Main'],['calendar','cal','Calendar','Main'],['tasks','tick','Tasks','Main'],['travel','route','My travel orders','Main']];
   if (hasLeaves()) main.push(['leaves','plane','My leaves','Main']);
   var more = [['log','plus','Offsets','More'],['tev','peso','TEVs','More'],['monthly','month','Monthly','More'],['records','list','Records','More']];
   if (!hasLeaves() && wlOnly()) more.push(['leaves','plane','Wellness leave','More']);
+  if (typeof pubCanSee === 'function' && pubCanSee()) more.push(['pub','news','Publication','More']);
   return main.concat(more);
 }
-var SHORT = { tasks: 'Tasks', dashboard: 'Home', travel: 'Travel', availability: 'Who’s in', log: 'Offsets', leaves: 'Leaves', approvals: 'Review' };
+var SHORT = { pub: 'Publication', tasks: 'Tasks', dashboard: 'Home', travel: 'Travel', availability: 'Who’s in', log: 'Offsets', leaves: 'Leaves', approvals: 'Review' };
 /* staff menus: the main places (and Inventory for Production) stay up front; the rest is under More */
 function navMain(n){ return isAdmin() || n[3] === 'Main' || n[3] === 'Production'; }
 /* The side menu, kept to two levels: the main pages in one list, then a few foldable groups.
@@ -95,7 +96,7 @@ function render(){
   function navBtn(n){ return '<button data-go="' + n[0] + '" data-tip="' + esc(n[2]) + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ic(n[1]) + '<span>' + n[2] + '</span>' + navBadge(n[0], pc) + '</button>'; }
   var tabs = isAdmin() ? nav.slice(0, 5) : nav.filter(navMain).slice(0, 4);
   var tabMore = !isAdmin() && nav.length > tabs.length;
-  var views = { tasks: viewTasks, dashboard: viewDashboard, log: viewLog, approvals: viewApprovals, calendar: viewCalendar, events: viewCalendar, inventory: viewInventory, monthly: viewMonthly, records: viewRecords, staff: viewStaff, settings: viewSettings, availability: viewCalendar, travel: viewTravel, leaves: viewLeaves, tev: viewTEV };
+  var views = { pub: viewPub, tasks: viewTasks, dashboard: viewDashboard, log: viewLog, approvals: viewApprovals, calendar: viewCalendar, events: viewCalendar, inventory: viewInventory, monthly: viewMonthly, records: viewRecords, staff: viewStaff, settings: viewSettings, availability: viewCalendar, travel: viewTravel, leaves: viewLeaves, tev: viewTEV };
   if (!views[S.view] || ((['staff','approvals','settings'].indexOf(S.view) >= 0 && !isAdmin()) || (S.view === 'inventory' && !inProd()))) S.view = 'dashboard';
   var v = views[S.view]();
   var myDiv = divOf(S.me.division), y = window.scrollY, same = S.view === S.lastView && !!app.querySelector('.shell'), kept = same ? keepForm(app) : null;

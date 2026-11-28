@@ -424,9 +424,9 @@ var Fire = (function(){
   var CFG = window.PIO_FIREBASE || {}, F = null, app = null, auth = null, db = null, booting = null;
   var me = null, member = null, unsub = [], store = null, timer = null, syncing = null, DEF = null;
   var DOMAIN = 'pio-overwatch.local';
-  var COLS = { users: 'username', entries: 'id', travelOrders: 'id', events: 'id', inventory: 'id', tasks: 'id', leaves: 'id', tevs: 'id', divisions: 'id', holidays: 'date', credits: 'username', settings: 'id', board: 'id' };
+  var COLS = { users: 'username', entries: 'id', travelOrders: 'id', events: 'id', inventory: 'id', tasks: 'id', pubs: 'id', pubItems: 'id', pubVotes: 'id', leaves: 'id', tevs: 'id', divisions: 'id', holidays: 'date', credits: 'username', settings: 'id', board: 'id' };
   var PRIVATE = { entries: 1, leaves: 1, credits: 1, tevs: 1 };
-  var ENGINE = { users: 'users', entries: 'entries', travelOrders: 'tos', events: 'events', inventory: 'inventory', tasks: 'tasks', leaves: 'leaves', tevs: 'tevs', divisions: 'divisions', holidays: 'holidays', credits: 'credits' };
+  var ENGINE = { users: 'users', entries: 'entries', travelOrders: 'tos', events: 'events', inventory: 'inventory', tasks: 'tasks', pubs: 'pubs', pubItems: 'pubItems', pubVotes: 'pubVotes', leaves: 'leaves', tevs: 'tevs', divisions: 'divisions', holidays: 'holidays', credits: 'credits' };
   var PH_CAL = 'en.philippines#holiday@group.v.calendar.google.com';
 
   function email(u, k){ return u + (k ? '.' + k : '') + '@' + DOMAIN; }
@@ -471,7 +471,7 @@ var Fire = (function(){
   function arrays(){
     function vals(c){ return Object.keys(store[c].docs).map(function(id){ return clone(store[c].docs[id]); }); }
     var settings = store.settings.docs.app ? clone(store.settings.docs.app) : clone(DEF.settings); delete settings.id;
-    return { users: vals('users'), entries: vals('entries'), tos: vals('travelOrders'), events: vals('events'), inventory: vals('inventory'), tasks: vals('tasks'), leaves: vals('leaves'), tevs: vals('tevs'), divisions: vals('divisions').sort(function(a, b){ return (a.order || 0) - (b.order || 0); }),
+    return { users: vals('users'), entries: vals('entries'), tos: vals('travelOrders'), events: vals('events'), inventory: vals('inventory'), tasks: vals('tasks'), pubs: vals('pubs'), pubItems: vals('pubItems'), pubVotes: vals('pubVotes'), leaves: vals('leaves'), tevs: vals('tevs'), divisions: vals('divisions').sort(function(a, b){ return (a.order || 0) - (b.order || 0); }),
       holidays: vals('holidays').sort(function(a, b){ return a.date < b.date ? -1 : 1; }), credits: vals('credits'), settings: settings,
       activity: Object.keys(store.activity.docs).map(function(id){ return store.activity.docs[id]; }).sort(function(a, b){ return a.at < b.at ? 1 : -1; }), board: vals('board') };
   }
@@ -545,7 +545,7 @@ var Fire = (function(){
       list.forEach(function(x){
         var id = String(x[keyName]); seen[id] = 1;
         var data = clone(x); delete data.pin; delete data._saving;
-        if (c === 'travelOrders' || c === 'events' || c === 'inventory' || c === 'tasks' || c === 'entries' || c === 'leaves' || c === 'tevs' || c === 'divisions') data.id = id;
+        if (c === 'travelOrders' || c === 'events' || c === 'inventory' || c === 'tasks' || c === 'pubs' || c === 'pubItems' || c === 'pubVotes' || c === 'entries' || c === 'leaves' || c === 'tevs' || c === 'divisions') data.id = id;
         var old = before[c].docs[id];
         if (!old || JSON.stringify(old) !== JSON.stringify(data)) w.push({ c: c, id: id, data: data });
       });
@@ -600,6 +600,13 @@ var Fire = (function(){
       if (oe && !x.del) return Object.keys(Object.assign({}, oe, x.data)).every(function(k){ return ['gear', 'gearHolder', 'gearBy', 'gearAt', '_t'].indexOf(k) >= 0 || JSON.stringify(oe[k]) === JSON.stringify(x.data[k]); });
       return !oe && !x.del && x.data.status === 'Pending' && x.data.createdBy === me; }   // staff: new unconfirmed event from a travel order
     if (x.c === 'inventory') return true;
+    /* Bantayog Publication: leaders run issues; editorial board members add articles and save their own scores */
+    if (x.c === 'pubs' || x.c === 'pubItems' || x.c === 'pubVotes'){
+      var mu = store.users.docs[me] || {}, md = store.divisions.docs[mu.division] || {}, bantLead = member.role === 'scheduler' && /bantayog/i.test((md.name || '') + ' ' + (md.short || '')), board = mu.board === true;
+      if (x.c === 'pubs') return bantLead;
+      if (x.c === 'pubItems') return bantLead || board;
+      return board && x.data && x.data.username === me;
+    }
     if (x.c === 'tasks'){ if (member.role === 'scheduler') return true;   // leaders give tasks to anyone
       var ot = store.tasks.docs[x.id], nt = x.data, selfT = function(t){ return !!t && t.createdBy === me && Array.isArray(t.assignees) && t.assignees.length === 1 && t.assignees[0] === me; };
       if (!ot) return !x.del && selfT(nt);                 // a task for yourself
@@ -862,7 +869,7 @@ var Mock = (function(){
     { username:'admin', name:'Maria Santos', role:'admin', division:'asd', pin:'1234', active:true, empType:'Regular' },
     { username:'rmendoza', name:'Ramon Mendoza', role:'admin', division:'bantayog', pin:'1234', active:true, empType:'Regular' },
     { username:'jdelacruz', name:'Juan Dela Cruz', role:'employee', division:'smpd', pin:'1234', active:true, empType:'JO' },
-    { username:'areyes', name:'Ana Reyes', role:'employee', division:'bantayog', pin:'1234', active:true, empType:'Casual' },
+    { username:'areyes', name:'Ana Reyes', role:'employee', division:'bantayog', pin:'1234', active:true, empType:'Casual', board:true },
     { username:'mbautista', name:'Mark Bautista', role:'employee', division:'smpd', pin:'1234', active:true, empType:'COS' },
     { username:'cvillanueva', name:'Carlo Villanueva', role:'employee', division:'asd', pin:'1234', active:true, empType:'Regular' },
     { username:'lgarcia', name:'Liza Garcia', role:'employee', division:'bantayog', pin:'1234', active:false, empType:'Casual' }
@@ -870,7 +877,12 @@ var Mock = (function(){
   var holidays = [['2026-01-01',"New Year's Day",'Regular'],['2026-02-17','Chinese New Year','Special'],['2026-04-02','Maundy Thursday','Regular'],['2026-04-03','Good Friday','Regular'],['2026-04-04','Black Saturday','Special'],['2026-04-09','Araw ng Kagitingan','Regular'],['2026-05-01','Labor Day','Regular'],['2026-06-12','Independence Day','Regular'],['2026-08-21','Ninoy Aquino Day','Special'],['2026-08-31','National Heroes Day','Regular'],['2026-09-28','Wenceslao Vinzons Day (Camarines Norte)','Local'],['2026-11-01',"All Saints' Day",'Special'],['2026-11-02',"All Souls' Day",'Special'],['2026-11-30','Bonifacio Day','Regular'],['2026-12-08','Immaculate Conception','Special'],['2026-12-24','Christmas Eve','Special'],['2026-12-25','Christmas Day','Regular'],['2026-12-30','Rizal Day','Regular'],['2026-12-31','Last Day of the Year','Special']]
     .map(function(h){ return { date:h[0], name:h[1], kind:h[2] }; });
   var settings = { workdays: 22, carryCap: 0, wellnessDays: 5, tevBudget: 250000 }, lastWrite = Date.now(), tevs = [];
-  var LT = { VL:'VL', FL:'VL', SL:'SL' }, tos = [], events = [], inventory = [], leaves = [], credits = [], tasks = [];
+  var LT = { VL:'VL', FL:'VL', SL:'SL' }, tos = [], events = [], inventory = [], leaves = [], credits = [], tasks = [], pubs = [], pubItems = [], pubVotes = [];
+  pubs.push({ id: 'pb1', title: 'Bantayog, November 2026', from: today().slice(0, 7) + '-01', to: today(), due: addDays(today(), 3), stage: 'vote', note: '', createdBy: 'rmendoza', createdAt: new Date().toISOString() });
+  pubItems.push({ id: 'pi1', issueId: 'pb1', title: 'Livelihood caravan reaches 120 families in Labo', link: 'https://www.facebook.com/', postedOn: addDays(today(), -9), summary: '', pick: 'in', addedBy: 'areyes', addedAt: new Date().toISOString() },
+                { id: 'pi2', issueId: 'pb1', title: 'Coastal clean-up in Mercedes gathers 300 volunteers', link: '', postedOn: addDays(today(), -5), summary: '', pick: '', addedBy: 'areyes', addedAt: new Date().toISOString() },
+                { id: 'pi3', issueId: 'pb1', title: 'Provincial Board approves the 2027 budget', link: '', postedOn: addDays(today(), -2), summary: '', pick: '', addedBy: 'rmendoza', addedAt: new Date().toISOString() });
+  pubVotes.push({ id: 'pi1_areyes', itemId: 'pi1', issueId: 'pb1', username: 'areyes', score: 5, note: '', at: new Date().toISOString() }, { id: 'pi2_areyes', itemId: 'pi2', issueId: 'pb1', username: 'areyes', score: 3, note: '', at: new Date().toISOString() });
   (function(){ var at = function(h){ return new Date(Date.now() - h * 36e5).toISOString(); }, mk = function(id, title, tpl, who, done, extra){
       var T = taskTpl(tpl), st = T.steps.map(function(x, i){ var d = i < done.length ? done[i] : null; return { id: 's' + (i + 1), name: x[0], skill: x[1], type: x[2], who: who[i] || [], doneBy: d ? d[0] : '', doneAt: d ? at(d[1]) : '', edits: !!(d && d[2]), note: d && d[3] || '' }; });
       var all = []; st.forEach(function(x){ x.who.forEach(function(u){ if (all.indexOf(u) < 0) all.push(u); }); });
@@ -921,7 +933,7 @@ var Mock = (function(){
   add('mbautista','USE',-9,'Used',0.5,'','','Confirmed');
   entries.forEach(function(e){ activity.unshift({ at: e.createdAt, actor: e.createdBy, action: e.type === 'USE' ? (e.status === 'Pending' ? 'Requested a day off' : 'Recorded offset use') : 'Logged an offset', target: e.username, details: (e.event ? e.event + ' · ' : '') + e.date + ' · ' + e.days + ' day(s)' }); });
   activity.sort(function(a,b){ return a.at < b.at ? 1 : -1; });
-  function pub(u){ return { username:u.username, name:u.name, role:u.role, division:u.division, active:u.active, photo: u.photo || '', empType:u.empType || 'JO', noPin: u.uid === '', position: u.position || '', skills: Array.isArray(u.skills) ? u.skills.slice() : [] }; }
+  function pub(u){ return { username:u.username, name:u.name, role:u.role, division:u.division, active:u.active, photo: u.photo || '', empType:u.empType || 'JO', noPin: u.uid === '', position: u.position || '', skills: Array.isArray(u.skills) ? u.skills.slice() : [], board: u.board === true }; }
   function find(u){ return users.filter(function(x){ return x.username === String(u||'').toLowerCase(); })[0]; }
   function canInv(u){ if (u.role === 'admin') return true; var d = divisions.filter(function(x){ return x.id === u.division; })[0]; return !!(d && /production/i.test(d.name)); }
   // Approved weekday offsets (work) and weekday days off both need a travel order to be valid, so one is
@@ -964,7 +976,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
     var board = leaves.filter(function(l){ return !/^ADJ/.test(l.type); }).map(function(l){ return { username:l.username, from:l.dateFrom, to:l.dateTo, kind:'leave', label: adm || l.username === me.username ? l.type : '' }; });
     if (!adm) entries.forEach(function(e){ if (e.type === 'USE' && e.status === 'Confirmed' && e.username !== me.username) board.push({ username:e.username, from:e.date, to:e.date, kind:'off', label:'' }); });
     return { me:pub(me), users: users.map(pub), divisions:copy(divisions), holidays:copy(holidays), settings:copy(settings), activity: adm ? copy(activity) : [], entries: copy(entries.filter(function(e){ return adm || e.username === me.username; })),
-      lastWrite: lastWrite, travelOrders: copy(tos), events: copy(events), inventory: (canInv(me) ? copy(inventory) : []), tasks: copy(tasks), tevs: copy(tevs.filter(function(v){ return adm || v.username === me.username; })), leaves: copy(leaves.filter(function(l){ return adm || l.username === me.username; })), credits: copy(credits.filter(function(c){ return adm || c.username === me.username; })), board: board }; }
+      lastWrite: lastWrite, travelOrders: copy(tos), events: copy(events), inventory: (canInv(me) ? copy(inventory) : []), tasks: copy(tasks), pubs: copy(pubs), pubItems: copy(pubItems), pubVotes: copy(pubVotes), tevs: copy(tevs.filter(function(v){ return adm || v.username === me.username; })), leaves: copy(leaves.filter(function(l){ return adm || l.username === me.username; })), credits: copy(credits.filter(function(c){ return adm || c.username === me.username; })), board: board }; }
   /* Shared with the Firebase layer: the same rules run in the browser, and the changes are written to Firestore. */
   var OP = '', K = 0, extBoard = null;
   function nid(){ return OP ? OP.replace(/[^A-Za-z0-9_-]/g, '') + '-' + (++K) : Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + (++K); }
@@ -988,8 +1000,8 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
   }
   return { bump: function(){ lastWrite = Date.now(); },
     engine: {
-      load: function(o){ users = o.users; entries = o.entries; divisions = o.divisions; holidays = o.holidays; settings = o.settings; activity = o.activity; tos = o.tos; events = o.events || []; inventory = o.inventory || []; tasks = o.tasks || []; leaves = o.leaves; credits = o.credits; tevs = o.tevs; extBoard = o.board || null; sessions = {}; },
-      dump: function(){ return { users: users, entries: entries, divisions: divisions, holidays: holidays, settings: settings, activity: activity, tos: tos, events: events, inventory: inventory, tasks: tasks, leaves: leaves, credits: credits, tevs: tevs }; },
+      load: function(o){ users = o.users; entries = o.entries; divisions = o.divisions; holidays = o.holidays; settings = o.settings; activity = o.activity; tos = o.tos; events = o.events || []; inventory = o.inventory || []; tasks = o.tasks || []; pubs = o.pubs || []; pubItems = o.pubItems || []; pubVotes = o.pubVotes || []; leaves = o.leaves; credits = o.credits; tevs = o.tevs; extBoard = o.board || null; sessions = {}; },
+      dump: function(){ return { users: users, entries: entries, divisions: divisions, holidays: holidays, settings: settings, activity: activity, tos: tos, events: events, inventory: inventory, tasks: tasks, pubs: pubs, pubItems: pubItems, pubVotes: pubVotes, leaves: leaves, credits: credits, tevs: tevs }; },
       board: boardOf,
       run: function(username, a, p){ sessions.fb = username; return Mock.api(a, p, 'fb'); },
       data: function(username){ var me = find(username); return me ? data(me) : null; }
@@ -1023,6 +1035,75 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
     /* tasks: admins and division leaders give tasks to anyone; everyone may give themselves a task.
        A task follows a template: a chain of steps, each with its own people (layout, caption, proofreading, posting...).
        Steps are done in order; who did each one (and any proofreading edits) is recorded. */
+    /* ---------- Bantayog Publication: issues, articles, the editorial board's 1–5 scores, the leader's final lineup ---------- */
+    if (/^(setBoard|savePub|pubStage|deletePub|savePubItem|deletePubItem|scorePub|pubPick)$/.test(a)){
+      var bantOf = function(u){ var dv = divisions.filter(function(x){ return x.id === u.division; })[0]; return !!(dv && /bantayog/i.test(dv.name + ' ' + (dv.short || ''))); };
+      var pubMgr = adm || (me.role === 'scheduler' && bantOf(me)), onBoard = me.board === true;
+      var dateOk = function(d){ return /^\d{4}-\d\d-\d\d$/.test(d || ''); };
+      if (a === 'setBoard'){
+        if (!adm) return fail('Only an admin can choose the editorial board.');
+        var bl = (Array.isArray(p.usernames) ? p.usernames : []).map(String);
+        users.forEach(function(u){ var on = bl.indexOf(u.username) >= 0; if (!!u.board !== on){ if (on) u.board = true; else delete u.board; } });
+        log(me, 'Updated the editorial board', '', bl.length + ' member(s)'); return ok(me);
+      }
+      if (a === 'savePub'){
+        if (!pubMgr) return fail('Only the Bantayog division leader or an admin can set up an issue.');
+        var pT = String(p.title || '').trim(); if (pT.length < 3) return fail('Name the issue, for example “Bantayog, December 2026”.');
+        if (!dateOk(p.from) || !dateOk(p.to) || p.from > p.to) return fail('Pick the dates the issue covers.');
+        var pX = p.id ? pubs.filter(function(x){ return x.id === p.id; })[0] : null; if (p.id && !pX) return fail('That issue was not found.');
+        var pF = { title: pT.slice(0, 120), from: p.from, to: p.to, due: dateOk(p.due) ? p.due : '', note: String(p.note || '').trim().slice(0, 400), updatedBy: me.username, updatedAt: now };
+        if (pX){ Object.assign(pX, pF); log(me, 'Edited a publication issue', '', pF.title); return ok(me, { id: pX.id }); }
+        var pN = Object.assign({ id: 'pb' + nid(), stage: 'collect', createdBy: me.username, createdAt: now }, pF); pubs.push(pN);
+        log(me, 'Started a publication issue', '', pF.title); return ok(me, { id: pN.id });
+      }
+      if (a === 'pubStage' || a === 'deletePub'){
+        var pS = pubs.filter(function(x){ return x.id === p.id; })[0]; if (!pS) return fail('That issue was not found.');
+        if (a === 'deletePub'){ if (!adm) return fail('Only an admin can delete an issue.');
+          var gone = pubItems.filter(function(x){ return x.issueId === pS.id; }).map(function(x){ return x.id; });
+          pubItems = pubItems.filter(function(x){ return x.issueId !== pS.id; }); pubVotes = pubVotes.filter(function(v){ return gone.indexOf(v.itemId) < 0; });
+          pubs.splice(pubs.indexOf(pS), 1); log(me, 'Deleted a publication issue', '', pS.title); return ok(me); }
+        if (!pubMgr) return fail('Only the Bantayog division leader or an admin can move an issue along.');
+        if (['collect', 'vote', 'final'].indexOf(p.stage) < 0) return fail('Unknown stage.');
+        if (p.stage === 'final' && !pubItems.some(function(x){ return x.issueId === pS.id && x.pick === 'in'; })) return fail('Pick at least one article to include before locking the lineup.');
+        pS.stage = p.stage; pS.updatedBy = me.username; pS.updatedAt = now;
+        if (p.stage === 'final'){ pS.finalBy = me.username; pS.finalAt = now; } else { pS.finalBy = ''; pS.finalAt = ''; }
+        log(me, p.stage === 'final' ? 'Locked a publication lineup' : p.stage === 'vote' ? 'Opened publication voting' : 'Reopened a publication for articles', '', pS.title); return ok(me);
+      }
+      if (a === 'savePubItem' || a === 'deletePubItem' || a === 'pubPick'){
+        var iX = p.id ? pubItems.filter(function(x){ return x.id === p.id; })[0] : null; if (p.id && !iX) return fail('That article was not found.');
+        var iss = pubs.filter(function(x){ return x.id === (iX ? iX.issueId : p.issueId); })[0]; if (!iss) return fail('That issue was not found.');
+        if (iss.stage === 'final') return fail('This lineup is locked. Reopen it to make changes.');
+        if (a === 'pubPick'){
+          if (!pubMgr) return fail('Only the Bantayog division leader or an admin decides the lineup.');
+          if (['in', 'out', ''].indexOf(p.pick) < 0) return fail('Pick in or out.');
+          iX.pick = p.pick; iX.pickBy = me.username; iX.pickAt = now; return ok(me);
+        }
+        if (a === 'deletePubItem'){
+          if (!(pubMgr || (iX.addedBy === me.username && iss.stage === 'collect'))) return fail('Only the person who added it (while collecting), the leader or an admin can remove it.');
+          pubItems.splice(pubItems.indexOf(iX), 1); pubVotes = pubVotes.filter(function(v){ return v.itemId !== iX.id; });
+          log(me, 'Removed a publication article', '', iX.title); return ok(me);
+        }
+        if (!(pubMgr || onBoard)) return fail('Only editorial board members, the Bantayog leader or an admin can add articles.');
+        if (iX && !(pubMgr || iX.addedBy === me.username)) return fail('Only the person who added it, the leader or an admin can change it.');
+        var aT = String(p.title || '').trim(); if (aT.length < 3) return fail('Write the article’s title or headline.');
+        var aL = String(p.link || '').trim(); if (aL && !/^https?:\/\/\S+$/i.test(aL)) return fail('The link should start with https://');
+        var aF = { title: aT.slice(0, 200), link: aL.slice(0, 500), postedOn: dateOk(p.postedOn) ? p.postedOn : '', summary: String(p.summary || '').trim().slice(0, 1200), updatedBy: me.username, updatedAt: now };
+        if (iX){ Object.assign(iX, aF); return ok(me, { id: iX.id }); }
+        if (aL && pubItems.some(function(x){ return x.issueId === iss.id && x.link && x.link === aL; })) return fail('That post is already in this issue.');
+        var iN = Object.assign({ id: 'pi' + nid(), issueId: iss.id, pick: '', addedBy: me.username, addedAt: now }, aF); pubItems.push(iN);
+        log(me, 'Added a publication article', '', aT); return ok(me, { id: iN.id });
+      }
+      // scorePub: one score per board member per article (its own record, so scores never overwrite each other)
+      if (!onBoard) return fail('Only editorial board members can score articles.');
+      var sI = pubItems.filter(function(x){ return x.id === p.itemId; })[0]; if (!sI) return fail('That article was not found.');
+      var sIss = pubs.filter(function(x){ return x.id === sI.issueId; })[0]; if (!sIss || sIss.stage !== 'vote') return fail('Scoring is open only while the issue is in voting.');
+      var sc = Number(p.score), vid = sI.id + '_' + me.username, ex = pubVotes.filter(function(v){ return v.id === vid; })[0];
+      if (sc === 0){ if (ex) pubVotes.splice(pubVotes.indexOf(ex), 1); return ok(me); }
+      if (!(sc >= 1 && sc <= 5 && Math.round(sc) === sc)) return fail('Score from 1 to 5.');
+      var vF = { id: vid, itemId: sI.id, issueId: sI.issueId, username: me.username, score: sc, note: String(p.note || '').trim().slice(0, 300), at: now };
+      if (ex) Object.assign(ex, vF); else pubVotes.push(vF);
+      return ok(me);
+    }
     if (a === 'saveTask' || a === 'setTaskDone' || a === 'deleteTask' || a === 'taskStep'){
       var lead = adm || me.role === 'scheduler', selfOf = function(t){ return t.createdBy === me.username && t.assignees.length === 1 && t.assignees[0] === me.username; };
       var canPostU = function(u){ var x = find(u); return !!x && divCanPost(x.division, divisions); };

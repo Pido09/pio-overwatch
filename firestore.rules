@@ -96,6 +96,20 @@ service cloud.firestore {
         // anyone may move a task along: finish a step, proofread (the app keeps writers from proofreading their own work), send back or undo; who did it is recorded
         || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['steps', 'status', 'doneBy', 'doneAt', 'sentBack', 'caption', 'flow', 'stage', 'updatedBy', 'updatedAt', '_t']));
     }
+    // Bantayog Publication. The editorial board is a flag on the person's users record, set by an admin.
+    function onBoard() { return isMember() && get(/databases/$(db)/documents/users/$(myName())).data.get('board', false) == true; }
+    match /pubs/{id} {
+      allow read: if isMember();
+      allow write: if stamped() && (isAdmin() || isLeader());
+    }
+    match /pubItems/{id} {
+      allow read: if isMember();
+      allow write: if stamped() && (isAdmin() || isLeader() || onBoard());
+    }
+    match /pubVotes/{id} {                       // one score per board member per article; only your own
+      allow read: if isMember();
+      allow write: if stamped() && onBoard() && request.resource.data.username == myName() && (resource == null || resource.data.username == myName());
+    }
     match /entries/{id} {
       allow read: if isAdmin() || (isMember() && resource.data.username == myName());
       allow create: if stamped() && (isAdmin() || (isMember()
