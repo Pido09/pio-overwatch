@@ -101,6 +101,10 @@ service cloud.firestore {
     match /pubs/{id} {
       allow read: if isMember();
       allow write: if stamped() && (isAdmin() || isLeader());
+      // board members: open the monthly issue (fixed id m2026-12) and move it to voting when the month is over
+      allow create: if stamped() && onBoard() && id.matches('m[0-9]{4}-[0-9]{2}') && request.resource.data.auto == true && request.resource.data.stage == 'collect';
+      allow update: if stamped() && onBoard() && resource.data.auto == true && resource.data.stage == 'collect' && request.resource.data.stage == 'vote'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stage', 'autoVoted', 'updatedBy', 'updatedAt', '_t']);
     }
     match /pubItems/{id} {
       allow read: if isMember();

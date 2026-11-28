@@ -603,7 +603,13 @@ var Fire = (function(){
     /* Bantayog Publication: leaders run issues; editorial board members add articles and save their own scores */
     if (x.c === 'pubs' || x.c === 'pubItems' || x.c === 'pubVotes'){
       var mu = store.users.docs[me] || {}, md = store.divisions.docs[mu.division] || {}, bantLead = member.role === 'scheduler' && /bantayog/i.test((md.name || '') + ' ' + (md.short || '')), board = mu.board === true;
-      if (x.c === 'pubs') return bantLead;
+      if (x.c === 'pubs'){
+        if (bantLead) return true;
+        if (!board || x.del) return false;
+        var op = store.pubs.docs[x.id], np = x.data;
+        if (!op) return /^md{4}-dd$/.test(x.id) && np.auto === true && np.stage === 'collect';
+        return op.auto === true && op.stage === 'collect' && np.stage === 'vote' && Object.keys(Object.assign({}, op, np)).every(function(k){ return ['stage', 'autoVoted', 'updatedBy', 'updatedAt', '_t'].indexOf(k) >= 0 || JSON.stringify(op[k]) === JSON.stringify(np[k]); });
+      }
       if (x.c === 'pubItems') return bantLead || board;
       return board && x.data && x.data.username === me;
     }
@@ -1036,7 +1042,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
        A task follows a template: a chain of steps, each with its own people (layout, caption, proofreading, posting...).
        Steps are done in order; who did each one (and any proofreading edits) is recorded. */
     /* ---------- Bantayog Publication: issues, articles, the editorial board's 1–5 scores, the leader's final lineup ---------- */
-    if (/^(setBoard|savePub|pubStage|deletePub|savePubItem|deletePubItem|scorePub|pubPick)$/.test(a)){
+    if (/^(setBoard|savePub|pubStage|deletePub|savePubItem|deletePubItem|pubUnskip|scorePub|pubPick|ensurePubMonth|pubAutoVote)$/.test(a)){
       var bantOf = function(u){ var dv = divisions.filter(function(x){ return x.id === u.division; })[0]; return !!(dv && /bantayog/i.test(dv.name + ' ' + (dv.short || ''))); };
       var pubMgr = adm || (me.role === 'scheduler' && bantOf(me)), onBoard = me.board === true;
       var dateOk = function(d){ return /^\d{4}-\d\d-\d\d$/.test(d || ''); };
@@ -1056,6 +1062,23 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
         var pN = Object.assign({ id: 'pb' + nid(), stage: 'collect', createdBy: me.username, createdAt: now }, pF); pubs.push(pN);
         log(me, 'Started a publication issue', '', pF.title); return ok(me, { id: pN.id });
       }
+      if (a === 'ensurePubMonth'){
+        // one issue per month, named and dated by itself (fixed id, so two people opening at once can't make two)
+        if (!(pubMgr || onBoard)) return fail('Only board members, the Bantayog leader or an admin open the monthly issue.');
+        var ym = String(p.ym || ''); if (!/^\d{4}-\d\d$/.test(ym)) return fail('Bad month.');
+        var mFrom = ym + '-01', mTo = ymd(new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0)), mId = 'm' + ym;
+        if (pubs.some(function(x){ return x.id === mId || (x.from === mFrom && x.to === mTo); })) return ok(me, { id: mId });
+        pubs.push({ id: mId, title: 'Bantayog, ' + fMonth(ym), from: mFrom, to: mTo, due: '', note: '', stage: 'collect', auto: true, createdBy: me.username, createdAt: now, updatedBy: me.username, updatedAt: now });
+        log(me, 'Opened the monthly publication issue', '', fMonth(ym)); return ok(me, { id: mId });
+      }
+      if (a === 'pubAutoVote'){
+        // a monthly issue whose month is over opens for scoring by itself
+        var av = pubs.filter(function(x){ return x.id === p.id; })[0]; if (!av) return fail('That issue was not found.');
+        if (!(pubMgr || onBoard)) return fail('Only board members, the Bantayog leader or an admin can do that.');
+        if (!av.auto || av.stage !== 'collect' || today() <= av.to) return ok(me);
+        av.stage = 'vote'; av.autoVoted = true; av.updatedBy = me.username; av.updatedAt = now;
+        log(me, 'Opened publication voting (month ended)', '', av.title); return ok(me);
+      }
       if (a === 'pubStage' || a === 'deletePub'){
         var pS = pubs.filter(function(x){ return x.id === p.id; })[0]; if (!pS) return fail('That issue was not found.');
         if (a === 'deletePub'){ if (!adm) return fail('Only an admin can delete an issue.');
@@ -1069,7 +1092,7 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
         if (p.stage === 'final'){ pS.finalBy = me.username; pS.finalAt = now; } else { pS.finalBy = ''; pS.finalAt = ''; }
         log(me, p.stage === 'final' ? 'Locked a publication lineup' : p.stage === 'vote' ? 'Opened publication voting' : 'Reopened a publication for articles', '', pS.title); return ok(me);
       }
-      if (a === 'savePubItem' || a === 'deletePubItem' || a === 'pubPick'){
+      if (a === 'savePubItem' || a === 'deletePubItem' || a === 'pubPick' || a === 'pubUnskip'){
         var iX = p.id ? pubItems.filter(function(x){ return x.id === p.id; })[0] : null; if (p.id && !iX) return fail('That article was not found.');
         var iss = pubs.filter(function(x){ return x.id === (iX ? iX.issueId : p.issueId); })[0]; if (!iss) return fail('That issue was not found.');
         if (iss.stage === 'final') return fail('This lineup is locked. Reopen it to make changes.');
@@ -1078,7 +1101,16 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
           if (['in', 'out', ''].indexOf(p.pick) < 0) return fail('Pick in or out.');
           iX.pick = p.pick; iX.pickBy = me.username; iX.pickAt = now; return ok(me);
         }
+        if (a === 'pubUnskip'){
+          if (!(pubMgr || onBoard)) return fail('Only board members, the leader or an admin can bring a post back.');
+          iX.skip = false; iX.updatedBy = me.username; iX.updatedAt = now; return ok(me);
+        }
         if (a === 'deletePubItem'){
+          if (iX.fbId){   // from the Facebook Page: set aside as "not news" instead of deleting
+            if (!(pubMgr || onBoard)) return fail('Only board members, the leader or an admin can skip a post.');
+            iX.skip = true; iX.pick = ''; iX.updatedBy = me.username; iX.updatedAt = now; pubVotes = pubVotes.filter(function(v){ return v.itemId !== iX.id; });
+            log(me, 'Skipped a Facebook post for the publication', '', iX.title); return ok(me);
+          }
           if (!(pubMgr || (iX.addedBy === me.username && iss.stage === 'collect'))) return fail('Only the person who added it (while collecting), the leader or an admin can remove it.');
           pubItems.splice(pubItems.indexOf(iX), 1); pubVotes = pubVotes.filter(function(v){ return v.itemId !== iX.id; });
           log(me, 'Removed a publication article', '', iX.title); return ok(me);
@@ -1088,8 +1120,12 @@ function yes(v){ return v === true || v === 'on' || v === '1' || v === 'true'; }
         var aT = String(p.title || '').trim(); if (aT.length < 3) return fail('Write the article’s title or headline.');
         var aL = String(p.link || '').trim(); if (aL && !/^https?:\/\/\S+$/i.test(aL)) return fail('The link should start with https://');
         var aF = { title: aT.slice(0, 200), link: aL.slice(0, 500), postedOn: dateOk(p.postedOn) ? p.postedOn : '', summary: String(p.summary || '').trim().slice(0, 1200), updatedBy: me.username, updatedAt: now };
+        var img = String(p.image || ''); if (/^https:\/\/\S+$/i.test(img)) aF.image = img.slice(0, 1000);
         if (iX){ Object.assign(iX, aF); return ok(me, { id: iX.id }); }
+        var fbId = String(p.fbId || '').replace(/[^0-9_]/g, '').slice(0, 60);
+        if (fbId && pubItems.some(function(x){ return x.issueId === iss.id && x.fbId === fbId; })) return fail('That post is already in this issue.');
         if (aL && pubItems.some(function(x){ return x.issueId === iss.id && x.link && x.link === aL; })) return fail('That post is already in this issue.');
+        if (fbId) aF.fbId = fbId;
         var iN = Object.assign({ id: 'pi' + nid(), issueId: iss.id, pick: '', addedBy: me.username, addedAt: now }, aF); pubItems.push(iN);
         log(me, 'Added a publication article', '', aT); return ok(me, { id: iN.id });
       }

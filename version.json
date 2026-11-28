@@ -1,8 +1,8 @@
 {
-  "ver": "v103",
+  "ver": "v106",
   "notes": [
-    "New: Bantayog Publication. The editorial board adds Facebook articles and scores them 1 to 5",
-    "The app averages the scores; the Bantayog leader picks what goes in and locks the final lineup, ready to print",
-    "Admins choose the editorial board from the Publication page"
+    "Publication: each month's issue opens by itself and voting opens by itself when the month ends",
+    "Upload Meta Business Suite's monthly export and every Facebook post lands in its month's issue",
+    "Posts that aren't news can be skipped, and brought back if needed"
   ]
 }

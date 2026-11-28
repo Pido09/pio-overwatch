@@ -1710,3 +1710,9 @@ html .side .nav-grp.closing>summary.has-cur{background:linear-gradient(135deg,#1
 .pb-boardpick{max-height:360px}
 @media (max-width:640px){ .pb-item{flex-wrap:wrap} .pb-side{flex-basis:100%;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between} }
 @media print{ .print-only{display:inline} .pb-item{break-inside:avoid;padding:8px 0} .pb-side .pb-stars,.pb-pick,.pb-tools{display:none!important} }
+/* Publication: posts from the Facebook Page */
+.pb-img{flex:none;width:64px;height:64px;border-radius:12px;object-fit:cover;background:var(--surface-2);outline:1px solid rgba(255,255,255,.08);outline-offset:-1px}
+:root:not([data-theme="dark"]) .pb-img{outline-color:rgba(0,0,0,.08)}
+.pb-fb{display:inline-flex;align-items:center;gap:6px}.pb-fb .lnk{font-size:13px;font-weight:600;margin-left:2px}
+.pb-fb.err{color:var(--gold)}.pb-fb .spin{width:13px;height:13px}
+.pb-res{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14px}

@@ -11,7 +11,13 @@ id = "980a3e883f404883960f5fe4a3ac9717"
 [vars]
 ORIGINS = "https://pido09.github.io,http://localhost:5173"
 FIREBASE_PROJECT = "project-overwatch-pio"
+FB_PAGE = "piocamnorte"
 VAPID_SUBJECT = "https://pido09.github.io/pio-overwatch/"
 # VAPID_PUBLIC is filled in by: node tools/vapid.js
 VAPID_PUBLIC = "BGGw1xlwT2x0eCQIkmNXBxLFp8VWnVHStfdhiZcC6QD-1BU7I2r7li1ANYjJv2Jmzov14NF4Z7vVIIYnRcwpPXg"
 # VAPID_PRIVATE is a secret, set with: wrangler secret put VAPID_PRIVATE  (never put it in this file)
+
+# Facebook Page scan every 3 hours (needs the FB_TOKEN secret; see FACEBOOK-SETUP.md)
+[triggers]
+crons = ["17 */3 * * *"]
+# FB_TOKEN is a secret: wrangler secret put FB_TOKEN  (never put it in this file)

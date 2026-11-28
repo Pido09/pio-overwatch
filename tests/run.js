@@ -280,7 +280,41 @@ withState(Object.assign({}, base, { me: users[0] }), function(){
   check('only the Bantayog leader or an admin decides the lineup', !E.run('ana', 'pubPick', { id: a1, pick: 'in' }).ok && E.run('lead', 'pubPick', { id: a1, pick: 'in' }).ok && E.run('lead', 'pubPick', { id: a2, pick: 'out' }).ok);
   r = E.run('lead', 'pubStage', { id: pid, stage: 'final' });
   check('the leader locks the final lineup', r.ok && pub().stage === 'final' && pub().finalBy === 'lead', r.error);
+  // the monthly issue makes itself; once its month is over it moves to voting
+  const ym = T.slice(0, 7);
+  check('the monthly issue opens by itself for board members', E.run('ana', 'ensurePubMonth', { ym: ym }).ok && E.dump().pubs.some(function(x){ return x.id === 'm' + ym && x.auto && x.stage === 'collect'; }));
+  check('the monthly issue is made only once', E.run('bob', 'ensurePubMonth', { ym: ym }).ok && E.dump().pubs.filter(function(x){ return x.id === 'm' + ym; }).length === 1);
+  check('people not on the board cannot open it', !E.run('olead', 'ensurePubMonth', { ym: '2031-01' }).ok);
+  E.run('ana', 'ensurePubMonth', { ym: '2020-01' });
+  E.run('ana', 'pubAutoVote', { id: 'm' + ym }); E.run('ana', 'pubAutoVote', { id: 'm2020-01' });
+  check('a month that is over moves to voting; the current month keeps collecting', E.dump().pubs.filter(function(x){ return x.id === 'm2020-01'; })[0].stage === 'vote' && E.dump().pubs.filter(function(x){ return x.id === 'm' + ym; })[0].stage === 'collect');
+  // posts brought in from the Facebook Page
+  E.run('lead', 'pubStage', { id: pid, stage: 'collect' });
+  r = E.run('ana', 'savePubItem', { issueId: pid, title: 'Flag ceremony', fbId: '123_456', link: 'https://www.facebook.com/piocamnorte/posts/1', image: 'https://scontent.example/p.jpg' });
+  const fbi = r.ok && items().filter(function(x){ return x.id === r.data.id; })[0];
+  check('a Facebook post keeps its post id and photo', r.ok && fbi.fbId === '123_456' && fbi.image === 'https://scontent.example/p.jpg', r.error || fbi);
+  check('the same Facebook post is not added twice', !E.run('bob', 'savePubItem', { issueId: pid, title: 'Flag ceremony', fbId: '123_456' }).ok);
+  check('removing a Facebook post skips it instead of deleting it (so the scan won’t re-add it)', E.run('bob', 'deletePubItem', { id: fbi.id }).ok && items().filter(function(x){ return x.id === fbi.id; })[0].skip === true);
+  check('a skipped post can be brought back', E.run('ana', 'pubUnskip', { id: fbi.id }).ok && !items().filter(function(x){ return x.id === fbi.id; })[0].skip);
+  E.run('lead', 'pubStage', { id: pid, stage: 'final' });
   check('a locked lineup takes no more scores or articles', !E.run('bob', 'scorePub', { itemId: a2, score: 5 }).ok && !E.run('ana', 'savePubItem', { issueId: pid, title: 'Late article' }).ok);
+})();
+
+/* ---------- 10. Facebook export file (Meta Business Suite → Insights → Content → Export data) ---------- */
+(function(){
+  const csv = '﻿Post ID,Page ID,Page name,Title,Description,Publish time,Permalink,Post type,Reach\r\n' +
+    '111_222,111,PIO Camarines Norte,,"Livelihood caravan reaches 120 families in Labo\nStarter kits for three barangays, with ""skills"" training",11/03/2026 09:30,https://www.facebook.com/piocamnorte/posts/222,Photos,5400\r\n' +
+    '111_333,111,PIO Camarines Norte,,Coastal clean-up in Mercedes,2026-11-15T08:00:00+0800,https://www.facebook.com/piocamnorte/posts/333,Photos,3100\r\n' +
+    '111_333,111,PIO Camarines Norte,,Coastal clean-up in Mercedes,2026-11-15T08:00:00+0800,https://www.facebook.com/piocamnorte/posts/333,Photos,3100\r\n' +
+    ',,,,,,,,\r\n' +
+    '111_444,111,PIO Camarines Norte,,Happy Bonifacio Day!,12/01/2026 07:00,https://www.facebook.com/piocamnorte/posts/444,Photos,9000\r\n';
+  const rows = G.fbExportRows(csv);
+  check('an export file is read: one row per post, blank rows ignored', rows.length === 3, rows.length);
+  check('text with commas, quotes and line breaks stays whole', rows[0] && rows[0].text === 'Livelihood caravan reaches 120 families in Labo\nStarter kits for three barangays, with "skills" training', rows[0] && rows[0].text);
+  check('both date styles Meta uses are understood', rows[0].day === '2026-11-03' && rows[1].day === '2026-11-15' && rows[2].day === '2026-12-01', rows.map(function(r){ return r.day; }));
+  check('each post keeps its id and link', rows[0].id === '111_222' && rows[0].link === 'https://www.facebook.com/piocamnorte/posts/222');
+  check('a headline is the first line of the post', G.fbTitle(rows[0].text) === 'Livelihood caravan reaches 120 families in Labo');
+  check('a file that is not an export is refused', G.fbExportRows('Name,Amount\nJuan,100\n').length === 0);
 })();
 
 report();

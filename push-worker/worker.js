@@ -9,6 +9,7 @@
    members/{uid} record from Firestore with the same token, so only active staff can use it.
    Storage (KV "SUBS"): u:<username> -> phones, s:<username> -> ids already sent. */
 import { send } from './webpush.js';
+import { fbScan, fbPosts } from './fb.js';
 
 const json = function(body, status, cors){ return new Response(JSON.stringify(body), { status: status || 200, headers: Object.assign({ 'Content-Type': 'application/json' }, cors) }); };
 
@@ -42,6 +43,11 @@ export default {
     let body; try { body = await req.json(); } catch (e) { return json({ error: 'Bad request' }, 400, cors); }
     const path = new URL(req.url).pathname;
 
+    // the Facebook Page's posts in an issue's dates (read-only; see fb.js)
+    if (path === '/fbposts'){
+      try { return json(Object.assign({ ok: true }, await fbPosts(env, String(body.from || ''), String(body.to || ''), !!body.fresh)), 200, cors); }
+      catch (e) { return json({ error: e.message || 'Facebook could not be read.' }, 502, cors); }
+    }
     if (path === '/subscribe'){
       const sub = body.sub; if (!sub || !sub.endpoint || !sub.keys || !sub.keys.p256dh || !sub.keys.auth) return json({ error: 'Bad subscription' }, 400, cors);
       const list = (await getList(env, 'u:' + me)).filter(function(s){ return s.endpoint !== sub.endpoint; });
@@ -74,5 +80,7 @@ export default {
       return json({ ok: true, sent: sent }, 200, cors);
     }
     return json({ error: 'Not found' }, 404, cors);
-  }
+  },
+  // every few hours: read the Page's newest posts (Cron Trigger in wrangler.toml)
+  async scheduled(event, env, ctx){ if (env.FB_TOKEN) ctx.waitUntil(fbScan(env).catch(function(e){ console.log('fb scan', e.message); })); }
 };
