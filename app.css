@@ -1608,3 +1608,56 @@ html .side .side-search kbd{border-color:var(--sd-line);color:var(--sd-muted)}
 .nk-ic{flex:none;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:var(--surface-2);color:var(--muted)}.nk-ic svg.i{width:16px;height:16px}
 .nk-assigned .nk-ic{background:var(--brand-soft);color:var(--brand-strong)}.nk-task .nk-ic{background:var(--violet-soft);color:var(--violet)}
 .nk-to .nk-ic{background:var(--gold-soft);color:var(--gold)}.nk-need .nk-ic{background:var(--red-soft);color:var(--red)}
+
+/* ---------- side menu, two levels: main pages, foldable groups, and an account menu at the bottom ---------- */
+html .side .nav{gap:2px}
+html .side .nav button{min-height:40px}
+.nav-grp{margin-top:2px}
+html .side .nav-grp>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:10px 12px;min-height:40px;box-sizing:border-box;border-radius:14px;cursor:pointer;font-weight:500;color:var(--sd-muted);transition:background-color .2s,color .2s}
+.nav-grp>summary::-webkit-details-marker{display:none}
+html .side .nav-grp>summary:hover{background:var(--sd-hover);color:var(--sd-ink)}
+.nav-grp>summary svg.i:last-child{margin-left:auto;width:16px;height:16px;opacity:.6;transition:transform .25s cubic-bezier(.22,1,.36,1)}
+.nav-grp[open]>summary svg.i:last-child{transform:rotate(180deg)}
+.nav-grp>summary:focus-visible{outline:3px solid var(--brand-glow);outline-offset:2px}
+/* a folded group holding the current page carries the highlight itself */
+html .side .nav-grp:not([open])>summary.has-cur{background:linear-gradient(135deg,#1A8A3F,#0E5E2B);color:#fff;font-weight:700;box-shadow:0 10px 22px -12px rgba(14,94,43,.75)}
+html .side .nav-grp:not([open])>summary.has-cur svg.i{color:#fff;opacity:1}
+/* pages in a group sit under the group's name */
+.nav-sub{display:flex;flex-direction:column;gap:2px;margin:2px 0 4px;padding-left:22px;position:relative}
+html .side .nav-sub::before{content:"";position:absolute;left:21px;top:4px;bottom:4px;width:1.5px;border-radius:2px;background:var(--sd-line)}
+html .side .nav-sub>button{min-height:36px;padding-top:7px;padding-bottom:7px;font-size:14px}
+html .side .nav-sep{height:1px;background:var(--sd-line);margin:8px 14px}
+/* bottom: notifications and the profile */
+html .side .side-foot{border-top:1px solid var(--sd-line);padding-top:10px}
+html .side .side-foot>.nav{margin-top:0}
+.acct{margin-top:6px}
+.acct-s{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:14px;cursor:pointer;transition:background-color .2s}
+html .side .acct-s:hover,html .side .acct.open .acct-s{background:var(--sd-hover)}
+.acct-s:focus-visible{outline:3px solid var(--brand-glow);outline-offset:2px}
+.acct-s .av{flex:none;border-radius:50%!important}
+.acct-s .who-t{flex:1;line-height:1.25}.acct-s .who-t b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html .side .acct-s .who-t small{color:var(--sd-muted);font-size:12px}
+.acct-s>svg.i{flex:none;width:16px;height:16px;opacity:.55;transition:transform .25s cubic-bezier(.22,1,.36,1)}
+.acct.open .acct-s>svg.i{transform:rotate(180deg)}
+html .side .acct-m{margin:0 0 6px;padding:8px;border-radius:16px;background:var(--sd-hover);border:1px solid var(--sd-line)}
+html .side .acct-m .themepick{margin:0 0 6px}
+html .side .acct-m .nav button{min-height:38px}
+html .side .acct-m .acct-out{color:var(--red)}html .side .acct-m .acct-out svg.i{color:var(--red)}
+/* folded to icons */
+html.side-mini .acct-s{justify-content:center;padding:6px 0}
+html.side-mini .acct-s>svg.i{display:none}
+html.side-mini .acct-m{padding:6px 4px}
+@media (prefers-reduced-motion:reduce){ .nav-grp>summary svg.i:last-child,.acct-s>svg.i{transition:none} }
+.acct-s .who-t small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* the account menu floats up over the side menu, above your profile */
+.acct{position:relative}
+html .side .acct-m{position:absolute;left:0;right:0;bottom:calc(100% + 6px);z-index:5;margin:0;background:var(--surface);box-shadow:0 18px 40px -16px rgba(0,0,0,.45),0 0 0 1px var(--sd-line)}
+
+/* a closing group turns its arrow back at once (the panel is still sliding shut) */
+.nav-grp.closing>summary svg.i:last-child{transform:none}
+html .side .nav-grp.closing>summary.has-cur{background:linear-gradient(135deg,#1A8A3F,#0E5E2B);color:#fff;font-weight:700}
+/* ---------- desktop: the green header floats as its own card beside the side menu, with the same gap and corners ---------- */
+@media (min-width:1101px){
+  .band{margin:12px 12px 0 14px;border-radius:26px;box-shadow:0 24px 50px -28px rgba(4,30,16,.55)}
+  .wrap{padding-inline:max(26px,env(safe-area-inset-left,0px))}
+}

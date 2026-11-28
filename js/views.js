@@ -4,8 +4,8 @@
 function navItems(){
   // The first five are the phone tab bar. Regular and casual staff get leaves up front; JO and COS get offsets.
   var tev = ['tev','peso','TEVs','Field work'];
-  if (isAdmin()) return [['dashboard','grid','Dashboard','Overview'],['travel','route','Travel orders','Field work'],['tasks','tick','Tasks','Overview'],
-       ['calendar','cal','Calendar','Overview'],tev,['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets'],['leaves','plane','Leaves','Leaves'],['staff','users','Staff','Admin'],['settings','cog','Settings','Admin']];
+  if (isAdmin()) return [['dashboard','grid','Home','Overview'],['tasks','tick','Tasks','Overview'],['calendar','cal','Calendar','Overview'],
+       ['travel','route','Travel orders','Field work'],tev,['monthly','month','Monthly','Offsets'],['records','list','Records','Offsets'],['leaves','plane','Leaves','Leaves'],['staff','users','Staff','Admin'],['settings','cog','Settings','Admin']];
   // staff and division leaders: four main places, everything else folded under More
   var main = [['dashboard','grid','Home','Main'],['calendar','cal','Calendar','Main'],['tasks','tick','Tasks','Main'],['travel','route','My travel orders','Main']];
   if (hasLeaves()) main.push(['leaves','plane','My leaves','Main']);
@@ -16,15 +16,54 @@ function navItems(){
 var SHORT = { tasks: 'Tasks', dashboard: 'Home', travel: 'Travel', availability: 'Who’s in', log: 'Offsets', leaves: 'Leaves', approvals: 'Review' };
 /* staff menus: the main places (and Inventory for Production) stay up front; the rest is under More */
 function navMain(n){ return isAdmin() || n[3] === 'Main' || n[3] === 'Production'; }
+/* The side menu, kept to two levels: the main pages in one list, then a few foldable groups.
+   A folded group that holds the current page is highlighted itself, so you always see where you are. */
+var SIDE_GROUP = { log: 'Offsets', monthly: 'Offsets', records: 'Offsets', staff: 'Admin', settings: 'Admin' };
+var SIDE_GROUP_IC = { Offsets: 'shield', Admin: 'cog' };
+function navOpen(){ try { return JSON.parse(lGet('pio_navopen') || '{}') || {}; } catch(e){ return {}; } }
 function sideNav(nav, navBtn){
-  if (!isAdmin()){
-    var mainN = nav.filter(navMain), moreN = nav.filter(function(n){ return !navMain(n); }), open = S.navMore || moreN.some(function(n){ return n[0] === S.view; });
-    return mainN.map(navBtn).join('') + (moreN.length ? '<details class="nav-more"' + (open ? ' open' : '') + '><summary>' + ic('right') + '<span>More</span></summary>' + moreN.map(navBtn).join('') + '</details>' : '');
-  }
-  var order = ['Overview','Field work','Production','Offsets','Leaves','Admin'], html = '';
-  order.forEach(function(g){ var items = nav.filter(function(n){ return n[3] === g; }); if (items.length) html += '<div class="nav-h">' + g + '</div>' + items.map(navBtn).join(''); });
+  var mini = document.documentElement.classList.contains('side-mini') && window.innerWidth > 1100, groups = {}, html = '';   // folded to icons is a desktop thing
+  nav.forEach(function(n){ var g = SIDE_GROUP[n[0]]; if (g) (groups[g] = groups[g] || []).push(n); else html += navBtn(n); });
+  var opened = navOpen();
+  Object.keys(groups).forEach(function(g){
+    var items = groups[g].map(function(n){ return n[0] === 'log' ? [n[0], n[1], 'Log offset', n[3]] : n; }), cur = items.some(function(n){ return n[0] === S.view; });
+    if (mini){ html += '<div class="nav-sep" role="separator"></div>' + items.map(navBtn).join(''); return; }
+    var open = cur || opened[g];
+    html += '<details class="nav-grp" data-g="' + g + '"' + (open ? ' open' : '') + '><summary' + (cur ? ' class="has-cur"' : '') + '>' + ic(SIDE_GROUP_IC[g] || 'list') + '<span>' + g + '</span>' + ic('down') + '</summary>' +
+      '<div class="nav-sub">' + items.map(navBtn).join('') + '</div></details>';
+  });
   return html;
 }
+/* Opening and closing a group glides: the pages slide open (height and fade) instead of snapping.
+   Clicking again mid-way reverses from where it is. The arrow turns at once, so the tap feels answered.
+   Only groups you open or close yourself are remembered (not ones opened because you are on their page). */
+function navFold(d, open){
+  var sub = d.querySelector('.nav-sub'), sm = d.querySelector('summary');
+  var o = navOpen(); o[d.dataset.g] = open; lSet('pio_navopen', JSON.stringify(o));
+  d.classList.toggle('closing', !open); sm.setAttribute('aria-expanded', open);
+  if (lessMotion() || !sub.animate){ d.open = open; d.classList.remove('closing'); return; }
+  var from = d._fold ? sub.getBoundingClientRect().height : (open ? 0 : sub.offsetHeight);   // mid-way: start from where it is
+  if (d._fold){ d._fold.cancel(); d._fold = null; }
+  if (open) d.open = true;
+  var to = open ? sub.scrollHeight : 0;
+  sub.style.overflow = 'hidden';
+  var anim = sub.animate([{ height: from + 'px', opacity: open ? (from ? 1 : 0) : 1 }, { height: to + 'px', opacity: open ? 1 : 0 }],
+    { duration: open ? 260 : 200, easing: 'cubic-bezier(.22,1,.36,1)' });
+  d._fold = anim;
+  if (open && !from) sub.querySelectorAll(':scope > button').forEach(function(btn, i){ btn.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], { duration: 240, delay: 40 + i * 40, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' }); });
+  // settle the final state on finish, with a timer as backup (the finish signal can come late, e.g. in a background tab)
+  var settle = function(){ if (d._fold !== anim) return; d._fold = null; sub.style.overflow = ''; if (!open){ d.open = false; d.classList.remove('closing'); } };
+  anim.onfinish = settle; setTimeout(settle, (open ? 260 : 200) + 40);
+}
+document.addEventListener('click', function(ev){
+  var sm = ev.target.closest('.nav-grp > summary'); if (!sm) return;
+  ev.preventDefault();   // we open and close it ourselves, with motion
+  var d = sm.parentNode, isOpen = d.open && !d.classList.contains('closing');
+  navFold(d, !isOpen);
+});
+/* folding the side menu to icons re-draws it (groups become plain icons) */
+document.addEventListener('click', function(ev){ if (ev.target.closest('[data-act="sideMini"]')) setTimeout(render, 0); });
+
 /* What someone is typing survives a screen refresh (a save finishing, new data arriving).
    A form that was just sent is left out, so it clears as expected. */
 function keepForm(root){
@@ -65,9 +104,14 @@ function render(){
     '<div class="shell">' +
       '<div class="drawer-scrim" data-act="drawerClose"></div><aside class="side" id="sidenav"><div class="brand"><img src="' + LOGO + '" alt="Provincial Information Office seal"><div class="brand-t"><b>PIO Overwatch</b><small>Camarines Norte</small></div><button type="button" class="side-tog" data-act="sideMini" aria-label="' + (sideMini() ? 'Expand menu' : 'Collapse menu') + '" aria-expanded="' + !sideMini() + '">' + ic('left') + '</button></div>' +
         '<nav class="nav" aria-label="Main">' + '<button data-act="search" class="side-search" aria-keyshortcuts="/">' + ic('search') + '<span>Search</span><kbd>/</kbd></button>' + sideNav(nav, navBtn) + '</nav>' +
-        '<div class="side-foot"><div class="who"><button type="button" class="av-btn" data-act="photoModal" data-u="' + esc(S.me.username) + '" aria-label="Your photo" data-tip="Your photo">' + avatarHtml(userOf(S.me.username) || S.me, 38) + '</button>' +
-          '<div class="who-t" style="min-width:0"><b>' + esc(S.me.name) + '</b><small><span class="cap">' + esc(S.me.role === 'scheduler' ? 'division leader' : S.me.role) + '</span> · ' + (myDiv ? esc(myDiv.short) : '@' + esc(S.me.username)) + '</small></div></div>' +
-        themePick() + '<div class="nav">' + (S.view === 'dashboard' ? '<button data-act="customize" class="show-sm">' + ic('sliders') + '<span>Customize dashboard</span></button>' : '') + bellBtn(true) + '<button data-act="refresh">' + ic('refresh') + '<span>Refresh</span></button><button data-act="changePin">' + ic('key') + '<span>Change PIN</span></button><button data-act="logout">' + ic('out') + '<span>Sign out</span></button></div></div>' +
+        '<div class="side-foot"><div class="nav">' + bellBtn(true) + '</div>' +
+          '<div class="acct' + (S.acctOpen ? ' open' : '') + '"><div class="acct-m" id="acctMenu"' + (S.acctOpen ? '' : ' hidden') + '>' + themePick() + '<div class="nav">' +
+            (S.view === 'dashboard' ? '<button data-act="customize" class="show-sm">' + ic('sliders') + '<span>Customize dashboard</span></button>' : '') +
+            '<button type="button" data-act="photoModal" data-u="' + esc(S.me.username) + '">' + ic('camera') + '<span>Your photo</span></button>' +
+            '<button data-act="changePin">' + ic('key') + '<span>Change PIN</span></button><button data-act="refresh">' + ic('refresh') + '<span>Refresh</span></button>' +
+            '<button data-act="logout" class="acct-out">' + ic('out') + '<span>Sign out</span></button></div></div>' +
+          '<button type="button" class="acct-s" data-act="acctMenu" aria-expanded="' + !!S.acctOpen + '" aria-controls="acctMenu" data-tip="' + esc(S.me.name) + '">' + avatarHtml(userOf(S.me.username) || S.me, 34) +
+            '<span class="who-t" style="min-width:0"><b>' + esc(S.me.name) + '</b><small><span class="cap">' + esc(S.me.role === 'scheduler' ? 'division leader' : S.me.role) + '</span> · ' + (myDiv ? esc(myDiv.short) : '@' + esc(S.me.username)) + '</small></span>' + ic('up') + '</button></div></div>' +
       '</aside>' +
       '<div style="min-width:0">' +
         '<header class="topbar"><button data-act="drawer" aria-label="Open menu" aria-controls="sidenav" aria-expanded="false">' + ic('menu') + '</button><img src="' + LOGO + '" alt=""><b>PIO Overwatch</b>' + '<button data-act="search" aria-label="Search">' + ic('search') + '</button>' + bellBtn(false) + '</header>' +
@@ -1128,3 +1172,19 @@ function readLogo(file){
 }
 function sure(t, label){ if (t.dataset.sure === '1') return true; t.dataset.sure = '1'; t.innerHTML = ic('trash') + label; return false; }
 
+
+/* the account menu at the bottom of the side menu: opens upward from your profile */
+function acctSet(open){
+  S.acctOpen = open; var box = document.querySelector('.side .acct'); if (!box) return;
+  var m = box.querySelector('.acct-m'), b = box.querySelector('.acct-s'); box.classList.toggle('open', open); b.setAttribute('aria-expanded', open);
+  if (open){ m.hidden = false; if (!lessMotion()) m.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 200, easing: 'cubic-bezier(.22,1,.36,1)' }); }
+  else m.hidden = true;
+}
+document.addEventListener('click', function(ev){
+  var t = ev.target.closest('[data-act="acctMenu"]'); if (t){ acctSet(!S.acctOpen); return; }
+  if (!S.acctOpen) return;
+  var inMenu = ev.target.closest('.side .acct');
+  // picking something in the menu (other than the theme) or clicking elsewhere closes it
+  if (!inMenu || (ev.target.closest('.acct-m button') && !ev.target.closest('.themepick'))) acctSet(false);
+});
+document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape' && S.acctOpen){ acctSet(false); var b = document.querySelector('.side .acct-s'); if (b) b.focus(); } });

@@ -1,6 +1,8 @@
 {
-  "ver": "v100",
+  "ver": "v102",
   "notes": [
-    "Switching notification filters is smooth now: only the list changes, no flicker"
+    "A calmer side menu: main pages in one list, Offsets and Admin fold away smoothly",
+    "Your photo, theme, Change PIN, Refresh and Sign out are now in a menu under your name",
+    "On computers the green header is its own rounded card beside the menu"
   ]
 }
